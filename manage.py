@@ -1,8 +1,10 @@
 """Gestione di PUMA da riga di comando:  python manage.py <comando>
   (in modalità prova i comandi agiscono sul db di prova: impostare prima PUMA_MODALITA=prova)
   verifica-vpn            controlla che posta dipartimentale e WAUC siano raggiungibili (FortiClient VPN collegata)
+  prova-login [UTENTE]    prova le credenziali dipartimentali sul server di posta e mostra la risposta esatta
   primo-admin             chiede l'email del primo amministratore (solo se non ce n'è ancora uno)
   nomina-admin EMAIL | revoca-admin EMAIL | utenti
+  diagnosi-wauc [UTENTE]  perché WAUC non trova una persona: sedi, risposte, ricerca per email e per cognome
   wauc-test [EMAIL]       prova il collegamento a WAUC: mostra i campi restituiti e cosa trova per quell'email
   wauc-sync               legge da WAUC l'elenco completo di specializzazioni e qualifiche
   sync-sedi [CMD,UFC]     scarica le sedi da /api/Sedi e le collega ai Comandi di PUMA
@@ -34,6 +36,10 @@ def main(a):
         print('Verifica dei collegamenti alla rete VVF (FortiClient VPN collegata oppure rete interna)...')
         ris = rete.controlli(timeout=4)
         for r in ris: print(f"  [{'OK' if r['ok'] else '!!'}] {r['nome']:22} {r['dettaglio']}")
+        if ris[0]['ok']:
+            ok, det = rete.saluto_imap()
+            print(f"  [{'OK' if ok else '!!'}] Server di posta (TLS)  {det}")
+            if not ok: ris[0]['ok'] = False
         if any(r['ok'] for r in ris[1:]):
             try: print(f"  [OK] Lettura dati WAUC      {len(wauc.catalogo_qualifiche())} qualifiche ricevute")
             except Exception as e: print(f"  [!!] Lettura dati WAUC      il server risponde ma i dati non arrivano ({str(e)[:120] or e.__class__.__name__})")
@@ -45,6 +51,27 @@ def main(a):
               '  1. apri FortiClient VPN e collegati (se serve, anche con il codice OTP)\n'
               '  2. ripeti la verifica:  python manage.py verifica-vpn\n'
               '  Per provare PUMA senza VPN usa la modalita prova (AVVIA_PROVA.bat / ./avvia_prova.sh).')
+        raise SystemExit(1)
+    elif cmd == 'prova-login':
+        import getpass, auth_imap, rete
+        if config.PROVA: return print('Modalita prova: la password e "dev" per tutti, non serve provare il login reale.')
+        grezzo = a[1] if len(a) > 1 else input('Utente (nome.cognome): ')
+        email, err = norm_email(grezzo)
+        if err: return print('Utente non valido:', err)
+        print(f'Server di posta: {config.IMAP_HOST}:{config.IMAP_PORT} · utente presentato al server: '
+              f"{email if config.IMAP_UTENTE == 'email' else email.split('@')[0]}")
+        ok, det = rete.saluto_imap()
+        print(f"  [{'OK' if ok else '!!'}] collegamento: {det}")
+        if not ok: return print('Il server di posta non e raggiungibile: collega FortiClient VPN e riprova (VERIFICA_VPN.bat).')
+        pwd = getpass.getpass('Password dipartimentale (non compare mentre scrivi e non viene salvata): ')
+        ok, msg, det = auth_imap.verifica(email, pwd)
+        print(f"  [{'OK' if ok else '!!'}] login: {det}")
+        if ok: return print('Credenziali accettate: in PUMA puoi entrare con', email.split('@')[0])
+        print('Credenziali rifiutate dal server di posta.')
+        print('  - controlla la password provando ad accedere alla webmail dipartimentale;')
+        print("  - se la webmail funziona, il server potrebbe volere solo nome.cognome: aggiungi in puma.env la riga")
+        print('      PUMA_IMAP_UTENTE=nome' if config.IMAP_UTENTE == 'email' else '      PUMA_IMAP_UTENTE=email   (oppure togli la riga PUMA_IMAP_UTENTE)')
+        print('    e ripeti questa prova (attenzione: troppi tentativi sbagliati possono bloccare l\'account).')
         raise SystemExit(1)
     elif cmd == 'primo-admin':
         c = db.connect()
@@ -102,6 +129,8 @@ def main(a):
                                            FROM specializzazioni s WHERE s.aggiornata_il IS NOT NULL ORDER BY s.codice""").fetchall()
         print(f'{len(righe)} specializzazioni' if righe else 'Elenco vuoto: esegui prima  python3 manage.py wauc-sync')
         for r in righe: print(f"{r['codice']:8} {(r['descrizione'] or '-'):60} persone: {r['persone']}" + ('  (aggiunta da un utente)' if r['fonte'] == 'utente' else ''))
+    elif cmd == 'diagnosi-wauc':
+        return diagnosi_wauc(a[1] if len(a) > 1 else None)
     elif cmd == 'wauc-test':
         import wauc
         c = db.connect(); sedi = profilo.sedi_wauc(c)
@@ -149,5 +178,58 @@ def main(a):
         else: c.execute('UPDATE utenti SET is_admin=0 WHERE email=?', (email,))
         db.audit(c, 'cli', cmd, email); c.commit(); print('Fatto:', cmd, email)
     else: print(__doc__)
+
+def diagnosi_wauc(utente=None):
+    """Perché WAUC non trova una persona? Collegamento, sedi interrogate, risposta per sede, ricerca per email e per cognome.
+    Il risultato è stampato e salvato in <dati>/diagnosi_wauc.txt (nessuna password: WAUC non la usa)."""
+    import concurrent.futures, rete, wauc
+    righe = []
+    def out(t=''):
+        print(t); righe.append(t)
+    if config.PROVA: out('Modalita prova: WAUC simulato (prova/wauc_finto.json).')
+    if not utente:
+        try: utente = input('Utente da cercare (nome.cognome): ')
+        except EOFError: utente = ''
+    email = norm_email(utente)[0] or (utente or '').strip().lower()
+    out(f'Diagnosi WAUC per {email} · {datetime.datetime.now():%Y-%m-%d %H:%M}')
+    out(f'WAUC: {config.WAUC_HTTP} (personale) · {config.WAUC_HTTPS} (elenchi) · timeout {config.WAUC_TIMEOUT}s · PUMA_WAUC_SEDI={",".join(config.WAUC_SEDI) or "(vuoto: tutte)"}')
+    for r in ([] if config.PROVA else rete.controlli(timeout=4)[1:]): out(f"  [{'OK' if r['ok'] else '!!'}] {r['nome']:14} {r['dettaglio']}")
+    c = db.connect()
+    try:
+        n = profilo.sincronizza_sedi(c, ('CMD',)); c.commit()
+        cod = [r[0] for r in c.execute("SELECT DISTINCT codice FROM sedi_wauc WHERE cod_tipo_dipartimento='CMD' ORDER BY codice")]
+        sig = {r[0] for r in c.execute('SELECT sigla FROM comandi WHERE sigla IS NOT NULL')}
+        out(f"  [OK] /api/Sedi: {n['sedi']} comandi; codici diversi dalle sigle provinciali: {', '.join(x for x in cod if x.upper() not in sig) or 'nessuno'}")
+    except Exception as e:
+        out(f'  [!!] /api/Sedi: {str(e)[:150] or e.__class__.__name__}')
+    sedi = profilo.sedi_wauc(c)
+    out(f'Sedi interrogate: {len(sedi)}')
+    def una(s):
+        try: return s, wauc._fetch(s), None
+        except Exception as e: return s, None, f'{e.__class__.__name__}: {str(e)[:80]}'
+    with concurrent.futures.ThreadPoolExecutor(max_workers=8) as ex: ris = list(ex.map(una, sedi))
+    con = [(s, r) for s, r, e in ris if r]; vuote = [s for s, r, e in ris if r == []]; err = [(s, e) for s, r, e in ris if e]
+    out(f'  con personale: {len(con)} sedi, {sum(len(r) for _, r in con)} persone · senza personale: {len(vuote)} · errori: {len(err)}')
+    for s, e in err[:5]: out(f'    errore {s}: {e}')
+    if con:
+        es = con[0][1][0]
+        out(f"  esempio di record ({con[0][0]}): campi = {', '.join(sorted(es.keys()))[:300]}")
+        out(f"    accountDipvvf='{wauc._s(wauc._g(es, 'accountDipvvf'))}'  emailVigilfuoco='{wauc._s(wauc._g(es, 'emailVigilfuoco'))}'")
+    tutti = [(s, x) for s, r in con for x in r]
+    trovati = [(s, x) for s, x in tutti if wauc._ha_email(x, email)]
+    out(f"Ricerca per email: {'TROVATO in ' + ', '.join(s for s, _ in trovati) if trovati else 'non trovato'}")
+    parti = [p for p in email.split('@')[0].replace('-', '.').split('.') if len(p) > 2]
+    simili = [(s, x) for s, x in tutti if any(p in wauc.norm(wauc._g(x, 'cognome')) for p in map(wauc.norm, parti[1:] or parti))]
+    out(f'Persone con cognome simile ({", ".join(parti[1:] or parti)}): {len(simili)}')
+    for s, x in simili[:8]:
+        ex = wauc.estrai_campi(x)
+        out(f"  {ex['cognome']} {ex['nome']} · sede {s}/{ex['cod_sede']} {ex['desc_sede']} · accountDipvvf='{ex['account_dipvvf']}' · emailVigilfuoco='{ex['email_vigilfuoco']}'")
+    if not con: out('=> WAUC non ha restituito personale per nessuna sede: collegamento o codici sede da verificare.')
+    elif trovati: out('=> La persona c\'e: al prossimo accesso il profilo viene compilato da WAUC (oppure: python manage.py reset-profilo ' + email + ').')
+    elif simili: out('=> La persona c\'e ma con un\'email diversa: vedi i campi qui sopra.')
+    else: out('=> La persona non compare nelle sedi interrogate: forse la sua sede ha un codice diverso (vedi «codici diversi» sopra).')
+    with open(os.path.join(config.DATA_DIR, 'diagnosi_wauc.txt'), 'w', encoding='utf-8') as f: f.write('\n'.join(righe) + '\n')
+    print(f'\n(risultato salvato anche in {os.path.join(config.DATA_DIR, "diagnosi_wauc.txt")})')
+
 
 if __name__ == '__main__': main(sys.argv[1:])

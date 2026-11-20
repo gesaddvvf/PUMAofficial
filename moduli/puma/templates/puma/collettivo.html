@@ -1,4 +1,4 @@
-{% extends 'base.html' %}{% block titolo %}P.U.M.A.{% endblock %}{% block main %}{% include "puma/_nav.html" %}
+{% extends 'base.html' %}{% block main %}{% include "puma/_nav.html" %}
 <h2 class="puma-h">{{ e.cod_add or (e.tipologia ~ ' – Team ' ~ e.team) }} <span class="puma-tag">{{ e.stato }}</span></h2>
 <p>{{ e.tipologia }} · squadra {{ e.team }} · {{ e.data }} · {{ e.ora_inizio or '' }}–{{ e.ora_fine or '' }} · {{ 'Direzione Regionale' if e.org_dr else nomi.get(e.comando_id,'') }}<br>{{ e.titolo or '' }}</p>
 <div id="map" class="puma-map" data-tiles="{{ tile_url }}" data-lat="{{ e.lat }}" data-lon="{{ e.lon }}" data-rvlat="{{ e.rv_lat or '' }}" data-rvlon="{{ e.rv_lon or '' }}" data-amblat="{{ e.amb_lat or '' }}" data-amblon="{{ e.amb_lon or '' }}"></div>

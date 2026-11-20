@@ -1,4 +1,4 @@
-{% extends 'base.html' %}{% block titolo %}P.U.M.A.{% endblock %}{% block main %}{% include "puma/_nav.html" %}
+{% extends 'base.html' %}{% block main %}{% include "puma/_nav.html" %}
 <h2 class="puma-h">Settore {{ s.nome }}</h2>
 <div class="puma-kpi"><a href="{{ url_for('puma.collettivi') }}">Addestramenti collettivi</a><a href="{{ url_for('puma.individuali') }}">Registra addestramento individuale</a>
 <a href="{{ url_for('puma.interventi') }}">Registra intervento reale</a><a href="{{ url_for('puma.mappa') }}">Mappa live</a></div>

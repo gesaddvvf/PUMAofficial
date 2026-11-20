@@ -1,4 +1,4 @@
-{% extends 'base.html' %}{% block titolo %}P.U.M.A.{% endblock %}{% block main %}{% include "puma/_nav.html" %}
+{% extends 'base.html' %}{% block main %}{% include "puma/_nav.html" %}
 <h2 class="puma-h">Registrazione all'addestramento</h2>
 <div class="puma-conferma"><p class="puma-cod">{{ e.cod_add }}</p>
 <p><b>{{ e.tipologia }}</b> – squadra <b>{{ e.team }}</b><br>{{ e.data }} · {{ e.ora_inizio }}–{{ e.ora_fine }}<br>Organizzatore: {{ 'Direzione Regionale' if e.org_dr else nomi.get(e.comando_id,'') }}<br>{{ e.titolo or '' }}</p></div>

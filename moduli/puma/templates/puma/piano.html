@@ -1,4 +1,4 @@
-{% extends 'base.html' %}{% block titolo %}P.U.M.A.{% endblock %}{% block main %}{% include "puma/_nav.html" %}
+{% extends 'base.html' %}{% block main %}{% include "puma/_nav.html" %}
 <h2 class="puma-h">Piano di sicurezza – {{ e.cod_add }}</h2>
 <p><a href="{{ url_for('puma.collettivo', i=e.id) }}">← scheda addestramento</a> · {{ e.data }} {{ e.ora_inizio }}–{{ e.ora_fine }}</p>
 

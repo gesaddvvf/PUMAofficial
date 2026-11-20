@@ -234,8 +234,9 @@ def documentazione(cat):
         get_db().commit()
         flash("Documento caricato.")
         return redirect(request.url)
+    from .pagine import catalogo
     return render_template("puma/documenti.html",
-                           cat=cat,
+                           cat=cat, catalogo=catalogo(cat),
                            righe=elenco("puma_documenti", u, "categoria=?", (cat,)),
                            scrivi=can_write(u))
 
@@ -276,4 +277,4 @@ def archivia(i):
     return redirect(url_for("puma.attivita"))
 
 
-from . import addestramenti, piano  # noqa: E402,F401  (registra le route dei moduli)
+from . import addestramenti, piano, pagine  # noqa: E402,F401  (registra le route dei moduli)
