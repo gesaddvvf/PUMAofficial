@@ -1,11 +1,15 @@
 {% extends 'base.html' %}{% block main %}{% include "puma/_nav.html" %}
-<h2 class="puma-h">Addestramenti individuali</h2>
-<form method="post" class="puma-form"><input type="hidden" name="csrf" value="{{ csrf }}"><h3>Registrazione rapida</h3>
-<label>Livello <select name="livello_id" id="liv" required data-url="{{ url_for('puma.api_manovre', lid=0) }}"><option value="">Scegli…</option>{% for l in livelli %}<option value="{{ l.id }}" data-s="{{ l.settore }}">{{ l.nome }}</option>{% endfor %}</select></label>
+<h2 class="puma-h">Registrazione attività individuale</h2>
+<p class="muted">Addestramento svolto da solo (o fuori da un collettivo programmato): conta nel tuo libretto per la tipologia scelta, con le manovre previste spuntate.</p>
+<form method="post" class="puma-form"><input type="hidden" name="csrf" value="{{ csrf }}"><h3>Nuova registrazione</h3>
+<label>Tipologia di addestramento {% include "puma/_tipologie.html" %}</label>
 <input type="hidden" name="tipologia" id="tipo">
-<label>Ora inizio <input type="datetime-local" name="inizio" value="{{ adesso }}" required></label>
-<label>Ora fine <input type="datetime-local" name="fine" value="{{ adesso }}" required></label>
-<fieldset id="man"><legend>Manovre</legend><small>Seleziona un livello.</small></fieldset><button>Registra</button></form>
-<ul class="puma-list">{% for r in righe %}<li><div><b>{{ r.livello or r.tipologia }}</b><br><small>{{ (r.manovre|from_json)|join(', ') if r.manovre }}</small></div><div>{{ r.inizio.replace('T',' ') }} → {{ r.fine[11:] }}</div></li>
-{% else %}<li class="puma-empty">Nessun addestramento individuale registrato.</li>{% endfor %}</ul>
+<label>Inizio <input type="datetime-local" name="inizio" value="{{ adesso }}" required></label>
+<label>Fine <input type="datetime-local" name="fine" value="{{ adesso }}" required></label>
+<fieldset id="man"><legend>Manovre previste svolte</legend><small>Scegli prima la tipologia.</small></fieldset>
+<label>Descrizione dell'attività <textarea name="descrizione" rows="2" placeholder="Facoltativa"></textarea></label>
+<button>Registra</button></form>
+<h3>Le mie registrazioni</h3>
+<ul class="puma-list">{% for r in righe %}<li><div><b>{{ r.livello or r.tipologia }}</b>{% if r.descrizione %} · {{ r.descrizione }}{% endif %}<br><small>{{ (r.manovre|from_json)|join(', ') if r.manovre }}</small></div><div>{{ r.inizio[:10]|datait }} {{ r.inizio[11:16] }} → {{ r.fine[11:16] }}</div></li>
+{% else %}<li class="puma-empty">Nessuna attività individuale registrata.</li>{% endfor %}</ul>
 <script src="{{ url_for('puma.static', filename='js/individuali.js') }}"></script>{% endblock %}

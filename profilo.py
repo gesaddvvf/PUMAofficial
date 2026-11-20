@@ -42,7 +42,7 @@ def sedi_wauc(c):
     if config.WAUC_SEDI: return list(config.WAUC_SEDI)
     note = [r[0] for r in c.execute('SELECT codice FROM wauc_sedi WHERE n_persone>0 ORDER BY n_persone DESC')]
     if note: return note
-    sigle = [r[0] for r in c.execute('SELECT sigla FROM comandi WHERE sigla IS NOT NULL ORDER BY sigla')]
+    sigle = [r[0] for r in c.execute("SELECT sigla FROM comandi WHERE sigla IS NOT NULL AND tipo='comando' ORDER BY sigla")]
     # codici dei comandi letti da /api/Sedi (se diversi dalle sigle provinciali, es. sigle storiche)
     extra = [r[0] for r in c.execute("SELECT DISTINCT upper(codice) FROM sedi_wauc WHERE cod_tipo_dipartimento='CMD' AND codice<>''")]
     return sigle + sorted(set(extra) - set(sigle))
@@ -58,10 +58,22 @@ def registra_osservati(c):
     for (sede, dist), desc in o['distaccamenti'].items():
         c.execute('INSERT INTO distaccamenti_wauc VALUES(?,?,?) ON CONFLICT(cod_sede,cod_distaccamento) DO UPDATE SET descrizione=excluded.descrizione', (sede, dist, desc))
 
+def assicura_sedi(c):
+    """La prima volta legge da /api/Sedi i codici veri dei comandi (possono differire dalle sigle provinciali):
+    la ricerca della persona li usa insieme alle sigle. Un tentativo ogni 6 ore al massimo; errori ignorati."""
+    if config.WAUC_SEDI or c.execute("SELECT 1 FROM sedi_wauc WHERE cod_tipo_dipartimento='CMD' LIMIT 1").fetchone(): return
+    t = c.execute("SELECT eseguita_il FROM wauc_sync WHERE chiave='sedi_tentativo'").fetchone()
+    if t and datetime.datetime.now() - datetime.datetime.fromisoformat(t[0]) < datetime.timedelta(hours=6): return
+    _segna_sync(c, 'sedi_tentativo')
+    try: sincronizza_sedi(c, ('CMD',))
+    except Exception as e: log.warning('Sedi WAUC non lette: %s', e)
+
+
 def trova(c, email):
     """(origine, dati, specs, errore): origine = 'wauc' | 'organico' | None."""
     err = None
     if config.WAUC_ATTIVO:
+        assicura_sedi(c)
         try:
             prima = c.execute('SELECT a.cod_sede FROM anagrafica_wauc a JOIN utenti u ON u.id=a.utente_id WHERE u.email=?', (email,)).fetchone()
             w = wauc.cerca_persona(email, sedi_wauc(c), prima[0] if prima and prima[0] else None)
@@ -77,7 +89,7 @@ def trova(c, email):
 
 def scopri_sedi(c):
     """Interroga tutte le sigle provinciali, memorizza le sedi con personale e i valori trovati. Ritorna {sede: n persone | None}."""
-    ris = wauc.scopri_sedi([r[0] for r in c.execute('SELECT sigla FROM comandi WHERE sigla IS NOT NULL ORDER BY sigla')])
+    ris = wauc.scopri_sedi(sedi_wauc(c) if not config.WAUC_SEDI else list(config.WAUC_SEDI))
     for s, n in ris.items():
         if n is not None: c.execute('INSERT INTO wauc_sedi VALUES(?,?,?) ON CONFLICT(codice) DO UPDATE SET n_persone=excluded.n_persone, verificata_il=excluded.verificata_il', (s, n, ADESSO()))
     registra_osservati(c); return ris

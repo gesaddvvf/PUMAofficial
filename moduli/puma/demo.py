@@ -32,7 +32,7 @@ def crea(silenzioso=False):
                 c.execute("INSERT OR REPLACE INTO permessi VALUES(?,?,?)", (uid, sett[cod], liv))
             c.execute("INSERT OR REPLACE INTO puma_livello_utente VALUES(?,?)", (uid, vis))
             c.execute("INSERT OR REPLACE INTO puma_persone VALUES(?,?)", (uid, CF[em]))
-        lv = c.execute("SELECT id FROM puma_livelli WHERE nome='SAF Basico'").fetchone()[0]
+        lv = c.execute("SELECT id FROM puma_livelli WHERE nome='SAF (Speleo Alpino Fluviale) BASICO'").fetchone()[0]
         for sig, team, blind, naz, lat, lon in EVENTI:
             cod = f"SAF-{team.upper()}-" + c.execute("SELECT COALESCE(dz.sigla,'XXX') FROM puma_comando_dir cd JOIN puma_direzioni dz ON dz.id=cd.direzione_id WHERE cd.comando_id=?", (com[sig],)).fetchone()[0] + sig + "-" + oggi.strftime("%Y%m%d")
             c.execute("""INSERT OR IGNORE INTO puma_eventi(data,ora_inizio,ora_fine,cod_add,tipologia,livello_id,team,titolo,lat,lon,rv_lat,rv_lon,rv_descr,amb_lat,amb_lon,amb_descr,responsabile,comando_id,direzione_id,

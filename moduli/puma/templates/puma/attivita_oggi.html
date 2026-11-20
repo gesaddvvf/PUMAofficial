@@ -1,0 +1,21 @@
+{% extends 'base.html' %}{% block main %}{% include "puma/_nav.html" %}
+{% macro evento(e, puoi_aggiungerti) %}
+<section class="puma-evento area-att">
+  <header><div class="ev-titolo">{% if e.chiave %}<img class="logo-tip" src="{{ url_for('puma.static', filename='img/tipologie/' ~ e.chiave ~ '.svg') }}" alt="">{% endif %}
+    <div><h4><a href="{{ url_for('puma.collettivo', i=e.id) }}">{{ e.cod_add or (e.tipologia ~ ' – Team ' ~ e.team) }}</a></h4>
+    <span class="muted">{{ e.tipologia_nome or e.tipologia }} · team {{ e.team }} · {{ e.comando }}{% if e.is_blindato %} · riservato{% endif %}</span></div></div>
+    <div class="ev-azioni">
+      {% if puoi_aggiungerti %}{% if e.io %}<span class="puma-tag">✔ Ci sei</span>{% else %}<a class="puma-btn puma-on" href="{{ url_for('puma.partecipa', i=e.id) }}">➕ Mi aggiungo</a>{% endif %}{% endif %}
+      {% if scrivi and e.comando_id == mio_comando %}<a class="puma-btn" href="{{ url_for('puma.piano', i=e.id) }}">🛡 Piano di sicurezza</a>{% endif %}
+    </div></header>
+  <p class="muted">{{ e.data|datait }} · {{ e.ora_inizio or '' }}–{{ e.ora_fine or '' }} · {{ e.presenti }} presenti{% if e.titolo %} · {{ e.titolo }}{% endif %}</p>
+</section>
+{% endmacro %}
+<div class="libretto-testa"><h2 class="puma-h">Addestramenti di oggi <small>{{ oggi|datait }}</small></h2>
+{% if scrivi %}<a class="puma-btn puma-on" href="{{ url_for('puma.collettivo_nuovo') }}">📅 Programma un addestramento</a>{% endif %}</div>
+<p class="muted">Gli addestramenti programmati per oggi: premi <b>Mi aggiungo</b> su quello a cui partecipi (anche di un altro Comando, se non è riservato). Il responsabile prepara il <b>piano di sicurezza</b> e a fine giornata convalida le presenze.</p>
+{% for e in di_oggi %}{{ evento(e, true) }}{% else %}<p class="puma-empty">Nessun addestramento programmato per oggi.{% if scrivi %} <a href="{{ url_for('puma.collettivo_nuovo') }}">Programmane uno</a>.{% endif %}</p>{% endfor %}
+<h3>Prossimi 7 giorni</h3>
+<p class="muted piccolo">Ci si aggiunge il giorno dell'addestramento.</p>
+{% for e in prossimi %}{{ evento(e, false) }}{% else %}<p class="puma-empty">Nessun addestramento programmato nei prossimi giorni.</p>{% endfor %}
+{% endblock %}

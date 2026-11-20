@@ -1,10 +1,14 @@
-{% extends 'base.html' %}{% block titolo %}Schede dei comandi{% endblock %}
-{% block main %}<h1>Schede dei comandi</h1>
-<p class="muted">Dati di contatto di ogni comando (= provincia). Non esistono in WAUC: si inseriscono qui e <b>non vengono toccati</b> dagli aggiornamenti da WAUC. Le coordinate inserite a mano prevalgono su quelle di WAUC. <a href="{{ url_for('admin_config') }}">← Configurazione</a></p>
+{% extends 'base.html' %}{% block titolo %}Schede delle sedi{% endblock %}
+{% block main %}<h1>Comandi, Direzioni regionali, CON e SOCAV</h1>
+<p class="muted">Contatti di ogni sede, caricati dai dati di <b>FireOps</b> (solo nei campi vuoti). Quello che modifichi qui resta: né FireOps né WAUC lo sovrascrivono. Le coordinate inserite qui prevalgono su quelle di WAUC.</p>
 {% if m %}<form method="post" class="box box-largo"><input type="hidden" name="csrf" value="{{ csrf }}"><input type="hidden" name="id" value="{{ m['id'] }}">
 <h2>{{ m['nome'] }}{% if m['sigla'] %} ({{ m['sigla'] }}){% endif %}</h2>
 <p class="muted">{% if m['sede_desc'] %}Sede WAUC collegata: {{ m['sede_desc'] }}{% if m['coordinate_raw'] %} · coordinate WAUC: {{ m['coordinate_raw'] }}{% endif %}{% else %}Nessuna sede WAUC collegata (esegui «Crea o aggiorna dati» sulle Sedi).{% endif %}</p>
-<label for="t1">Telefono</label><input id="t1" name="telefono" value="{{ m['telefono'] or '' }}">
+<label for="tso">Telefono Sala Operativa</label><input id="tso" name="telefono_so" value="{{ m['telefono_so'] or '' }}">
+<label for="cr">Canale radio</label><input id="cr" name="canale_radio" value="{{ m['canale_radio'] or '' }}">
+<label for="eso">Email Sala Operativa</label><input id="eso" name="email_so" type="email" value="{{ m['email_so'] or '' }}">
+<label for="pso">PEC Sala Operativa</label><input id="pso" name="pec_so" type="email" value="{{ m['pec_so'] or '' }}">
+<label for="t1">Telefono centralino</label><input id="t1" name="telefono" value="{{ m['telefono'] or '' }}">
 <label for="t2">Telefono 2</label><input id="t2" name="telefono2" value="{{ m['telefono2'] or '' }}">
 <label for="em">Email</label><input id="em" name="email" type="email" value="{{ m['email'] or '' }}">
 <label for="pc">PEC</label><input id="pc" name="pec" type="email" value="{{ m['pec'] or '' }}">
@@ -19,11 +23,13 @@
 <label for="si">Sito intranet</label><input id="si" name="sito_intranet" value="{{ m['sito_intranet'] or '' }}" placeholder="http://…">
 <label for="no">Note</label><input id="no" name="note" value="{{ m['note'] or '' }}">
 <button class="btn btn-primary" type="submit">Salva</button> <a class="btn" href="{{ url_for('admin_comandi') }}">Annulla</a></form>{% endif %}
-<form method="get" class="filtri"><input name="q" value="{{ q }}" placeholder="Cerca per nome o sigla"><button class="btn" type="submit">Cerca</button></form>
-<table><tr><th>Comando</th><th>Contatti</th><th>NUE</th><th>Siti</th><th></th></tr>
-{% for r in righe %}<tr><td><b>{{ r['nome'] }}</b>{% if r['sigla'] %} <span class="muted">({{ r['sigla'] }})</span>{% endif %}{% if r['indirizzo'] %}<br><span class="muted">{{ r['indirizzo'] }}{% if r['comune'] %}, {{ r['comune'] }}{% endif %}</span>{% endif %}
+<div class="filtri">{% for k, v in [('', 'Tutte'), ('comando', 'Comandi'), ('direzione', 'Direzioni regionali'), ('nazionale', 'CON e SOCAV')] %}<a class="btn{{ ' btn-primary' if tipo == k }}" href="?tipo={{ k }}">{{ v }}</a>{% endfor %}</div>
+<form method="get" class="filtri"><input type="hidden" name="tipo" value="{{ tipo }}"><input name="q" value="{{ q }}" placeholder="Cerca per nome o sigla" class="campo-corto"><button class="btn" type="submit">Cerca</button></form>
+<table><tr><th>Sede</th><th>Sala Operativa</th><th>Contatti</th><th>NUE</th><th>Siti</th><th></th></tr>
+{% for r in righe %}<tr><td><b>{{ r['nome'] }}</b>{% if r['tipo'] != 'comando' %} <span class="badge b-admin">{{ 'Direzione' if r['tipo'] == 'direzione' else 'Nazionale' }}</span>{% endif %}{% if r['sigla'] %} <span class="muted">({{ r['sigla'] }})</span>{% endif %}{% if r['indirizzo'] %}<br><span class="muted">{{ r['indirizzo'] }}{% if r['comune'] %}, {{ r['comune'] }}{% endif %}</span>{% endif %}
 {% set la = r['lat'] if r['lat'] is not none else r['wlat'] %}{% set lo = r['lon'] if r['lon'] is not none else r['wlon'] %}{% if la is not none and lo is not none %}<br><span class="muted">{{ '%.4f'|format(la) }}, {{ '%.4f'|format(lo) }}{% if r['lat'] is none %} (WAUC){% endif %}</span>{% endif %}</td>
+<td>{{ r['telefono_so'] or '—' }}{% if r['canale_radio'] %}<br><span class="muted">canale radio {{ r['canale_radio'] }}</span>{% endif %}{% if r['email_so'] %}<br><span class="muted">{{ r['email_so'] }}</span>{% endif %}</td>
 <td>{{ r['telefono'] or '—' }}{% if r['telefono2'] %}<br>{{ r['telefono2'] }}{% endif %}{% if r['email'] %}<br><span class="muted">{{ r['email'] }}</span>{% endif %}{% if r['pec'] %}<br><span class="muted">PEC {{ r['pec'] }}</span>{% endif %}</td>
 <td>{% if r['nue'] == 1 %}<span class="badge b-attivo">Sì</span>{% elif r['nue'] == 0 %}<span class="badge b-disabilitato">No</span>{% else %}<span class="muted">—</span>{% endif %}</td>
 <td>{% if r['sito_web'] %}<a href="{{ r['sito_web'] }}" target="_blank" rel="noopener">Sito</a>{% endif %}{% if r['sito_web'] and r['sito_intranet'] %} · {% endif %}{% if r['sito_intranet'] %}<a href="{{ r['sito_intranet'] }}" target="_blank" rel="noopener">Intranet</a>{% endif %}{% if not r['sito_web'] and not r['sito_intranet'] %}<span class="muted">—</span>{% endif %}</td>
-<td><a class="btn" href="?modifica={{ r['id'] }}">Modifica</a></td></tr>{% else %}<tr><td colspan="5" class="muted">Nessun comando trovato.</td></tr>{% endfor %}</table>{% endblock %}
+<td><a class="btn" href="?modifica={{ r['id'] }}">Modifica</a></td></tr>{% else %}<tr><td colspan="6" class="muted">Nessuna sede trovata.</td></tr>{% endfor %}</table>{% endblock %}

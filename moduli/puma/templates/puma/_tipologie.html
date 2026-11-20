@@ -1,0 +1,3 @@
+<select name="livello_id" id="liv" required data-url="{{ url_for('puma.api_manovre', lid=0) }}"><option value="">Scegli la tipologia…</option>
+{% for cat, gruppo in tipologie|groupby('categoria') %}<optgroup label="{{ cat or 'Altro' }}">{% for l in gruppo %}<option value="{{ l.id }}" data-s="{{ l.settore }}" {{ 'selected' if scelta is defined and scelta == l.id }}>{{ l.nome }}</option>{% endfor %}</optgroup>{% endfor %}
+</select>

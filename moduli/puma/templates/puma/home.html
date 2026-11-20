@@ -14,8 +14,8 @@
 
   <div class="sez-tit">Aree</div>
   <div class="tessere">
-    <a class="tessera area-att" href="{{ url_for('puma.individuali') }}"><div class="ic">📝</div><h4>Attività</h4>
-      <p>Profilazione individuale, registrazione attività e pianificazione degli addestramenti collettivi.</p></a>
+    <a class="tessera area-att" href="{{ url_for('puma.attivita_oggi') }}"><div class="ic">📝</div><h4>Attività</h4>
+      <p>Addestramenti di oggi (mi aggiungo), programmazione, piani di sicurezza, registrazione individuale e interventi.</p></a>
     <a class="tessera area-rt" href="{{ url_for('puma.presenze') }}"><div class="ic">🗺️</div><h4>Real Time</h4>
       <p>Presenze odierne, mappa degli addestramenti in corso e riepilogo globale degli addestramenti collettivi.</p></a>
     <a class="tessera area-doc" href="{{ url_for('puma.documentazione', cat='manuali-puma') }}"><div class="ic">📚</div><h4>Documentazione</h4>
@@ -23,7 +23,7 @@
     <a class="tessera area-rep" href="{{ url_for('puma.profilo') }}"><div class="ic">👤</div><h4>Report Individuale</h4>
       <p>Libretto di formazione del singolo: addestramenti, scadenze e storico.</p></a>
     {% if nav_perm and nav_perm.comando %}<a class="tessera area-rep" href="{{ url_for('puma.report_collettivo') }}"><div class="ic">👥</div><h4>Report Collettivo</h4>
-      <p>Situazione per settore, Comando per Comando o per Direzione: scadenze del personale per ROP e ROR.</p></a>{% endif %}
+      <p>Situazione per tipologia, Comando per Comando o per Direzione, e cruscotto dello stato dei corsi.</p></a>{% endif %}
     <a class="tessera area-com" href="{{ url_for('puma.area_comando') }}"><div class="ic">{{ '🔓' if nav_perm and nav_perm.comando else '🔒' }}</div><h4>Area Comando</h4>
       <p>Reportistica e gestione per ROP, ROR, Funzionario di settore e amministratori.</p></a>
   </div>

@@ -23,6 +23,11 @@
     window.scrollTo(0, 0);
     aggiornaTurno(); setInterval(aggiornaTurno, 30000);
     filtroDocumenti();
+    // barre di grafici e cruscotto: dimensioni dai data-attribute (gli stili in linea sono vietati dalla CSP)
+    Array.prototype.forEach.call(document.querySelectorAll('[data-w]'), function (el) { el.style.width = el.getAttribute('data-w') + '%'; });
+    Array.prototype.forEach.call(document.querySelectorAll('[data-h]'), function (el) { el.style.height = el.getAttribute('data-h') + '%'; });
+    // selettori dei report: cambiando l'ente si aggiorna subito la pagina
+    Array.prototype.forEach.call(document.querySelectorAll('form.selettore select[name=ente]'), function (s) { s.addEventListener('change', function () { s.form.submit(); }); });
   });
 
   /* ---------- turno e salto in servizio (stessa sequenza del sito P.U.M.A. e di FireOps) ---------- */
