@@ -1,0 +1,41 @@
+{% extends 'base.html' %}{% block titolo %}Il tuo profilo{% endblock %}
+{% block main %}<form class="box box-largo" method="post"><h1>Verifica i tuoi dati</h1>
+{% if utente['origine_profilo']=='wauc' %}<div class="flash success">Ti ho trovato nell'anagrafica del personale con l'email <strong>{{ utente['email'] }}</strong>: controlla i dati e conferma. Dove serve modificare, puoi scegliere solo tra i valori presenti in WAUC.</div>
+{% elif utente['origine_profilo']=='organico' %}<div class="flash success">Ti ho trovato nell'organico di P.U.M.A. con l'email <strong>{{ utente['email'] }}</strong>: controlla i dati e conferma.</div>
+{% else %}<div class="flash warning">Non risulti ancora in anagrafica: ho ricavato solo nome e cognome dall'email. Completa i dati mancanti.</div>{% endif %}
+<input type="hidden" name="csrf" value="{{ csrf }}">
+<label for="nome">Nome</label><input id="nome" name="nome" value="{{ utente['nome'] or '' }}" required {{ 'readonly' if blocca_nome }}>
+<label for="cognome">Cognome</label><input id="cognome" name="cognome" value="{{ utente['cognome'] or '' }}" required {{ 'readonly' if blocca_nome }}>
+<label for="co">Comando di appartenenza (provincia)</label><select id="co" name="comando_id" required><option value="">— seleziona —</option>{% for k in comandi %}<option value="{{ k['id'] }}" data-sigla="{{ k['sigla'] or '' }}" {{ 'selected' if utente['comando_id']==k['id'] }}>{{ k['nome'] }}</option>{% endfor %}</select>
+<label for="distaccamento">Distaccamento</label>
+{% if dist %}<select id="distaccamento" name="distaccamento"><option value="">—</option>{% if utente['distaccamento'] and utente['distaccamento'] not in dist|map(attribute='descrizione') %}<option value="{{ utente['distaccamento'] }}" selected>{{ utente['distaccamento'] }}</option>{% endif %}
+{% for d in dist %}<option value="{{ d['descrizione'] }}" data-sigla="{{ d['cod_sede'] }}" {{ 'selected' if utente['distaccamento']==d['descrizione'] }}>{{ d['descrizione'] }}</option>{% endfor %}</select>
+{% else %}<input id="distaccamento" name="distaccamento" value="{{ utente['distaccamento'] or '' }}">{% endif %}
+<label for="qualifica">Qualifica</label>
+{% if quals %}<select id="qualifica" name="qualifica"><option value="">—</option>
+{% for q in quals %}{% if loop.first or quals[loop.index0-1]['desc_gruppo']!=q['desc_gruppo'] %}{% if not loop.first %}</optgroup>{% endif %}<optgroup label="{{ q['desc_gruppo'] }}">{% endif %}<option value="{{ q['codice'] }}|{{ q['cod_gruppo'] }}" {{ 'selected' if utente['cod_qualifica']==q['codice'] and (utente['cod_gruppo'] or '')==q['cod_gruppo'] }}>{{ q['descrizione'] }}</option>{% if loop.last %}</optgroup>{% endif %}{% endfor %}</select>
+{% else %}<input id="qualifica" name="qualifica" value="{{ utente['qualifica'] or '' }}">{% endif %}
+<label for="tipo">Tipo di personale</label>
+{% if tipi %}<select id="tipo" name="tipo_personale"><option value="">—</option>{% for t in tipi %}<option value="{{ t['codice'] }}" {{ 'selected' if utente['cod_tipo_personale']==t['codice'] }}>{{ t['descrizione'] }}</option>{% endfor %}</select>
+{% else %}<input id="tipo" name="tipo_personale" value="{{ utente['tipo_personale'] or '' }}">{% endif %}
+<label for="turno">Turno</label>
+{% if turni %}<select id="turno" name="turno"><option value="">—</option>{% for t in turni %}<option value="{{ t }}" {{ 'selected' if utente['turno']==t }}>{{ t }}</option>{% endfor %}</select>
+{% else %}<input id="turno" name="turno" value="{{ utente['turno'] or '' }}">{% endif %}
+<label for="salto">Salto turno</label>
+{% if salti %}<select id="salto" name="salto_turno"><option value="">—</option>{% for t in salti %}<option value="{{ t }}" {{ 'selected' if utente['salto_turno']==t }}>{{ t }}</option>{% endfor %}</select>
+{% else %}<input id="salto" name="salto_turno" value="{{ utente['salto_turno'] or '' }}">{% endif %}
+<label for="matricola">Matricola</label><input id="matricola" name="matricola" value="{{ utente['matricola'] or '' }}">
+<label for="telefono">Telefono</label><input id="telefono" name="telefono" value="{{ utente['telefono'] or '' }}">
+<h2 id="specializzazioni">Specializzazioni</h2><p class="muted">Tutte quelle presenti in WAUC. Quelle che risultano a te sono già spuntate (non modificabili); puoi spuntare altre che ti mancano indicando, se vuoi, la data. Le scadute sono segnalate.</p>
+<details class="aggiungi-spec"><summary class="btn">+ Aggiungi specializzazione non presente</summary>
+<p class="muted">Se la tua specializzazione non è in elenco, inseriscila: la troverai spuntata e sarà disponibile anche agli altri .</p>
+<div class="riga"><input form="form-add-spec" name="codice" placeholder="Codice" maxlength="20" required size="10"><input form="form-add-spec" name="descrizione" placeholder="Descrizione" maxlength="120" required>
+<input form="form-add-spec" type="date" name="data" aria-label="Data (facoltativa)" title="Data (facoltativa)"><button class="btn btn-primary" type="submit" form="form-add-spec">Aggiungi</button></div></details>
+{% if specs %}<input type="search" id="filtro-spec" placeholder="Cerca per codice o descrizione" aria-label="Cerca specializzazione">
+<div class="spunte" id="elenco-spec">{% for s in specs %}<div class="riga-spec"><label><input type="checkbox" name="spec" value="{{ s['codice'] }}" {{ 'checked' if s['valida'] or s['origine']=='manuale' }} {{ 'disabled' if s['origine']=='wauc' }}> <strong>{{ s['codice'] }}</strong> {{ s['descrizione'] or '' }}
+{% if s['origine']=='wauc' and not s['valida'] %}<span class="badge b-disabilitato">scaduta il {{ s['fine']|datait }}</span>{% elif s['origine']=='wauc' %}<span class="badge b-attivo">WAUC</span>{% elif s['origine']=='manuale' %}<span class="badge">aggiunta da te</span>{% endif %}{% if s['fonte']=='utente' %}<span class="badge">non in WAUC</span>{% endif %}</label>
+{% if s['origine']=='wauc' %}<span class="muted">{{ ('dal ' ~ (s['inizio']|datait)) if s['inizio'] else '' }}</span>{% else %}<input type="date" name="data_{{ s['codice'] }}" value="{{ s['inizio'] or '' }}" aria-label="Data (facoltativa) {{ s['codice'] }}" title="Data (facoltativa)">{% endif %}</div>{% endfor %}</div>
+{% else %}<p class="muted">Elenco non ancora caricato (WAUC non raggiungibile). Ricarica la pagina fra qualche minuto oppure aggiungi la specializzazione con il pulsante qui sopra.</p>{% endif %}
+<button class="btn btn-primary" type="submit">Conferma e continua</button></form>
+<form id="form-add-spec" method="post" action="{{ url_for('profilo_spec_aggiungi') }}"><input type="hidden" name="csrf" value="{{ csrf }}"></form>
+<script src="{{ url_for('static', filename='js/profilo.js') }}" defer></script>{% endblock %}

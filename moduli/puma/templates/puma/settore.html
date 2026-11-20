@@ -1,0 +1,8 @@
+{% extends 'base.html' %}{% block titolo %}P.U.M.A.{% endblock %}{% block main %}{% include "puma/_nav.html" %}
+<h2 class="puma-h">Settore {{ s.nome }}</h2>
+<div class="puma-kpi"><a href="{{ url_for('puma.collettivi') }}">Addestramenti collettivi</a><a href="{{ url_for('puma.individuali') }}">Registra addestramento individuale</a>
+<a href="{{ url_for('puma.interventi') }}">Registra intervento reale</a><a href="{{ url_for('puma.mappa') }}">Mappa live</a></div>
+{% if rop %}<h3>Scadenze del personale ({{ 'tutta Italia' if livello=='nazionale' else 'la tua regione' if livello=='regione' else 'il tuo Comando' }})</h3>
+<ul class="puma-list">{% for r in sc %}<li><div><b>{{ r.username }}</b> – {{ r.livello }} <small>({{ nomi.get(r.comando_id,'') }})</small><br><small>ultimo addestramento {{ r.ultima }}</small></div>
+<div class="{{ 'puma-scad' if r.giorni < 0 else '' }}">scade {{ r.scadenza }} ({{ r.giorni }} gg)</div></li>
+{% else %}<li class="puma-empty">Nessun dato di addestramento registrato.</li>{% endfor %}</ul>{% endif %}{% endblock %}

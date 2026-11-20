@@ -1,0 +1,26 @@
+{% extends 'base.html' %}{% block titolo %}Accesso{% endblock %}
+{% block main %}<div class="accesso">
+<section class="accesso-hero">
+  <img src="{{ url_for('static', filename='img/puma-logo.jpg') }}" alt="Logo P.U.M.A.">
+  <h1>Piattaforma <b>Unificata Monitoraggio Addestramenti</b></h1>
+  <h2>Forma. Qualifica. Avanza.</h2>
+  <p>Addestramenti collettivi e individuali, piano di sicurezza, mappa live, scadenze e storico del personale in un unico posto.</p>
+</section>
+<div class="accesso-dx">
+{% if utenti_prova %}
+<div class="box box-prova"><h1>Accesso di prova</h1>
+<p class="muted">Utenti <b>fittizi</b> con dati WAUC simulati: scegli chi impersonare. Nessuna VPN, nessun dato reale.</p>
+{% for u in utenti_prova %}<form method="post" class="riga-prova"><input type="hidden" name="csrf" value="{{ csrf }}"><input type="hidden" name="email" value="{{ u.account }}"><input type="hidden" name="password" value="dev">
+<button class="btn" type="submit"><b>{{ u.etichetta }}</b><span class="muted">{{ u.descrizione }}</span></button></form>{% endfor %}
+<p class="muted piccolo">Oppure usa il modulo qui sotto con qualsiasi <code>nome.cognome</code> e password <b>dev</b> (un utente sconosciuto a WAUC prova il caso «non trovato»).</p></div>
+{% endif %}
+<form class="box" method="post"><h1>{{ 'Accesso libero' if utenti_prova else 'Accesso' }}</h1>
+{% if not utenti_prova %}<p class="muted">Usa le <b>credenziali dipartimentali</b> (quelle della posta @vigilfuoco.it): scrivi solo <strong>nome.cognome</strong>. La password non viene salvata.</p>{% endif %}
+{% if dev_auth and not prova %}<div class="flash warning">PUMA_DEV_AUTH attivo: password «dev» per tutti. Solo per sviluppo.</div>{% endif %}
+<input type="hidden" name="csrf" value="{{ csrf }}">
+<label for="email">Utente</label><div class="campo-dominio"><input type="text" id="email" name="email" placeholder="nome.cognome" required {{ '' if utenti_prova else 'autofocus' }} autocomplete="username" autocapitalize="none" spellcheck="false"><span class="muted">@vigilfuoco.it</span></div>
+<label for="password">Password</label><input type="password" id="password" name="password" required autocomplete="current-password" {{ 'placeholder=dev' if prova }}>
+<button class="btn btn-primary" type="submit">Accedi</button></form>
+<div class="box stato-rete" id="stato-rete" data-url="{{ url_for('stato_rete') }}" hidden><h2>Collegamento alla rete VVF</h2><ul id="stato-rete-voci"><li class="muted">Verifica in corso…</li></ul><p id="stato-rete-nota" class="muted piccolo"></p></div>
+</div></div>
+<script src="{{ url_for('static', filename='js/login.js') }}" defer></script>{% endblock %}

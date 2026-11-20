@@ -1,0 +1,23 @@
+{% extends 'base.html' %}{% block titolo %}Configurazione{% endblock %}
+{% block main %}<h1>Configurazione</h1>
+<h2>Comandi</h2><table>{% for k in comandi %}<tr><td>{{ k['nome'] }}</td></tr>{% else %}<tr><td class="muted">Nessun comando: aggiungine uno, serve agli utenti per indicare l'appartenenza.</td></tr>{% endfor %}</table>
+<form method="post" class="riga"><input type="hidden" name="csrf" value="{{ csrf }}"><input type="hidden" name="azione" value="comando"><input type="text" name="nome" placeholder="Es. Comando VVF Belluno" required><button class="btn btn-primary">Aggiungi comando</button></form>
+<h2>Settori</h2><table><tr><th>Codice</th><th>Nome</th></tr>{% for s in settori %}<tr><td>{{ s['codice'] }}</td><td>{{ s['nome'] }}</td></tr>{% endfor %}</table>
+<form method="post" class="riga"><input type="hidden" name="csrf" value="{{ csrf }}"><input type="hidden" name="azione" value="settore"><input type="text" name="codice" placeholder="codice (es. logistica)" required><input type="text" name="nome" placeholder="Nome settore" required><button class="btn btn-primary">Aggiungi settore</button></form>
+<h2>Anagrafiche WAUC</h2>
+<p class="muted">Elenchi scaricati da WAUC e salvati nel db di P.U.M.A.. «Crea o aggiorna dati» scarica di nuovo l'elenco e aggiunge o aggiorna le voci: non cancella ciò che è stato inserito a mano (schede dei comandi, specializzazioni aggiunte dagli utenti). Può richiedere qualche decina di secondi.</p>
+<table><tr><th>Elenco</th><th>Dati in P.U.M.A.</th><th>Ultimo aggiornamento</th><th></th></tr>
+{% macro quando(v) %}{% if v %}{{ v|datait }} {{ v[11:16] }}{% else %}<span class="muted">mai</span>{% endif %}{% endmacro %}
+{% macro pulsante(azione) %}<form class="inline" method="post"><input type="hidden" name="csrf" value="{{ csrf }}"><input type="hidden" name="azione" value="{{ azione }}"><button class="btn" type="submit">Crea o aggiorna dati</button></form>{% endmacro %}
+<tr><td><b>Sedi</b><br><span class="muted">Comandi, distaccamenti e uffici (/api/Sedi)</span></td>
+<td>{{ anag.sedi.n }} sedi · {{ anag.sedi.comandi }} comandi<br><span class="muted">{{ anag.sedi.collegati }} di {{ anag.sedi.totale_comandi }} Comandi di P.U.M.A. collegati</span></td><td>{{ quando(anag.sedi.quando) }}</td><td>{{ pulsante('sync_sedi') }}</td></tr>
+<tr><td><b>Qualifiche</b><br><span class="muted">CNVVF e Amministrazione Civile (/api/ElencoQualifiche)</span></td>
+<td>{{ anag.qualifiche.n }} qualifiche</td><td>{{ quando(anag.qualifiche.quando) }}</td><td>{{ pulsante('sync_qualifiche') }}</td></tr>
+<tr><td><b>Specializzazioni</b><br><span class="muted">Usate dai profili e da P.U.M.A. (/api/Specializzazioni)</span></td>
+<td>{{ anag.specializzazioni.n }} specializzazioni{% if anag.specializzazioni.utenti %}<br><span class="muted">{{ anag.specializzazioni.utenti }} aggiunte dagli utenti</span>{% endif %}</td><td>{{ quando(anag.specializzazioni.quando) }}</td><td>{{ pulsante('sync_specializzazioni') }}</td></tr></table>
+<p class="riga"><a class="btn btn-primary" href="{{ url_for('admin_comandi') }}">Schede dei comandi</a><span class="muted">telefoni, email, PEC, indirizzo, coordinate, NUE, siti e intranet di ogni comando</span></p>
+<h2>Personale per sede</h2><p class="muted">{{ sedi|length }} sedi con personale note. Il login cerca l'email in tutte le sedi (la sede dell'utente viene poi ricordata). «Scopri sedi» interroga tutte le sigle provinciali e può richiedere qualche decina di secondi (da terminale: <code>python3 manage.py wauc-sedi</code>).</p>
+<form method="post" class="riga"><input type="hidden" name="csrf" value="{{ csrf }}"><input type="hidden" name="azione" value="scopri_sedi"><button class="btn">Scopri sedi</button></form>
+<h2>Elenco specializzazioni</h2><p class="muted">{{ specs|length }} in elenco. L'elenco si completa con quelle lette da WAUC e con quelle aggiunte dagli utenti.</p>
+<table><tr><th>Codice</th><th>Descrizione</th><th>Validità</th><th>Persone</th></tr>
+{% for s in specs %}<tr><td>{{ s['codice'] }}</td><td>{{ s['descrizione'] or '—' }}{% if s['fonte']=='utente' %} <span class="badge">aggiunta da un utente</span>{% endif %}</td><td>{% if s['data_inizio_validita'] or s['data_fine_validita'] %}{% if s['data_inizio_validita'] %}dal {{ s['data_inizio_validita']|datait }}{% endif %}{% if s['data_fine_validita'] %} al {{ s['data_fine_validita']|datait }}{% endif %}{% else %}<span class="muted">—</span>{% endif %}</td><td>{{ s['persone'] }}</td></tr>{% else %}<tr><td colspan="4" class="muted">Nessuna specializzazione. Premi «Crea o aggiorna dati» sulla riga Specializzazioni.</td></tr>{% endfor %}</table>{% endblock %}

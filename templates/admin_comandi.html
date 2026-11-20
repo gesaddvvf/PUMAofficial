@@ -1,0 +1,29 @@
+{% extends 'base.html' %}{% block titolo %}Schede dei comandi{% endblock %}
+{% block main %}<h1>Schede dei comandi</h1>
+<p class="muted">Dati di contatto di ogni comando (= provincia). Non esistono in WAUC: si inseriscono qui e <b>non vengono toccati</b> dagli aggiornamenti da WAUC. Le coordinate inserite a mano prevalgono su quelle di WAUC. <a href="{{ url_for('admin_config') }}">← Configurazione</a></p>
+{% if m %}<form method="post" class="box box-largo"><input type="hidden" name="csrf" value="{{ csrf }}"><input type="hidden" name="id" value="{{ m['id'] }}">
+<h2>{{ m['nome'] }}{% if m['sigla'] %} ({{ m['sigla'] }}){% endif %}</h2>
+<p class="muted">{% if m['sede_desc'] %}Sede WAUC collegata: {{ m['sede_desc'] }}{% if m['coordinate_raw'] %} · coordinate WAUC: {{ m['coordinate_raw'] }}{% endif %}{% else %}Nessuna sede WAUC collegata (esegui «Crea o aggiorna dati» sulle Sedi).{% endif %}</p>
+<label for="t1">Telefono</label><input id="t1" name="telefono" value="{{ m['telefono'] or '' }}">
+<label for="t2">Telefono 2</label><input id="t2" name="telefono2" value="{{ m['telefono2'] or '' }}">
+<label for="em">Email</label><input id="em" name="email" type="email" value="{{ m['email'] or '' }}">
+<label for="pc">PEC</label><input id="pc" name="pec" type="email" value="{{ m['pec'] or '' }}">
+<label for="ind">Indirizzo</label><input id="ind" name="indirizzo" value="{{ m['indirizzo'] or '' }}">
+<label for="cap">CAP</label><input id="cap" name="cap" value="{{ m['cap'] or '' }}">
+<label for="com">Comune</label><input id="com" name="comune" value="{{ m['comune'] or '' }}">
+<label for="la">Latitudine (es. 46.1405)</label><input id="la" name="lat" value="{{ m['lat'] if m['lat'] is not none else '' }}" placeholder="{{ m['wlat'] if m['wlat'] is not none else '' }}">
+<label for="lo">Longitudine (es. 12.2167)</label><input id="lo" name="lon" value="{{ m['lon'] if m['lon'] is not none else '' }}" placeholder="{{ m['wlon'] if m['wlon'] is not none else '' }}">
+<label for="nue">NUE (Numero Unico Emergenze)</label><select id="nue" name="nue"><option value="" {{ 'selected' if m['nue'] is none }}>Non noto</option><option value="si" {{ 'selected' if m['nue'] == 1 }}>Sì</option><option value="no" {{ 'selected' if m['nue'] == 0 }}>No</option></select>
+<label for="nn">Note NUE</label><input id="nn" name="nue_note" value="{{ m['nue_note'] or '' }}">
+<label for="sw">Sito web</label><input id="sw" name="sito_web" value="{{ m['sito_web'] or '' }}" placeholder="https://…">
+<label for="si">Sito intranet</label><input id="si" name="sito_intranet" value="{{ m['sito_intranet'] or '' }}" placeholder="http://…">
+<label for="no">Note</label><input id="no" name="note" value="{{ m['note'] or '' }}">
+<button class="btn btn-primary" type="submit">Salva</button> <a class="btn" href="{{ url_for('admin_comandi') }}">Annulla</a></form>{% endif %}
+<form method="get" class="filtri"><input name="q" value="{{ q }}" placeholder="Cerca per nome o sigla"><button class="btn" type="submit">Cerca</button></form>
+<table><tr><th>Comando</th><th>Contatti</th><th>NUE</th><th>Siti</th><th></th></tr>
+{% for r in righe %}<tr><td><b>{{ r['nome'] }}</b>{% if r['sigla'] %} <span class="muted">({{ r['sigla'] }})</span>{% endif %}{% if r['indirizzo'] %}<br><span class="muted">{{ r['indirizzo'] }}{% if r['comune'] %}, {{ r['comune'] }}{% endif %}</span>{% endif %}
+{% set la = r['lat'] if r['lat'] is not none else r['wlat'] %}{% set lo = r['lon'] if r['lon'] is not none else r['wlon'] %}{% if la is not none and lo is not none %}<br><span class="muted">{{ '%.4f'|format(la) }}, {{ '%.4f'|format(lo) }}{% if r['lat'] is none %} (WAUC){% endif %}</span>{% endif %}</td>
+<td>{{ r['telefono'] or '—' }}{% if r['telefono2'] %}<br>{{ r['telefono2'] }}{% endif %}{% if r['email'] %}<br><span class="muted">{{ r['email'] }}</span>{% endif %}{% if r['pec'] %}<br><span class="muted">PEC {{ r['pec'] }}</span>{% endif %}</td>
+<td>{% if r['nue'] == 1 %}<span class="badge b-attivo">Sì</span>{% elif r['nue'] == 0 %}<span class="badge b-disabilitato">No</span>{% else %}<span class="muted">—</span>{% endif %}</td>
+<td>{% if r['sito_web'] %}<a href="{{ r['sito_web'] }}" target="_blank" rel="noopener">Sito</a>{% endif %}{% if r['sito_web'] and r['sito_intranet'] %} · {% endif %}{% if r['sito_intranet'] %}<a href="{{ r['sito_intranet'] }}" target="_blank" rel="noopener">Intranet</a>{% endif %}{% if not r['sito_web'] and not r['sito_intranet'] %}<span class="muted">—</span>{% endif %}</td>
+<td><a class="btn" href="?modifica={{ r['id'] }}">Modifica</a></td></tr>{% else %}<tr><td colspan="5" class="muted">Nessun comando trovato.</td></tr>{% endfor %}</table>{% endblock %}

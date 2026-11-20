@@ -1,0 +1,25 @@
+# Dati (db, chiave della sessione, backup, documenti caricati, cache mappe): MAI su GitHub
+data/
+data_prova/
+*.db
+*.db-journal
+*.db-wal
+*.db-shm
+secret.key
+
+# Impostazioni locali (possono contenere password SMTP)
+puma.env
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+venv/
+.venv/
+
+# Editor
+.vscode/
+.idea/
+*.swp
+
+# NB: la cartella libs/ (librerie Python pure) DEVE stare nel repository: senza, PUMA non parte.

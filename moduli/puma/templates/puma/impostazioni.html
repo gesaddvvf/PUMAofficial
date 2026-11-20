@@ -1,0 +1,10 @@
+{% extends 'base.html' %}{% block titolo %}P.U.M.A.{% endblock %}{% block main %}{% include "puma/_nav.html" %}
+<h2 class="puma-h">Impostazioni P.U.M.A. (per il tuo Comando)</h2>
+<form method="post" class="puma-form"><input type="hidden" name="csrf" value="{{ csrf }}"><input type="hidden" name="azione" value="mail"><h3>Destinatari Piano di Sicurezza e alert</h3>
+{% for r,v in mails.items() %}<label>{{ r }} <input name="{{ r }}" value="{{ v }}" placeholder="indirizzi separati da virgola"></label>{% endfor %}
+<label>Giorni di preavviso scadenza <input type="number" name="preavviso" value="{{ preavviso }}" min="1"></label><button>Salva</button></form>
+<form method="post" class="puma-form"><input type="hidden" name="csrf" value="{{ csrf }}"><input type="hidden" name="azione" value="livelli"><h3>Validità addestramenti (mesi)</h3>
+{% for l in livelli %}<label>{{ l.nome }} <input type="number" name="m{{ l.id }}" value="{{ l.mesi_validita }}" min="1"></label>{% endfor %}<button>Salva</button></form>
+<form method="post" class="puma-form"><input type="hidden" name="csrf" value="{{ csrf }}"><input type="hidden" name="azione" value="manovra"><h3>Checklist manovre</h3>
+<select name="livello_id">{% for l in livelli %}<option value="{{ l.id }}">{{ l.nome }}</option>{% endfor %}</select><input name="nome" placeholder="Nome manovra"><button>Aggiungi</button></form>
+<ul class="puma-list">{% for m in man %}<li><div>{{ m.livello }} – {{ m.nome }}</div><form method="post"><input type="hidden" name="csrf" value="{{ csrf }}"><input type="hidden" name="azione" value="elimina_manovra"><input type="hidden" name="id" value="{{ m.id }}"><button>Elimina</button></form></li>{% endfor %}</ul>{% endblock %}

@@ -1,0 +1,4 @@
+# Script di Windows con fine riga CRLF (altrimenti cmd.exe li legge male), script Linux con LF
+*.bat text eol=crlf
+*.sh  text eol=lf
+*.py  text eol=lf

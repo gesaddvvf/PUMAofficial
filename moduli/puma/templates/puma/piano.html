@@ -1,0 +1,35 @@
+{% extends 'base.html' %}{% block titolo %}P.U.M.A.{% endblock %}{% block main %}{% include "puma/_nav.html" %}
+<h2 class="puma-h">Piano di sicurezza – {{ e.cod_add }}</h2>
+<p><a href="{{ url_for('puma.collettivo', i=e.id) }}">← scheda addestramento</a> · {{ e.data }} {{ e.ora_inizio }}–{{ e.ora_fine }}</p>
+
+<h3>1. Meteo (passi di 3 h nella fascia dell'addestramento)</h3>
+{% if meteo and meteo.slots %}<table class="puma-tab"><thead><tr><th></th><th>Ora</th><th>Condizioni</th><th>T °C</th><th>Pioggia mm</th><th>Vento km/h</th></tr></thead><tbody>
+{% for s in meteo.slots %}<tr><td class="puma-ico">{{ s.code|meteo_icona }}</td><td>{{ s.ora }}</td><td>{{ s.descr }}</td><td>{{ s.t }}</td><td>{{ s.pioggia }}</td><td>{{ s.vento }}</td></tr>{% endfor %}</tbody></table><p><small>Rilevato {{ meteo.rilevato }}</small></p>{% endif %}
+<form method="post" action="{{ url_for('puma.piano_meteo', i=e.id) }}"><input type="hidden" name="csrf" value="{{ csrf }}"><button>Recupera meteo dalle coordinate</button></form>
+
+<h3>2. Organizzazione</h3>
+<form method="post" action="{{ url_for('puma.piano_organizzazione', i=e.id) }}" class="puma-form"><input type="hidden" name="csrf" value="{{ csrf }}">
+<label>Canali radio <textarea name="radio" placeholder="es. CH1 coordinamento, CH2 squadra">{{ org.radio or '' }}</textarea></label>
+<label>Attrezzature e mezzi – una per riga: <i>voce | responsabile</i> <textarea name="risorse" rows="5">{% for r in org.risorse or [] %}{{ r.voce }} | {{ r.resp }}
+{% endfor %}</textarea></label>
+<label>Veterinario (solo se necessario) <input name="veterinario" value="{{ org.veterinario or '' }}"></label>
+<label>Note <textarea name="note">{{ org.note or '' }}</textarea></label><button>Salva organizzazione</button></form>
+
+<h3>3. Matrice di rischio</h3>
+<form method="get" class="puma-filtri"><label>Matrice <select name="m" id="selm">{% for m in matrici %}<option value="{{ m.codice }}" {{ 'selected' if m.codice==cod }}>{{ m.nome }}</option>{% endfor %}</select></label><button>Carica</button></form>
+{% if mx %}<form method="post" action="{{ url_for('puma.piano_matrice', i=e.id) }}" id="matrice" data-medio="{{ mx.soglia_medio }}" data-alto="{{ mx.soglia_alto }}">
+<input type="hidden" name="csrf" value="{{ csrf }}"><input type="hidden" name="m" value="{{ mx.codice }}">
+<div class="puma-anteprima" id="anteprima">Anteprima: <b id="a-tot">0</b> / <b id="a-max">{{ mx.fattori|sum(attribute='peso_max') }}</b> (<span id="a-pct">0</span>%) – rischio <span id="a-liv" class="puma-tag">—</span></div>
+{% for f in mx.fattori %}<fieldset class="puma-fatt" data-max="{{ f.peso_max }}"><legend><b>{{ f.codice }}</b> – {{ f.descrizione }} <small>(max {{ f.peso_max }})</small></legend>
+{% for o in f.opzioni %}<label class="puma-chk"><input type="radio" name="r_{{ f.id }}" value="{{ o.id }}" data-p="{{ o.punteggio }}" {{ 'checked' if risposte.get(f.id|string)==o.id|string }}> {{ o.testo }} <small>({{ o.punteggio }})</small></label>{% endfor %}</fieldset>{% endfor %}
+<button>Salva matrice</button></form>
+{% if ris %}<p>Salvata: <span class="puma-tag">{{ ris.livello }}</span> {{ ris.totale }}/{{ ris.max }} ({{ ris.pct }}%){% if not ris.completo %} – fattori non compilati{% endif %}</p>{% endif %}{% endif %}
+
+<h3>4. PDF e invio</h3>
+<p><a class="puma-btn" href="{{ url_for('puma.piano_scarica', i=e.id, tipo='completo') }}">PDF completo</a>
+<a class="puma-btn" href="{{ url_for('puma.piano_scarica', i=e.id, tipo='ridotto') }}">PDF ridotto (pag. 3, 4, firme)</a>
+{% if n_manovre %}<a class="puma-btn" href="{{ url_for('puma.piano_scarica', i=e.id, tipo='manovre') }}">Allegato manovre ({{ n_manovre }})</a>{% endif %}</p>
+<form method="post" action="{{ url_for('puma.piano_invia', i=e.id) }}"><input type="hidden" name="csrf" value="{{ csrf }}">
+<label class="puma-chk"><input type="checkbox" name="ridotto"> Invia solo la versione ridotta (pagine 3, 4 e fogli firme)</label><button class="puma-btn">Invia alle SO e agli indirizzi configurati</button></form>
+{% if e.piano_inviato %}<p><small>Ultimo invio: {{ e.piano_inviato }}</small></p>{% endif %}
+<script src="{{ url_for('puma.static', filename='js/matrice.js') }}"></script>{% endblock %}

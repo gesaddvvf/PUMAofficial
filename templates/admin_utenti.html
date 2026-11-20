@@ -1,0 +1,8 @@
+{% extends 'base.html' %}{% block titolo %}Utenti{% endblock %}
+{% block main %}<h1>Utenti</h1>
+<div class="filtri"><a class="btn" href="{{ url_for('admin_utenti') }}">Tutti</a><a class="btn" href="?stato=in_attesa">In attesa</a><a class="btn" href="?stato=attivo">Attivi</a><a class="btn" href="?stato=disabilitato">Disabilitati</a>
+<form method="get" class="riga"><input type="hidden" name="stato" value="{{ filtro }}"><select name="comando" aria-label="Comando"><option value="">Tutti i comandi</option>{% for k in comandi %}<option value="{{ k['id'] }}" {{ 'selected' if cmd==k['id'] }}>{{ k['nome'] }}</option>{% endfor %}</select><button class="btn" type="submit">Filtra</button></form></div>
+<table><tr><th>Utente</th><th>Comando</th><th>Stato</th><th>Ultimo accesso</th><th></th></tr>
+{% for r in righe %}<tr><td>{{ r['cognome'] }} {{ r['nome'] }}<br><span class="muted">{{ r['email'] }}</span> {% if r['is_admin'] %}<span class="badge b-admin">admin</span>{% endif %}</td>
+<td>{{ r['comando'] or '—' }}</td><td><span class="badge b-{{ r['stato'] }}">{{ r['stato'].replace('_',' ') }}</span></td><td>{{ r['ultimo_accesso'] or '—' }}</td>
+<td><a class="btn" href="{{ url_for('admin_utente', uid=r['id']) }}">Gestisci</a></td></tr>{% else %}<tr><td colspan="5" class="muted">Nessun utente.</td></tr>{% endfor %}</table>{% endblock %}

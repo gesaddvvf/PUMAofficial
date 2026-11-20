@@ -1,0 +1,19 @@
+{% extends 'base.html' %}{% block titolo %}Organico{% endblock %}
+{% block main %}<h1>Organico</h1>
+<p class="muted">Anagrafica usata per compilare in automatico il profilo al login (ricerca per email). Si arricchisce anche da sola quando gli utenti confermano i propri dati.</p>
+<form method="post" class="box box-largo"><input type="hidden" name="csrf" value="{{ csrf }}"><input type="hidden" name="id" value="{{ m['id'] if m else '' }}">
+<h2>{{ 'Modifica persona' if m else 'Aggiungi persona' }}</h2>
+<label for="e">Email dipartimentale</label><input id="e" name="email" type="email" required value="{{ m['email'] if m else '' }}" placeholder="nome.cognome@vigilfuoco.it">
+<label for="n">Nome</label><input id="n" name="nome" value="{{ (m['nome'] if m else '') or '' }}">
+<label for="c">Cognome</label><input id="c" name="cognome" value="{{ (m['cognome'] if m else '') or '' }}">
+<label for="k">Comando</label><input id="k" name="comando" list="lc" value="{{ (m['comando'] if m else '') or '' }}"><datalist id="lc">{% for k in comandi %}<option value="{{ k['nome'] }}">{% endfor %}</datalist>
+<label for="d">Distaccamento / sede</label><input id="d" name="distaccamento" value="{{ (m['distaccamento'] if m else '') or '' }}">
+<label for="q">Qualifica</label><input id="q" name="qualifica" value="{{ (m['qualifica'] if m else '') or '' }}">
+<label for="mt">Matricola</label><input id="mt" name="matricola" value="{{ (m['matricola'] if m else '') or '' }}">
+<label for="t">Telefono</label><input id="t" name="telefono" value="{{ (m['telefono'] if m else '') or '' }}">
+<button class="btn btn-primary" type="submit">Salva</button>{% if m %} <a class="btn" href="{{ url_for('admin_organico') }}">Annulla</a>{% endif %}</form>
+<form method="get" class="filtri"><input name="q" value="{{ q }}" placeholder="Cerca per nome, cognome o email"><button class="btn" type="submit">Cerca</button></form>
+<table><tr><th>Persona</th><th>Comando</th><th>Qualifica</th><th></th></tr>
+{% for r in righe %}<tr><td>{{ r['cognome'] or '' }} {{ r['nome'] or '' }}<br><span class="muted">{{ r['email'] }}</span></td><td>{{ r['comando'] or '—' }}{% if r['distaccamento'] %}<br><span class="muted">{{ r['distaccamento'] }}</span>{% endif %}</td><td>{{ r['qualifica'] or '—' }}</td>
+<td><a class="btn" href="?modifica={{ r['id'] }}">Modifica</a>
+<form class="inline" method="post"><input type="hidden" name="csrf" value="{{ csrf }}"><input type="hidden" name="azione" value="elimina"><input type="hidden" name="id" value="{{ r['id'] }}"><button type="submit">Elimina</button></form></td></tr>{% else %}<tr><td colspan="4" class="muted">Nessuna persona in organico.</td></tr>{% endfor %}</table>{% endblock %}

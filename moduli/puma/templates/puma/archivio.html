@@ -1,0 +1,7 @@
+{% extends 'base.html' %}{% block titolo %}P.U.M.A.{% endblock %}{% block main %}{% include "puma/_nav.html" %}
+<h2 class="puma-h">Archivio</h2><h3>Attività archiviate</h3>
+<ul class="puma-list">{% for r in att %}<li><div><b>{{ r.titolo }}</b> <small>{{ r.tipo or '' }}</small></div><div>{{ r.data_inizio or '' }}</div></li>
+{% else %}<li class="puma-empty">Nessuna attività archiviata.</li>{% endfor %}</ul>
+<h3>Addestramenti passati</h3>
+<ul class="puma-list">{% for r in add %}<li><div><b>{{ r.tema }}</b> {{ r.luogo or '' }}</div><div>{{ r.data }}</div></li>
+{% else %}<li class="puma-empty">L'archivio è vuoto.</li>{% endfor %}</ul>{% endblock %}

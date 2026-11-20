@@ -1,0 +1,3 @@
+{% extends 'base.html' %}{% block titolo %}Registro{% endblock %}
+{% block main %}<h1>Registro attività</h1><table><tr><th>Quando</th><th>Utente</th><th>Azione</th><th>Dettaglio</th></tr>
+{% for r in righe %}<tr><td>{{ r['ts'] }}</td><td>{{ r['utente_email'] }}</td><td>{{ r['azione'] }}</td><td>{{ r['dettaglio'] }}</td></tr>{% endfor %}</table>{% endblock %}

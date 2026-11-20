@@ -1,0 +1,5 @@
+{% extends 'base.html' %}{% block titolo %}Home{% endblock %}
+{% block main %}<h1>Ciao {{ utente['nome'] }}</h1>
+<p class="muted">{{ utente['comando'] or 'Comando non indicato' }}</p>
+{% if moduli %}<div class="griglia">{% for m in moduli %}<a class="card" href="{{ url_for(m['codice'] ~ '.index') }}">{% if m.get('logo') %}<img class="logo-modulo" src="{{ url_for(m['codice'] ~ '.static', filename=m['logo']) }}" alt="Logo {{ m['nome'] }}">{% else %}<div class="ico">{{ m.get('icona','📁') }}</div>{% endif %}<h3>{{ m['nome'] }}</h3><p class="muted">{{ m.get('descrizione','') }}</p></a>{% endfor %}</div>
+{% else %}<div class="card"><p>Non hai ancora applicazioni abilitate. Contatta un amministratore di P.U.M.A.</p></div>{% endif %}{% endblock %}

@@ -1,0 +1,2 @@
+{% extends 'base.html' %}{% block titolo %}Modulo di esempio{% endblock %}
+{% block main %}<h1>🧩 Modulo di esempio</h1><p class="muted">Accesso consentito dal settore «demo».{% if puo('demo','scrittura') %} Hai anche i permessi di scrittura.{% endif %}</p>{% endblock %}

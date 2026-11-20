@@ -1,0 +1,696 @@
+{
+ "_leggimi": [
+  "WAUC SIMULATO per la modalità prova di PUMA: stessa struttura delle risposte dell API reale (/api/Personale, /api/Specializzazioni, /api/ElencoQualifiche, /api/Sedi).",
+  "Tutti i nomi, gli account e i dati sono INVENTATI. Per aggiungere un utente di prova copiare una voce di «personale» e, se deve comparire tra i pulsanti di accesso rapido, aggiungerla anche a «utenti_prova»."
+ ],
+ "utenti_prova": [
+  {
+   "account": "demo.admin",
+   "etichetta": "Amministratore",
+   "descrizione": "Elena Ferri · Forlì-Cesena · gestisce utenti, permessi e livelli"
+  },
+  {
+   "account": "demo.rop",
+   "etichetta": "ROP / Responsabile",
+   "descrizione": "Laura Bianchi · Belluno · crea addestramenti, piano di sicurezza, scadenze"
+  },
+  {
+   "account": "demo.utente",
+   "etichetta": "Operatore",
+   "descrizione": "Mario Rossi · Belluno · check-in, individuali, il mio profilo"
+  },
+  {
+   "account": "demo.ror",
+   "etichetta": "ROR (regione)",
+   "descrizione": "Paolo Verdi · Venezia · vede tutto il Veneto, sola lettura"
+  },
+  {
+   "account": "demo.nazionale",
+   "etichetta": "Nazionale",
+   "descrizione": "Anna Neri · Roma · vede tutti i Comandi, sola lettura"
+  },
+  {
+   "account": "demo.nuovo",
+   "etichetta": "Primo accesso",
+   "descrizione": "Luca Gialli · Treviso · profilo da WAUC, poi in attesa di abilitazione"
+  }
+ ],
+ "personale": [
+  {
+   "nome": "ELENA",
+   "cognome": "FERRI",
+   "accountDipvvf": "demo.admin",
+   "emailVigilfuoco": "demo.admin@vigilfuoco.it",
+   "qualifica": {
+    "codice": "DVD",
+    "descrizione": "Direttore Vicedirigente",
+    "nome": "DIRETTORE VICEDIRIGENTE",
+    "codSettore": "OPE",
+    "gruppo": {
+     "codice": "DIR",
+     "descrizione": "Ruolo dei Direttivi",
+     "ambito": "VVF"
+    }
+   },
+   "sede": {
+    "id": "FC-CMD",
+    "codice": "FC",
+    "codDistaccamento": "",
+    "descrizione": "COMANDO VV.F. FORLI-CESENA",
+    "descrizionePadre": "COMANDO VV.F. FORLI-CESENA"
+   },
+   "turno": "",
+   "saltoTurno": "",
+   "tipoPersonale": {
+    "codice": "P",
+    "descrizione": "PERMANENTE"
+   },
+   "specializzazioni": [
+    {
+     "codice": "TPSS",
+     "descrizione": "Tecniche di Primo Soccorso Sanitario",
+     "dataInizioValidita": "2019-03-01",
+     "dataFineValidita": null
+    }
+   ]
+  },
+  {
+   "nome": "MARIO",
+   "cognome": "ROSSI",
+   "accountDipvvf": "demo.utente",
+   "emailVigilfuoco": "demo.utente@vigilfuoco.it",
+   "qualifica": {
+    "codice": "VF",
+    "descrizione": "Vigile del Fuoco",
+    "nome": "VIGILE DEL FUOCO",
+    "codSettore": "OPE",
+    "gruppo": {
+     "codice": "OPE",
+     "descrizione": "Ruolo dei Vigili del Fuoco",
+     "ambito": "VVF"
+    }
+   },
+   "sede": {
+    "id": "BL-D01",
+    "codice": "BL",
+    "codDistaccamento": "BL001",
+    "descrizione": "DISTACCAMENTO FELTRE",
+    "descrizionePadre": "COMANDO VV.F. BELLUNO"
+   },
+   "turno": "B",
+   "saltoTurno": "4",
+   "tipoPersonale": {
+    "codice": "P",
+    "descrizione": "PERMANENTE"
+   },
+   "specializzazioni": [
+    {
+     "codice": "SAF1A",
+     "descrizione": "SAF 1A - Speleo Alpino Fluviale basico",
+     "dataInizioValidita": "2021-05-10",
+     "dataFineValidita": null
+    },
+    {
+     "codice": "TPSS",
+     "descrizione": "Tecniche di Primo Soccorso Sanitario",
+     "dataInizioValidita": "2022-01-20",
+     "dataFineValidita": null
+    }
+   ]
+  },
+  {
+   "nome": "LAURA",
+   "cognome": "BIANCHI",
+   "accountDipvvf": "demo.rop",
+   "emailVigilfuoco": "demo.rop@vigilfuoco.it",
+   "qualifica": {
+    "codice": "CS",
+    "descrizione": "Capo Squadra",
+    "nome": "CAPO SQUADRA",
+    "codSettore": "OPE",
+    "gruppo": {
+     "codice": "CSR",
+     "descrizione": "Ruolo dei Capi Squadra e dei Capi Reparto",
+     "ambito": "VVF"
+    }
+   },
+   "sede": {
+    "id": "BL-CMD",
+    "codice": "BL",
+    "codDistaccamento": "",
+    "descrizione": "COMANDO VV.F. BELLUNO",
+    "descrizionePadre": "COMANDO VV.F. BELLUNO"
+   },
+   "turno": "A",
+   "saltoTurno": "2",
+   "tipoPersonale": {
+    "codice": "P",
+    "descrizione": "PERMANENTE"
+   },
+   "specializzazioni": [
+    {
+     "codice": "SAF1A",
+     "descrizione": "SAF 1A - Speleo Alpino Fluviale basico",
+     "dataInizioValidita": "2015-04-01",
+     "dataFineValidita": null
+    },
+    {
+     "codice": "SAF1B",
+     "descrizione": "SAF 1B - Speleo Alpino Fluviale basico (fluviale)",
+     "dataInizioValidita": "2016-06-01",
+     "dataFineValidita": null
+    },
+    {
+     "codice": "SAF2A",
+     "descrizione": "SAF 2A - Speleo Alpino Fluviale avanzato",
+     "dataInizioValidita": "2018-09-15",
+     "dataFineValidita": null
+    },
+    {
+     "codice": "TPSS",
+     "descrizione": "Tecniche di Primo Soccorso Sanitario",
+     "dataInizioValidita": "2017-02-01",
+     "dataFineValidita": null
+    }
+   ]
+  },
+  {
+   "nome": "PAOLO",
+   "cognome": "VERDI",
+   "accountDipvvf": "demo.ror",
+   "emailVigilfuoco": "demo.ror@vigilfuoco.it",
+   "qualifica": {
+    "codice": "IA",
+    "descrizione": "Ispettore Antincendi",
+    "nome": "ISPETTORE ANTINCENDI",
+    "codSettore": "OPE",
+    "gruppo": {
+     "codice": "ISP",
+     "descrizione": "Ruolo degli Ispettori Antincendi",
+     "ambito": "VVF"
+    }
+   },
+   "sede": {
+    "id": "VE-CMD",
+    "codice": "VE",
+    "codDistaccamento": "",
+    "descrizione": "COMANDO VV.F. VENEZIA",
+    "descrizionePadre": "COMANDO VV.F. VENEZIA"
+   },
+   "turno": "",
+   "saltoTurno": "",
+   "tipoPersonale": {
+    "codice": "P",
+    "descrizione": "PERMANENTE"
+   },
+   "specializzazioni": [
+    {
+     "codice": "SAF2A",
+     "descrizione": "SAF 2A - Speleo Alpino Fluviale avanzato",
+     "dataInizioValidita": "2012-10-01",
+     "dataFineValidita": null
+    },
+    {
+     "codice": "NBCR1",
+     "descrizione": "NBCR 1° livello",
+     "dataInizioValidita": "2014-03-01",
+     "dataFineValidita": null
+    }
+   ]
+  },
+  {
+   "nome": "ANNA",
+   "cognome": "NERI",
+   "accountDipvvf": "demo.nazionale",
+   "emailVigilfuoco": "demo.nazionale@vigilfuoco.it",
+   "qualifica": {
+    "codice": "DIR",
+    "descrizione": "Direttore",
+    "nome": "DIRETTORE",
+    "codSettore": "OPE",
+    "gruppo": {
+     "codice": "DIR",
+     "descrizione": "Ruolo dei Direttivi",
+     "ambito": "VVF"
+    }
+   },
+   "sede": {
+    "id": "RM-CMD",
+    "codice": "RM",
+    "codDistaccamento": "",
+    "descrizione": "COMANDO VV.F. ROMA",
+    "descrizionePadre": "COMANDO VV.F. ROMA"
+   },
+   "turno": "",
+   "saltoTurno": "",
+   "tipoPersonale": {
+    "codice": "P",
+    "descrizione": "PERMANENTE"
+   },
+   "specializzazioni": [
+    {
+     "codice": "USAR",
+     "descrizione": "USAR - ricerca e soccorso urbano",
+     "dataInizioValidita": "2016-05-01",
+     "dataFineValidita": null
+    }
+   ]
+  },
+  {
+   "nome": "LUCA",
+   "cognome": "GIALLI",
+   "accountDipvvf": "demo.nuovo",
+   "emailVigilfuoco": "demo.nuovo@vigilfuoco.it",
+   "qualifica": {
+    "codice": "VFE",
+    "descrizione": "Vigile del Fuoco Esperto",
+    "nome": "VIGILE DEL FUOCO ESPERTO",
+    "codSettore": "OPE",
+    "gruppo": {
+     "codice": "OPE",
+     "descrizione": "Ruolo dei Vigili del Fuoco",
+     "ambito": "VVF"
+    }
+   },
+   "sede": {
+    "id": "TV-D01",
+    "codice": "TV",
+    "codDistaccamento": "TV001",
+    "descrizione": "DISTACCAMENTO CASTELFRANCO VENETO",
+    "descrizionePadre": "COMANDO VV.F. TREVISO"
+   },
+   "turno": "C",
+   "saltoTurno": "1",
+   "tipoPersonale": {
+    "codice": "P",
+    "descrizione": "PERMANENTE"
+   },
+   "specializzazioni": [
+    {
+     "codice": "SAF1A",
+     "descrizione": "SAF 1A - Speleo Alpino Fluviale basico",
+     "dataInizioValidita": "2018-03-01",
+     "dataFineValidita": "2025-12-31"
+    },
+    {
+     "codice": "NAUT",
+     "descrizione": "Soccorso acquatico - nautico",
+     "dataInizioValidita": "2020-06-01",
+     "dataFineValidita": null
+    }
+   ]
+  },
+  {
+   "nome": "FRANCO",
+   "cognome": "BRUNI",
+   "accountDipvvf": "franco.bruni.demo",
+   "emailVigilfuoco": "franco.bruni.demo@vigilfuoco.it",
+   "qualifica": {
+    "codice": "CS",
+    "descrizione": "Capo Squadra",
+    "nome": "CAPO SQUADRA",
+    "codSettore": "OPE",
+    "gruppo": {
+     "codice": "CSR",
+     "descrizione": "Ruolo dei Capi Squadra e dei Capi Reparto",
+     "ambito": "VVF"
+    }
+   },
+   "sede": {
+    "id": "FC-D01",
+    "codice": "FC",
+    "codDistaccamento": "FC001",
+    "descrizione": "DISTACCAMENTO CESENA",
+    "descrizionePadre": "COMANDO VV.F. FORLI-CESENA"
+   },
+   "turno": "D",
+   "saltoTurno": "5",
+   "tipoPersonale": {
+    "codice": "P",
+    "descrizione": "PERMANENTE"
+   },
+   "specializzazioni": [
+    {
+     "codice": "SAF1A",
+     "descrizione": "SAF 1A - Speleo Alpino Fluviale basico",
+     "dataInizioValidita": "2019-09-01",
+     "dataFineValidita": null
+    }
+   ]
+  },
+  {
+   "nome": "SARA",
+   "cognome": "CONTI",
+   "accountDipvvf": "sara.conti.demo",
+   "emailVigilfuoco": "sara.conti.demo@vigilfuoco.it",
+   "qualifica": {
+    "codice": "VF",
+    "descrizione": "Vigile del Fuoco",
+    "nome": "VIGILE DEL FUOCO",
+    "codSettore": "OPE",
+    "gruppo": {
+     "codice": "OPE",
+     "descrizione": "Ruolo dei Vigili del Fuoco",
+     "ambito": "VVF"
+    }
+   },
+   "sede": {
+    "id": "FC-CMD",
+    "codice": "FC",
+    "codDistaccamento": "",
+    "descrizione": "COMANDO VV.F. FORLI-CESENA",
+    "descrizionePadre": "COMANDO VV.F. FORLI-CESENA"
+   },
+   "turno": "B",
+   "saltoTurno": "6",
+   "tipoPersonale": {
+    "codice": "P",
+    "descrizione": "PERMANENTE"
+   },
+   "specializzazioni": [
+    {
+     "codice": "TPSS",
+     "descrizione": "Tecniche di Primo Soccorso Sanitario",
+     "dataInizioValidita": "2023-04-01",
+     "dataFineValidita": null
+    }
+   ]
+  },
+  {
+   "nome": "MARCO",
+   "cognome": "DAL PRA",
+   "accountDipvvf": "marco.dalpra.demo",
+   "emailVigilfuoco": "marco.dalpra.demo@vigilfuoco.it",
+   "qualifica": {
+    "codice": "VC",
+    "descrizione": "Vigile del Fuoco Coordinatore",
+    "nome": "VIGILE DEL FUOCO COORDINATORE",
+    "codSettore": "OPE",
+    "gruppo": {
+     "codice": "OPE",
+     "descrizione": "Ruolo dei Vigili del Fuoco",
+     "ambito": "VVF"
+    }
+   },
+   "sede": {
+    "id": "BL-D02",
+    "codice": "BL",
+    "codDistaccamento": "BL002",
+    "descrizione": "DISTACCAMENTO AGORDO",
+    "descrizionePadre": "COMANDO VV.F. BELLUNO"
+   },
+   "turno": "C",
+   "saltoTurno": "3",
+   "tipoPersonale": {
+    "codice": "P",
+    "descrizione": "PERMANENTE"
+   },
+   "specializzazioni": [
+    {
+     "codice": "SAF1A",
+     "descrizione": "SAF 1A - Speleo Alpino Fluviale basico",
+     "dataInizioValidita": "2017-05-01",
+     "dataFineValidita": null
+    },
+    {
+     "codice": "SAF2A",
+     "descrizione": "SAF 2A - Speleo Alpino Fluviale avanzato",
+     "dataInizioValidita": "2020-10-01",
+     "dataFineValidita": null
+    }
+   ]
+  }
+ ],
+ "specializzazioni": [
+  {
+   "codice": "SAF1A",
+   "descrizione": "SAF 1A - Speleo Alpino Fluviale basico",
+   "dataInizioValidita": "2010-01-01",
+   "dataFineValidita": null
+  },
+  {
+   "codice": "SAF1B",
+   "descrizione": "SAF 1B - Speleo Alpino Fluviale basico (fluviale)",
+   "dataInizioValidita": "2010-01-01",
+   "dataFineValidita": null
+  },
+  {
+   "codice": "SAF2A",
+   "descrizione": "SAF 2A - Speleo Alpino Fluviale avanzato",
+   "dataInizioValidita": "2010-01-01",
+   "dataFineValidita": null
+  },
+  {
+   "codice": "SAF2B",
+   "descrizione": "SAF 2B - Speleo Alpino Fluviale avanzato (forre)",
+   "dataInizioValidita": "2010-01-01",
+   "dataFineValidita": null
+  },
+  {
+   "codice": "TPSS",
+   "descrizione": "Tecniche di Primo Soccorso Sanitario",
+   "dataInizioValidita": "2010-01-01",
+   "dataFineValidita": null
+  },
+  {
+   "codice": "NBCR1",
+   "descrizione": "NBCR 1° livello",
+   "dataInizioValidita": "2010-01-01",
+   "dataFineValidita": null
+  },
+  {
+   "codice": "NBCR2",
+   "descrizione": "NBCR 2° livello",
+   "dataInizioValidita": "2010-01-01",
+   "dataFineValidita": null
+  },
+  {
+   "codice": "TAS1",
+   "descrizione": "Topografia Applicata al Soccorso 1° livello",
+   "dataInizioValidita": "2010-01-01",
+   "dataFineValidita": null
+  },
+  {
+   "codice": "USAR",
+   "descrizione": "USAR - ricerca e soccorso urbano",
+   "dataInizioValidita": "2010-01-01",
+   "dataFineValidita": null
+  },
+  {
+   "codice": "SMZT",
+   "descrizione": "Sommozzatori",
+   "dataInizioValidita": "2010-01-01",
+   "dataFineValidita": null
+  },
+  {
+   "codice": "NAUT",
+   "descrizione": "Soccorso acquatico - nautico",
+   "dataInizioValidita": "2010-01-01",
+   "dataFineValidita": null
+  },
+  {
+   "codice": "CINO",
+   "descrizione": "Cinofili",
+   "dataInizioValidita": "2010-01-01",
+   "dataFineValidita": null
+  }
+ ],
+ "qualifiche": [
+  {
+   "codice": "VF",
+   "descrizione": "Vigile del Fuoco",
+   "nome": "VIGILE DEL FUOCO",
+   "codSettore": "OPE",
+   "gruppo": {
+    "codice": "OPE",
+    "descrizione": "Ruolo dei Vigili del Fuoco",
+    "ambito": "VVF"
+   }
+  },
+  {
+   "codice": "VFE",
+   "descrizione": "Vigile del Fuoco Esperto",
+   "nome": "VIGILE DEL FUOCO ESPERTO",
+   "codSettore": "OPE",
+   "gruppo": {
+    "codice": "OPE",
+    "descrizione": "Ruolo dei Vigili del Fuoco",
+    "ambito": "VVF"
+   }
+  },
+  {
+   "codice": "VC",
+   "descrizione": "Vigile del Fuoco Coordinatore",
+   "nome": "VIGILE DEL FUOCO COORDINATORE",
+   "codSettore": "OPE",
+   "gruppo": {
+    "codice": "OPE",
+    "descrizione": "Ruolo dei Vigili del Fuoco",
+    "ambito": "VVF"
+   }
+  },
+  {
+   "codice": "CS",
+   "descrizione": "Capo Squadra",
+   "nome": "CAPO SQUADRA",
+   "codSettore": "OPE",
+   "gruppo": {
+    "codice": "CSR",
+    "descrizione": "Ruolo dei Capi Squadra e dei Capi Reparto",
+    "ambito": "VVF"
+   }
+  },
+  {
+   "codice": "CSE",
+   "descrizione": "Capo Squadra Esperto",
+   "nome": "CAPO SQUADRA ESPERTO",
+   "codSettore": "OPE",
+   "gruppo": {
+    "codice": "CSR",
+    "descrizione": "Ruolo dei Capi Squadra e dei Capi Reparto",
+    "ambito": "VVF"
+   }
+  },
+  {
+   "codice": "CR",
+   "descrizione": "Capo Reparto",
+   "nome": "CAPO REPARTO",
+   "codSettore": "OPE",
+   "gruppo": {
+    "codice": "CSR",
+    "descrizione": "Ruolo dei Capi Squadra e dei Capi Reparto",
+    "ambito": "VVF"
+   }
+  },
+  {
+   "codice": "IA",
+   "descrizione": "Ispettore Antincendi",
+   "nome": "ISPETTORE ANTINCENDI",
+   "codSettore": "OPE",
+   "gruppo": {
+    "codice": "ISP",
+    "descrizione": "Ruolo degli Ispettori Antincendi",
+    "ambito": "VVF"
+   }
+  },
+  {
+   "codice": "IAE",
+   "descrizione": "Ispettore Antincendi Esperto",
+   "nome": "ISPETTORE ANTINCENDI ESPERTO",
+   "codSettore": "OPE",
+   "gruppo": {
+    "codice": "ISP",
+    "descrizione": "Ruolo degli Ispettori Antincendi",
+    "ambito": "VVF"
+   }
+  },
+  {
+   "codice": "DVD",
+   "descrizione": "Direttore Vicedirigente",
+   "nome": "DIRETTORE VICEDIRIGENTE",
+   "codSettore": "OPE",
+   "gruppo": {
+    "codice": "DIR",
+    "descrizione": "Ruolo dei Direttivi",
+    "ambito": "VVF"
+   }
+  },
+  {
+   "codice": "DIR",
+   "descrizione": "Direttore",
+   "nome": "DIRETTORE",
+   "codSettore": "OPE",
+   "gruppo": {
+    "codice": "DIR",
+    "descrizione": "Ruolo dei Direttivi",
+    "ambito": "VVF"
+   }
+  }
+ ],
+ "sedi": [
+  {
+   "id": "FC-CMD",
+   "codice": "FC",
+   "codDistaccamento": "",
+   "descrizione": "COMANDO VV.F. FORLI-CESENA",
+   "tipo": "CMD",
+   "descTipo": "Comando",
+   "tipoOriginale": "CMD",
+   "tipologiaDistaccamento": null,
+   "provincia": "FC",
+   "coordinate": "44.2227, 12.0407",
+   "idSedePadre": null,
+   "codAOO": "COM-FC"
+  },
+  {
+   "id": "BL-CMD",
+   "codice": "BL",
+   "codDistaccamento": "",
+   "descrizione": "COMANDO VV.F. BELLUNO",
+   "tipo": "CMD",
+   "descTipo": "Comando",
+   "tipoOriginale": "CMD",
+   "tipologiaDistaccamento": null,
+   "provincia": "BL",
+   "coordinate": "46.1405, 12.2167",
+   "idSedePadre": null,
+   "codAOO": "COM-BL"
+  },
+  {
+   "id": "TV-CMD",
+   "codice": "TV",
+   "codDistaccamento": "",
+   "descrizione": "COMANDO VV.F. TREVISO",
+   "tipo": "CMD",
+   "descTipo": "Comando",
+   "tipoOriginale": "CMD",
+   "tipologiaDistaccamento": null,
+   "provincia": "TV",
+   "coordinate": "45.6669, 12.243",
+   "idSedePadre": null,
+   "codAOO": "COM-TV"
+  },
+  {
+   "id": "VE-CMD",
+   "codice": "VE",
+   "codDistaccamento": "",
+   "descrizione": "COMANDO VV.F. VENEZIA",
+   "tipo": "CMD",
+   "descTipo": "Comando",
+   "tipoOriginale": "CMD",
+   "tipologiaDistaccamento": null,
+   "provincia": "VE",
+   "coordinate": "45.4408, 12.3155",
+   "idSedePadre": null,
+   "codAOO": "COM-VE"
+  },
+  {
+   "id": "MI-CMD",
+   "codice": "MI",
+   "codDistaccamento": "",
+   "descrizione": "COMANDO VV.F. MILANO",
+   "tipo": "CMD",
+   "descTipo": "Comando",
+   "tipoOriginale": "CMD",
+   "tipologiaDistaccamento": null,
+   "provincia": "MI",
+   "coordinate": "45.4642, 9.19",
+   "idSedePadre": null,
+   "codAOO": "COM-MI"
+  },
+  {
+   "id": "RM-CMD",
+   "codice": "RM",
+   "codDistaccamento": "",
+   "descrizione": "COMANDO VV.F. ROMA",
+   "tipo": "CMD",
+   "descTipo": "Comando",
+   "tipoOriginale": "CMD",
+   "tipologiaDistaccamento": null,
+   "provincia": "RM",
+   "coordinate": "41.9028, 12.4964",
+   "idSedePadre": null,
+   "codAOO": "COM-RM"
+  }
+ ]
+}

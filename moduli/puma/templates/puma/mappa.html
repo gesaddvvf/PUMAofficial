@@ -1,0 +1,6 @@
+{% extends 'base.html' %}{% block titolo %}P.U.M.A.{% endblock %}{% block main %}{% include "puma/_nav.html" %}
+<h2 class="puma-h">Mappa live addestramenti collettivi</h2>
+<div class="puma-split"><div id="map" class="puma-map" data-tiles="{{ tile_url }}" data-live="{{ url_for('puma.api_attivi') }}"></div>
+<table class="puma-tab"><thead><tr><th>ID / Team</th><th>Stato</th><th>Presenti</th><th>Convalidati</th></tr></thead><tbody id="tab"></tbody></table></div>
+{% include "puma/_legenda.html" %}
+<script src="{{ url_for('puma.static', filename='vendor/leaflet.js') }}"></script><script src="{{ url_for('puma.static', filename='js/puma.js') }}"></script>{% endblock %}
