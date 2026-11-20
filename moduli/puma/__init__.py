@@ -71,8 +71,13 @@ def current_user():
     return u
 
 def settore_ok(u, cod, minimo='lettura'):
-    """Il sotto-settore P.U.M.A. (es. SAF) coincide con un settore del nucleo (codice minuscolo)."""
-    return _puo(cod, minimo)
+    """Permessi per categoria (SAF, TPSS...). Partecipare e registrare le proprie attività: basta l'accesso a P.U.M.A.
+    Per programmare (scrittura) o vedere le scadenze (gestore): il permesso sul settore, se esiste tra i settori dei permessi,
+    altrimenti quello su P.U.M.A."""
+    cod = (cod or '').lower()
+    if minimo == 'lettura': return _puo('puma', 'lettura') or _puo(cod, 'lettura')
+    esiste = get_db().execute('SELECT 1 FROM settori WHERE codice=?', (cod,)).fetchone()
+    return _puo(cod, minimo) if esiste else _puo('puma', minimo)
 
 def email_utente(username):
     return username if "@" in username else None
@@ -86,6 +91,8 @@ def conf(chiave, default=None):
 
 # ---------- DB (db unico di PUMA; schema in migrazioni/002_puma.sql) ----------
 import config, db as portale_db
+from . import corsi as _corsi
+with portale_db.connect() as _c: _corsi.seed_tipologie(_c)   # catalogo delle tipologie (dati/tipologie.json), solo campi vuoti
 
 def get_db():
     if "puma_db" not in g:

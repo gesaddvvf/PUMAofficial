@@ -29,9 +29,10 @@ def ev_get(i, u):
     return r or abort(404)
 def cod_add(d, tipologia, team, comando_id, org_dr, data):
     """COD_ADD = TIPOLOGIA-SQUADRA-<SIGLA DIREZIONE><SIGLA COMANDO | DR>-AAAAMMGG  (es. SAF-ALFA-VENBL-20261006; se organizza la Direzione: SAF-ALFA-VENDR-...)."""
-    r = d.execute("""SELECT k.sigla cmd, COALESCE(dz.sigla,'XXX') dir FROM comandi k LEFT JOIN puma_comando_dir cd ON cd.comando_id=k.id
+    r = d.execute("""SELECT k.sigla cmd, k.tipo, COALESCE(dz.sigla,'NAZ') dir FROM comandi k LEFT JOIN puma_comando_dir cd ON cd.comando_id=k.id
         LEFT JOIN puma_direzioni dz ON dz.id=cd.direzione_id WHERE k.id=?""", (comando_id,)).fetchone()
-    return f"{tipologia.upper()}-{team.upper()}-{r['dir']}{'DR' if org_dr else r['cmd']}-{data.replace('-', '')}"
+    sede = 'DR' if org_dr or r['tipo'] == 'direzione' else (r['cmd'] or 'XX')   # Direzione regionale: ...-VENDR-...; CON: ...-NAZCON-...
+    return f"{tipologia.upper()}-{team.upper()}-{r['dir']}{sede}-{data.replace('-', '')}"
 
 _CF_ODD = dict(zip("0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ", [1,0,5,7,9,13,15,17,19,21,1,0,5,7,9,13,15,17,19,21,2,4,18,20,11,3,6,8,12,14,16,10,22,25,24,23]))
 def cf_valido(cf):
@@ -63,22 +64,26 @@ def collettivo_nuovo():
     if not can_write(u): abort(403)
     if request.method == "POST":
         f = request.form
-        if not settore_ok(u, f["tipologia"], "scrittura"): abort(403)
+        tipologia = f.get("tipologia") or (db().execute("SELECT settore FROM puma_livelli WHERE id=?", (f.get("livello_id"),)).fetchone() or ["ALTRO"])[0]
+        if not settore_ok(u, tipologia, "scrittura"): abort(403)
         try:
             if (f.get("ora_fine") or "23:59") <= (f.get("ora_inizio") or "00:00"):
                 flash("L'ora di fine deve essere successiva all'ora di inizio."); return redirect(request.url)
             org_dr = int(bool(f.get("org_dr")))
-            cod = cod_add(db(), f["tipologia"], f["team"], u["comando_id"], org_dr, f["data"])
-            c = db().execute("""INSERT INTO puma_eventi(data,ora_inizio,ora_fine,org_dr,cod_add,tipologia,livello_id,team,titolo,lat,lon,rv_lat,rv_lon,rv_descr,
-              amb_lat,amb_lon,amb_descr,responsabile,comando_id,direzione_id,is_blindato,is_condiviso_nazionale) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
-              (f["data"], f.get("ora_inizio") or "08:00", f.get("ora_fine") or "17:00", org_dr, cod, f["tipologia"], f.get("livello_id") or None, f["team"], f.get("titolo"),
+            cod = cod_add(db(), tipologia, f["team"], u["comando_id"], org_dr, f["data"])
+            c = db().execute("""INSERT INTO puma_eventi(data,ora_inizio,ora_fine,org_dr,cod_add,tipologia,livello_id,team,titolo,manovre,descrizione,lat,lon,rv_lat,rv_lon,rv_descr,
+              amb_lat,amb_lon,amb_descr,responsabile,comando_id,direzione_id,is_blindato,is_condiviso_nazionale) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
+              (f["data"], f.get("ora_inizio") or "08:00", f.get("ora_fine") or "17:00", org_dr, cod, tipologia, f.get("livello_id") or None, f["team"], f.get("titolo"),
+               json.dumps(f.getlist("manovre")), (f.get("descrizione") or "").strip()[:1000] or None,
                num(f.get("lat")), num(f.get("lon")), num(f.get("rv_lat")), num(f.get("rv_lon")), f.get("rv_descr"),
                num(f.get("amb_lat")), num(f.get("amb_lon")), f.get("amb_descr"), u["username"], *tenant_vals(u)))
         except Exception:
-            flash("Esiste già un addestramento %s – team %s in quella data per il tuo Comando." % (f["tipologia"], f["team"]))
+            flash("Esiste già un addestramento %s – team %s in quella data per il tuo Comando: scegli un altro team." % (tipologia, f["team"]))
             return redirect(request.url)
-        db().commit(); return redirect(url_for("puma.collettivo", i=c.lastrowid))
-    return render_template("puma/collettivo_nuovo.html", team=TEAM, livelli=livelli(), oggi=date.today().isoformat())
+        db().commit(); flash("Addestramento programmato: il giorno stabilito comparirà in «Addestramenti di oggi» e il personale potrà aggiungersi.")
+        return redirect(url_for("puma.collettivo", i=c.lastrowid))
+    from .corsi import tipologie
+    return render_template("puma/collettivo_nuovo.html", team=TEAM, tipologie=tipologie(db()), oggi=request.args.get("data") or date.today().isoformat())
 
 @puma_bp.route("/collettivi/<int:i>")
 def collettivo(i):
@@ -147,19 +152,23 @@ def individuali():
     if request.method == "POST":
         f = request.form
         if not settore_ok(u, f["tipologia"]): abort(403)
-        db().execute("""INSERT INTO puma_individuali(username,tipologia,livello_id,inizio,fine,manovre,comando_id,direzione_id,is_blindato,
-            is_condiviso_nazionale) VALUES(?,?,?,?,?,?,?,?,0,0)""", (u["username"], f["tipologia"], f.get("livello_id") or None,
-            f["inizio"], f["fine"], json.dumps(f.getlist("manovre")), u["comando_id"], u.get("direzione_id")))
+        if (f.get("fine") or "") <= (f.get("inizio") or ""):
+            flash("La fine deve essere successiva all'inizio."); return redirect(url_for("puma.individuali"))
+        db().execute("""INSERT INTO puma_individuali(username,tipologia,livello_id,inizio,fine,manovre,descrizione,comando_id,direzione_id,is_blindato,
+            is_condiviso_nazionale) VALUES(?,?,?,?,?,?,?,?,?,0,0)""", (u["username"], f["tipologia"], f.get("livello_id") or None,
+            f["inizio"], f["fine"], json.dumps(f.getlist("manovre")), (f.get("descrizione") or "").strip()[:500] or None, u["comando_id"], u.get("direzione_id")))
         db().commit(); flash("Addestramento individuale registrato."); return redirect(url_for("puma.individuali"))
     mie = db().execute("""SELECT i.*, l.nome livello FROM puma_individuali i LEFT JOIN puma_livelli l ON l.id=i.livello_id
         WHERE username=? ORDER BY inizio DESC""", (u["username"],)).fetchall()
-    return render_template("puma/individuali.html", righe=mie, livelli=[l for l in livelli() if settore_ok(u, l["settore"])],
+    from .corsi import tipologie
+    return render_template("puma/individuali.html", righe=mie, tipologie=tipologie(db()),
                            adesso=datetime.now().strftime("%Y-%m-%dT%H:%M"))
 
 @puma_bp.route("/api/manovre/<int:lid>")
 def api_manovre(lid):
     current_user()
-    return jsonify([dict(r) for r in db().execute("SELECT id,nome FROM puma_manovre WHERE livello_id=? ORDER BY ordine,id", (lid,))])
+    lid = db().execute("SELECT COALESCE(equivale_a, id) FROM puma_livelli WHERE id=?", (lid,)).fetchone() or [lid]
+    return jsonify([dict(r) for r in db().execute("SELECT id,nome,ciclo,lettera FROM puma_manovre WHERE livello_id IN (?, ?) AND COALESCE(lettera, '')<>'N' ORDER BY ordine,id", (lid[0], request.view_args["lid"]))])
 
 @puma_bp.route("/interventi", methods=["GET", "POST"])
 def interventi():
@@ -212,11 +221,18 @@ def scadenze(u=None, settore=None, comando=None):
 
 @puma_bp.route("/profilo")
 def profilo():
-    u = current_user()
-    ind = db().execute("SELECT i.*, l.nome livello FROM puma_individuali i LEFT JOIN puma_livelli l ON l.id=i.livello_id WHERE username=? ORDER BY inizio DESC", (u["username"],)).fetchall()
-    col = db().execute("""SELECT e.data,e.tipologia,e.team,l.nome livello,c.convalidato FROM puma_checkin c JOIN puma_eventi e ON e.id=c.evento_id
-        LEFT JOIN puma_livelli l ON l.id=e.livello_id WHERE c.username=? ORDER BY e.data DESC""", (u["username"],)).fetchall()
-    return render_template("puma/profilo.html", sc=scadenze(u=u["username"]), ind=ind, col=col)
+    """Report Individuale: libretto di formazione (come reportindividuale.html del sito). ?utente=<id> per ROP/ROR/Nazionale."""
+    from .libretto import libretto
+    from .pagine import comandi_visibili
+    u = current_user(); anno = request.args.get("anno", type=int) or date.today().year
+    chi = g.utente
+    altro = request.args.get("utente", type=int)
+    if altro and altro != g.utente["id"]:
+        vis = comandi_visibili(u)
+        chi = db().execute("SELECT u.*, k.nome AS comando FROM utenti u LEFT JOIN comandi k ON k.id=u.comando_id WHERE u.id=?", (altro,)).fetchone() or abort(404)
+        if vis is not None and chi["comando_id"] not in vis: abort(403)
+    lib = libretto(db(), chi, anno)
+    return render_template("puma/libretto.html", lib=lib, chi=chi, y=anno, proprio=chi["id"] == g.utente["id"])
 
 @puma_bp.route("/settore/<cod>")
 def settore(cod):

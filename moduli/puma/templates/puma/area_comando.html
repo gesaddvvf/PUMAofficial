@@ -9,6 +9,7 @@
 <div class="sez-tit">Reportistica</div>
 <div class="tessere">
   <a class="tessera area-rep" href="{{ url_for('puma.report_collettivo') }}"><div class="ic">👥</div><h4>Report collettivo</h4><p>Scadenze del personale per settore: il tuo Comando, la tua regione o tutta Italia.</p></a>
+  <a class="tessera area-rep" href="{{ url_for('puma.cruscotto') }}"><div class="ic">📈</div><h4>Cruscotto corsi</h4><p>Per ogni tipologia: chi ha il corso e chi è in regola con le ore dell'anno.</p></a>
   <a class="tessera area-rep" href="{{ url_for('puma.collettivi', vista='riepilogo', quando='tutti') }}"><div class="ic">🗂️</div><h4>Riepilogo addestramenti collettivi</h4><p>Tutti gli addestramenti collettivi visibili, con filtri per periodo.</p></a>
 </div>
 <div class="sez-tit">Gestione</div>
@@ -16,10 +17,11 @@
   {% if perm.gestore %}<a class="tessera area-com" href="{{ url_for('puma.impostazioni') }}"><div class="ic">🏢</div><h4>Impostazioni del Comando</h4><p>E-mail di SO, ROP, ROR, SODIR, Formazione e TEP; validità dei livelli; checklist manovre.</p></a>{% endif %}
   {% if perm.admin %}
   <a class="tessera area-com" href="{{ url_for('puma.livelli_utente') }}"><div class="ic">🧭</div><h4>Livelli utenti</h4><p>Visibilità comando / regione / nazionale di ogni utente.</p></a>
+  <a class="tessera area-com" href="{{ url_for('puma.importa_foglio') }}"><div class="ic">📥</div><h4>Corsi e foglio PUMA</h4><p>Importa Formazione, Manovre_PREVISTE ed Elenco_Filtrato dal file Excel del foglio Google.</p></a>
   <a class="tessera area-com" href="{{ url_for('admin_utenti') }}"><div class="ic">👮</div><h4>Utenti e permessi</h4><p>Abilitazione dei nuovi utenti, settori e livelli (lettura, scrittura, gestore).</p></a>
   <a class="tessera area-com" href="{{ url_for('admin_organico') }}"><div class="ic">📇</div><h4>Organico</h4><p>Anagrafica locale usata quando WAUC non trova la persona.</p></a>
   <a class="tessera area-com" href="{{ url_for('admin_config') }}"><div class="ic">⚙️</div><h4>Configurazione e WAUC</h4><p>Sedi, qualifiche e specializzazioni scaricate da WAUC; comandi e settori.</p></a>
-  <a class="tessera area-com" href="{{ url_for('admin_comandi') }}"><div class="ic">☎️</div><h4>Schede dei comandi</h4><p>Telefoni, PEC, indirizzi, coordinate, NUE e siti di ogni Comando.</p></a>
+  <a class="tessera area-com" href="{{ url_for('admin_comandi') }}"><div class="ic">☎️</div><h4>Comandi e Direzioni</h4><p>Contatti di Comandi, Direzioni regionali, CON e SOCAV (dati FireOps): Sale Operative, PEC, canali radio.</p></a>
   <a class="tessera area-com" href="{{ url_for('admin_audit') }}"><div class="ic">🧾</div><h4>Registro attività</h4><p>Accessi (anche quelli negati, con il motivo), abilitazioni, errori WAUC.</p></a>
   {% endif %}
 </div>

@@ -1,13 +1,16 @@
 {% extends 'base.html' %}{% block main %}{% include "puma/_nav.html" %}
-<h2 class="puma-h">Nuovo addestramento collettivo</h2>
+<h2 class="puma-h">Programma un addestramento collettivo</h2>
+<p class="muted">Scegli il giorno: quel giorno l'addestramento compare in «Addestramenti di oggi» e il personale (anche di altri Comandi, se non è riservato) può aggiungersi. Dopo la programmazione, dalla scheda prepari il piano di sicurezza.</p>
 <form method="post" class="puma-form"><input type="hidden" name="csrf" value="{{ csrf }}">
 <label>Data <input type="date" name="data" value="{{ oggi }}" required></label>
 <label>Ora inizio <input type="time" name="ora_inizio" value="08:00" required></label><label>Ora fine <input type="time" name="ora_fine" value="17:00" required></label>
 <label class="puma-chk"><input type="checkbox" name="org_dr"> Organizza la Direzione Regionale (sigla DR al posto del Comando)</label>
-<label>Tipologia <select name="tipologia" id="tip">{% for s in settori_all %}<option value="{{ s.codice }}">{{ s.codice }}</option>{% endfor %}</select></label>
-<label>Livello <select name="livello_id"><option value="">—</option>{% for l in livelli %}<option value="{{ l.id }}">{{ l.nome }}</option>{% endfor %}</select></label>
+<label>Tipologia di addestramento {% include "puma/_tipologie.html" %}</label>
+<input type="hidden" name="tipologia" id="tipo">
+<fieldset id="man"><legend>Manovre previste</legend><small>Scegli prima la tipologia: compaiono le manovre previste dal sito P.U.M.A.</small></fieldset>
 <label>Team <select name="team">{% for t in team %}<option>{{ t }}</option>{% endfor %}</select></label>
-<input name="titolo" placeholder="Titolo / descrizione">
+<input name="titolo" placeholder="Titolo (es. Addestramento in parete – Valle del Bidente)">
+<label>Descrizione <textarea name="descrizione" rows="2" placeholder="Obiettivi, luogo, materiali (facoltativa)"></textarea></label>
 <p><small>Il codice COD_ADD (es. SAF-ALFA-VENBL-20261006) viene generato in automatico.</small></p>
 <p><b>Clicca sulla mappa</b>: scegli prima l'area, poi il punto di Rendez-Vous.</p>
 <div class="puma-radio"><label><input type="radio" name="modo" value="area" checked> Area addestrativa</label><label><input type="radio" name="modo" value="rv"> RV elicottero (H)</label><label><input type="radio" name="modo" value="amb"> RV ambulanza (croce)</label></div>
@@ -18,5 +21,5 @@
 <input name="rv_descr" placeholder="Descrizione RV elicottero (es. prato)">
 <input name="amb_lat" id="amb_lat" placeholder="Lat RV ambulanza" readonly><input name="amb_lon" id="amb_lon" placeholder="Lon RV ambulanza" readonly>
 <input name="amb_descr" placeholder="Descrizione RV ambulanza (es. parcheggio)">
-{% include "puma/_tenant.html" %}<button>Crea addestramento</button></form>
-<script src="{{ url_for('puma.static', filename='vendor/leaflet.js') }}"></script><script src="{{ url_for('puma.static', filename='js/puma.js') }}"></script>{% endblock %}
+{% include "puma/_tenant.html" %}<button>Programma l'addestramento</button></form>
+<script src="{{ url_for('puma.static', filename='vendor/leaflet.js') }}"></script><script src="{{ url_for('puma.static', filename='js/puma.js') }}"></script><script src="{{ url_for('puma.static', filename='js/individuali.js') }}"></script>{% endblock %}

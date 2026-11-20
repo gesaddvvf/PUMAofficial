@@ -1,0 +1,426 @@
+{
+ "_fonte": "Tipologie e loghi del sito gesaddvvf.github.io/PUMA (images/loghi/loghi.json). codici_wauc = specializzazioni WAUC che danno il corso in possesso. Ore minime, quota collettive e anni arrivano dal foglio Formazione (python manage.py importa-foglio).",
+ "categorie": [
+  [
+   "SAF",
+   "SAF (Speleo Alpino Fluviale)"
+  ],
+  [
+   "SSA",
+   "SSA (Soccorso Acquatico)"
+  ],
+  [
+   "USAR",
+   "USAR (Urban Search And Rescue)"
+  ],
+  [
+   "TPSS",
+   "TPSS (Tecniche di Primo Soccorso Sanitario)"
+  ],
+  [
+   "OSO",
+   "OSO (Operatore Sala Operativa)"
+  ],
+  [
+   "TAS",
+   "TAS (Topografia Applicata al Soccorso)"
+  ],
+  [
+   "CFBT",
+   "CFBT (Compartment Fire Behaviour Training)"
+  ],
+  [
+   "NBCR",
+   "NBCR (Nucleare Biologico Chimico Radiologico)"
+  ],
+  [
+   "APR",
+   "APR (Aeromobili a Pilotaggio Remoto)"
+  ],
+  [
+   "K9",
+   "Cinofili - K9"
+  ],
+  [
+   "PT",
+   "Patenti Terrestri"
+  ],
+  [
+   "MMT",
+   "MMT (Movimento Terra)"
+  ],
+  [
+   "PN",
+   "Patenti Nautiche"
+  ],
+  [
+   "VARIE",
+   "Varie"
+  ]
+ ],
+ "equivalenti": {
+  "SAF (Speleo Alpino Fluviale) SAF1A": "SAF (Speleo Alpino Fluviale) Competenze primarie"
+ },
+ "tipologie": [
+  {
+   "chiave": "saf-speleo-alpino-fluviale-competenze-primarie",
+   "nome": "SAF (Speleo Alpino Fluviale) Competenze primarie",
+   "sigla": "SAF PRI",
+   "categoria": "SAF",
+   "codici_wauc": "SAF",
+   "di_tutti": 1,
+   "corso": 1,
+   "ordine": 0
+  },
+  {
+   "chiave": "saf-speleo-alpino-fluviale-basico",
+   "nome": "SAF (Speleo Alpino Fluviale) BASICO",
+   "sigla": "SAF BAS",
+   "categoria": "SAF",
+   "codici_wauc": "SBA,S1B,ISB",
+   "di_tutti": 0,
+   "corso": 1,
+   "ordine": 1
+  },
+  {
+   "chiave": "saf-speleo-alpino-fluviale-avanzato",
+   "nome": "SAF (Speleo Alpino Fluviale) AVANZATO",
+   "sigla": "SAF AVA",
+   "categoria": "SAF",
+   "codici_wauc": "SAV,S2A,S2B,FSA,SEN",
+   "di_tutti": 0,
+   "corso": 1,
+   "ordine": 2
+  },
+  {
+   "chiave": "saf-speleo-alpino-fluviale-saf1a",
+   "nome": "SAF (Speleo Alpino Fluviale) SAF1A",
+   "sigla": "SAF 1A",
+   "categoria": "SAF",
+   "codici_wauc": "S1A",
+   "di_tutti": 0,
+   "corso": 1,
+   "ordine": 3
+  },
+  {
+   "chiave": "negh",
+   "nome": "NEGH (NEveGHiaccio)",
+   "sigla": "NEGH",
+   "categoria": "SAF",
+   "codici_wauc": "CNG",
+   "di_tutti": 0,
+   "corso": 1,
+   "ordine": 4
+  },
+  {
+   "chiave": "evac-evacuazione-impianti-a-fune",
+   "nome": "EVAC Evacuazione impianti a fune",
+   "sigla": "EVAC",
+   "categoria": "SAF",
+   "codici_wauc": "",
+   "di_tutti": 0,
+   "corso": 1,
+   "ordine": 5
+  },
+  {
+   "chiave": "atp",
+   "nome": "ATP (Autoprotezione in ambiente acquatico)",
+   "sigla": "ATP",
+   "categoria": "SSA",
+   "codici_wauc": "ATP,IAT",
+   "di_tutti": 0,
+   "corso": 1,
+   "ordine": 6
+  },
+  {
+   "chiave": "sfa",
+   "nome": "SFA (Soccorritore Fluviale Alluvionale)",
+   "sigla": "SFA",
+   "categoria": "SSA",
+   "codici_wauc": "SF,SFA",
+   "di_tutti": 0,
+   "corso": 1,
+   "ordine": 7
+  },
+  {
+   "chiave": "sa",
+   "nome": "SA (Soccorritore Acquatico)",
+   "sigla": "SA",
+   "categoria": "SSA",
+   "codici_wauc": "SA,ISA",
+   "di_tutti": 0,
+   "corso": 1,
+   "ordine": 8
+  },
+  {
+   "chiave": "smzt",
+   "nome": "SMZT (Sommozzatore)",
+   "sigla": "SMZT",
+   "categoria": "SSA",
+   "codici_wauc": "SOM,GS,ISO,SSF,SST",
+   "di_tutti": 0,
+   "corso": 1,
+   "ordine": 9
+  },
+  {
+   "chiave": "usar-l",
+   "nome": "USAR L (Urban Search And Rescue)",
+   "sigla": "USAR L",
+   "categoria": "USAR",
+   "codici_wauc": "USL,FUL",
+   "di_tutti": 0,
+   "corso": 1,
+   "ordine": 10
+  },
+  {
+   "chiave": "usar-m",
+   "nome": "USAR M (Urban Search And Rescue)",
+   "sigla": "USAR M",
+   "categoria": "USAR",
+   "codici_wauc": "USM,IUM,UCC",
+   "di_tutti": 0,
+   "corso": 1,
+   "ordine": 11
+  },
+  {
+   "chiave": "tpss",
+   "nome": "TPSS (Tecniche di Primo Soccorso Sanitario)",
+   "sigla": "TPSS",
+   "categoria": "TPSS",
+   "codici_wauc": "TPS,ITP",
+   "di_tutti": 1,
+   "corso": 1,
+   "ordine": 12
+  },
+  {
+   "chiave": "oso",
+   "nome": "OSO (Operatore Sala Operativa)",
+   "sigla": "OSO",
+   "categoria": "OSO",
+   "codici_wauc": "OSO",
+   "di_tutti": 0,
+   "corso": 1,
+   "ordine": 13
+  },
+  {
+   "chiave": "tas1",
+   "nome": "TAS1 (Topografia Applicata al Soccorso)",
+   "sigla": "TAS 1",
+   "categoria": "TAS",
+   "codici_wauc": "T1",
+   "di_tutti": 0,
+   "corso": 1,
+   "ordine": 14
+  },
+  {
+   "chiave": "tas2",
+   "nome": "TAS2 (Topografia Applicata al Soccorso)",
+   "sigla": "TAS 2",
+   "categoria": "TAS",
+   "codici_wauc": "T2,T2I,TD,TF",
+   "di_tutti": 0,
+   "corso": 1,
+   "ordine": 15
+  },
+  {
+   "chiave": "cfbt",
+   "nome": "CFBT (Compartment Fire Behaviour Training)",
+   "sigla": "CFBT",
+   "categoria": "CFBT",
+   "codici_wauc": "OBT,FBT",
+   "di_tutti": 0,
+   "corso": 1,
+   "ordine": 16
+  },
+  {
+   "chiave": "nbcr-0",
+   "nome": "NBCR 0 (Nucleare Biologico Chimico Radiologico)",
+   "sigla": "NBCR 0",
+   "categoria": "NBCR",
+   "codici_wauc": "N0",
+   "di_tutti": 0,
+   "corso": 1,
+   "ordine": 17
+  },
+  {
+   "chiave": "nbcr-1",
+   "nome": "NBCR 1 (Nucleare Biologico Chimico Radiologico)",
+   "sigla": "NBCR 1",
+   "categoria": "NBCR",
+   "codici_wauc": "N1",
+   "di_tutti": 0,
+   "corso": 1,
+   "ordine": 18
+  },
+  {
+   "chiave": "nbcr-2",
+   "nome": "NBCR 2 (Nucleare Biologico Chimico Radiologico)",
+   "sigla": "NBCR 2",
+   "categoria": "NBCR",
+   "codici_wauc": "N2",
+   "di_tutti": 0,
+   "corso": 1,
+   "ordine": 19
+  },
+  {
+   "chiave": "nbcr-3",
+   "nome": "NBCR 3 (Nucleare Biologico Chimico Radiologico)",
+   "sigla": "NBCR 3",
+   "categoria": "NBCR",
+   "codici_wauc": "N3,N3F",
+   "di_tutti": 0,
+   "corso": 1,
+   "ordine": 20
+  },
+  {
+   "chiave": "apr",
+   "nome": "APR (Aeromobili Pilotaggio Remoto)",
+   "sigla": "APR",
+   "categoria": "APR",
+   "codici_wauc": "PS",
+   "di_tutti": 0,
+   "corso": 1,
+   "ordine": 21
+  },
+  {
+   "chiave": "cinofilo-k9",
+   "nome": "Cinofilo - K9",
+   "sigla": "K9",
+   "categoria": "K9",
+   "codici_wauc": "CIN",
+   "di_tutti": 0,
+   "corso": 1,
+   "ordine": 22
+  },
+  {
+   "chiave": "patente-terrestre-i-cat",
+   "nome": "Patente Terrestre I cat.",
+   "sigla": "PT I",
+   "categoria": "PT",
+   "codici_wauc": "AM1,A1L",
+   "di_tutti": 0,
+   "corso": 1,
+   "ordine": 23
+  },
+  {
+   "chiave": "patente-terrestre-ii-cat",
+   "nome": "Patente Terrestre II cat.",
+   "sigla": "PT II",
+   "categoria": "PT",
+   "codici_wauc": "AM2,A2L",
+   "di_tutti": 0,
+   "corso": 1,
+   "ordine": 24
+  },
+  {
+   "chiave": "patente-terrestre-iii-cat",
+   "nome": "Patente Terrestre III cat.",
+   "sigla": "PT III",
+   "categoria": "PT",
+   "codici_wauc": "AM3,A3L",
+   "di_tutti": 0,
+   "corso": 1,
+   "ordine": 25
+  },
+  {
+   "chiave": "patente-terrestre-iv-cat",
+   "nome": "Patente Terrestre IV cat.",
+   "sigla": "PT IV",
+   "categoria": "PT",
+   "codici_wauc": "AM4,A4L",
+   "di_tutti": 0,
+   "corso": 1,
+   "ordine": 26
+  },
+  {
+   "chiave": "mmt",
+   "nome": "MMT (Movimento Terra)",
+   "sigla": "MMT",
+   "categoria": "MMT",
+   "codici_wauc": "MT",
+   "di_tutti": 0,
+   "corso": 1,
+   "ordine": 27
+  },
+  {
+   "chiave": "patente-nautica-i-cat",
+   "nome": "Patente Nautica I cat.",
+   "sigla": "PN I",
+   "categoria": "PN",
+   "codici_wauc": "PN1,P1L,P1A,P1X,PNU,PUA,PUL,PAL",
+   "di_tutti": 0,
+   "corso": 1,
+   "ordine": 28
+  },
+  {
+   "chiave": "patente-nautica-ii-cat",
+   "nome": "Patente Nautica II cat.",
+   "sigla": "PN II",
+   "categoria": "PN",
+   "codici_wauc": "PN2,P2L,P2A,P2Y",
+   "di_tutti": 0,
+   "corso": 1,
+   "ordine": 29
+  },
+  {
+   "chiave": "intervento",
+   "nome": "Intervento",
+   "sigla": "INT",
+   "categoria": "VARIE",
+   "codici_wauc": "",
+   "di_tutti": 0,
+   "corso": 0,
+   "ordine": 30
+  },
+  {
+   "chiave": "altro",
+   "nome": "Altro",
+   "sigla": "ALTRO",
+   "categoria": "VARIE",
+   "codici_wauc": "",
+   "di_tutti": 0,
+   "corso": 0,
+   "ordine": 31
+  },
+  {
+   "chiave": "corso-di-formazione",
+   "nome": "Corso di Formazione",
+   "sigla": "FORM",
+   "categoria": "VARIE",
+   "codici_wauc": "",
+   "di_tutti": 0,
+   "corso": 0,
+   "ordine": 32
+  },
+  {
+   "chiave": "corso-di-aggiornamento",
+   "nome": "Corso di Aggiornamento",
+   "sigla": "AGG",
+   "categoria": "VARIE",
+   "codici_wauc": "",
+   "di_tutti": 0,
+   "corso": 0,
+   "ordine": 33
+  },
+  {
+   "chiave": "esercitazione",
+   "nome": "Esercitazione",
+   "sigla": "ESERC",
+   "categoria": "VARIE",
+   "codici_wauc": "",
+   "di_tutti": 0,
+   "corso": 0,
+   "ordine": 34
+  },
+  {
+   "chiave": "piano-di-sicurezza-mancante",
+   "nome": "Piano di Sicurezza Mancante",
+   "sigla": "PSM",
+   "categoria": "VARIE",
+   "codici_wauc": "",
+   "di_tutti": 0,
+   "corso": 0,
+   "ordine": 35
+  }
+ ]
+}

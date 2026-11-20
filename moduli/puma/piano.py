@@ -8,7 +8,7 @@ from . import piano_pdf
 
 DATI = os.path.join(os.path.dirname(__file__), "dati")
 ROM = {"I": 1, "II": 2, "III": 3, "IV": 4}
-CORSO_LIVELLO = {"BAS": "SAF Basico", "AVA": "SAF Avanzato", "TPS": "Retraining TPSS"}
+CORSO_LIVELLO = {"BAS": "SAF (Speleo Alpino Fluviale) BASICO", "AVA": "SAF (Speleo Alpino Fluviale) AVANZATO", "TPS": "TPSS (Tecniche di Primo Soccorso Sanitario)"}
 _seeded = False
 
 # ---------- import iniziale (solo se le tabelle sono vuote: le modifiche successive restano) ----------

@@ -4,6 +4,8 @@
   prova-login [UTENTE]    prova le credenziali dipartimentali sul server di posta e mostra la risposta esatta
   primo-admin             chiede l'email del primo amministratore (solo se non ce n'è ancora uno)
   nomina-admin EMAIL | revoca-admin EMAIL | utenti
+  importa-foglio [FILE]    importa Formazione, Manovre_PREVISTE, Elenco_Filtrato dal foglio PUMA scaricato in .xlsx
+  aggiorna-sedi [--forza]  contatti di Comandi, Direzioni, CON e SOCAV da dati/sedi_fireops.json (FireOps)
   diagnosi-wauc [UTENTE]  perché WAUC non trova una persona: sedi, risposte, ricerca per email e per cognome
   wauc-test [EMAIL]       prova il collegamento a WAUC: mostra i campi restituiti e cosa trova per quell'email
   wauc-sync               legge da WAUC l'elenco completo di specializzazioni e qualifiche
@@ -129,6 +131,19 @@ def main(a):
                                            FROM specializzazioni s WHERE s.aggiornata_il IS NOT NULL ORDER BY s.codice""").fetchall()
         print(f'{len(righe)} specializzazioni' if righe else 'Elenco vuoto: esegui prima  python3 manage.py wauc-sync')
         for r in righe: print(f"{r['codice']:8} {(r['descrizione'] or '-'):60} persone: {r['persone']}" + ('  (aggiunta da un utente)' if r['fonte'] == 'utente' else ''))
+    elif cmd == 'importa-foglio':
+        import glob
+        f = a[1] if len(a) > 1 else next(iter(sorted(glob.glob(os.path.join(config.BASE_DIR, '*.xlsx')) + glob.glob(os.path.join(config.BASE_DIR, '..', '*.xlsx')), key=os.path.getmtime, reverse=True)), None)
+        if not f: return print('Indica il file:  python manage.py importa-foglio "PUMA VVF Database Personale.xlsx"  (oppure mettilo nella cartella di PUMA)')
+        import app as portale
+        from moduli.puma import foglio
+        c = db.connect(); r = foglio.importa(c, f); c.commit()
+        print(f"Importato {os.path.basename(f)}: {r['tipologie']} tipologie ({r['nuove']} nuove), {r['manovre']} manovre previste ({r['manovre_senza_corso']} senza tipologia), {r['persone']} persone (Elenco_Filtrato). Fogli: {', '.join(r['fogli'])}")
+    elif cmd == 'aggiorna-sedi':
+        import anagrafiche
+        c = db.connect(); r = anagrafiche.aggiorna_sedi(c, forza='--forza' in a); c.commit()
+        print(f"Sedi da FireOps: {r['comandi']} comandi, {r['direzioni']} direzioni, {r['nazionali']} nazionali · schede aggiornate: {r['aggiornati']}"
+              + ('' if '--forza' in a else '  (solo campi vuoti; --forza per sovrascrivere)'))
     elif cmd == 'diagnosi-wauc':
         return diagnosi_wauc(a[1] if len(a) > 1 else None)
     elif cmd == 'wauc-test':

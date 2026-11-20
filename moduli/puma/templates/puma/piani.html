@@ -1,0 +1,11 @@
+{% extends 'base.html' %}{% block main %}{% include "puma/_nav.html" %}
+<div class="libretto-testa"><h2 class="puma-h">Piani di sicurezza del mio Comando</h2><a class="puma-btn puma-on" href="{{ url_for('puma.collettivo_nuovo') }}">📅 Programma un addestramento</a></div>
+<p class="muted">Per ogni addestramento programmato: meteo, matrice di rischio, PDF e invio alle Sale Operative. Sono elencati anche quelli degli ultimi 30 giorni.</p>
+<table><tr><th>Data</th><th>Addestramento</th><th>Presenti</th><th>Meteo</th><th>Rischio</th><th>Inviato</th><th></th></tr>
+{% for e in righe %}<tr class="{{ 'passato' if e.data < oggi }}">
+  <td>{{ e.data|datait }}<br><span class="muted">{{ e.ora_inizio or '' }}–{{ e.ora_fine or '' }}</span></td>
+  <td><a href="{{ url_for('puma.collettivo', i=e.id) }}"><b>{{ e.cod_add or e.tipologia }}</b></a><br><span class="muted">{{ e.tipologia_nome or '' }}</span></td>
+  <td>{{ e.presenti }}</td><td>{{ '✔' if e.meteo else '—' }}</td><td>{{ '✔' if e.rischio else '—' }}</td><td>{{ e.piano_inviato[:16].replace('T', ' ') if e.piano_inviato else '—' }}</td>
+  <td><a class="puma-btn{{ ' puma-on' if not e.piano_inviato and e.data >= oggi }}" href="{{ url_for('puma.piano', i=e.id) }}">🛡 Piano</a></td></tr>
+{% else %}<tr><td colspan="7" class="puma-empty">Nessun addestramento programmato dal tuo Comando.</td></tr>{% endfor %}</table>
+{% endblock %}

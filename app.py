@@ -13,11 +13,14 @@ config.avvia_log()
 log_accesso = logging.getLogger('accesso')
 
 LIVELLI = ['lettura', 'scrittura', 'gestore']
+ORDINE_SEDI = "SELECT * FROM comandi ORDER BY CASE tipo WHEN 'comando' THEN 0 WHEN 'direzione' THEN 1 ELSE 2 END, nome"
 app = Flask(__name__)
 app.secret_key = config.secret_key()
 app.config.update(SESSION_COOKIE_HTTPONLY=True, SESSION_COOKIE_SAMESITE='Lax',
                   PERMANENT_SESSION_LIFETIME=datetime.timedelta(hours=8))
 db.migra()
+import anagrafiche
+with db.connect() as _c: anagrafiche.aggiorna_sedi(_c)   # Comandi, Direzioni, CON e SOCAV con i dati di FireOps (solo campi vuoti)
 
 
 
@@ -238,7 +241,7 @@ def profilo_view():
             profilo.salva_in_organico(c, u['email'], v, com['nome'])
             db.audit(c, u['email'], 'profilo_confermato', f'origine={orig}')
             return redirect(url_for('attesa' if u['stato'] == 'in_attesa' else 'home'))
-        comandi = c.execute('SELECT * FROM comandi ORDER BY nome').fetchall()
+        comandi = c.execute(ORDINE_SEDI).fetchall()
         dist = c.execute('SELECT * FROM distaccamenti_wauc ORDER BY cod_sede, descrizione').fetchall()
         specs = c.execute("""SELECT s.codice, s.descrizione, s.fonte, su.origine, su.inizio, su.fine, (su.codice IS NOT NULL) AS posseduta,
             (su.codice IS NOT NULL AND (su.fine IS NULL OR su.fine='' OR su.fine>=date('now','localtime'))) AS valida
@@ -326,7 +329,7 @@ def admin_utente(uid):
             db.audit(c, g.utente['email'], 'modifica_utente', f"{u['email']} stato={stato} admin={adm}")
             flash('Utente aggiornato.', 'success')
             return redirect(url_for('admin_utenti'))
-        comandi = c.execute('SELECT * FROM comandi ORDER BY nome').fetchall()
+        comandi = c.execute(ORDINE_SEDI).fetchall()
         perm = {r['settore_id']: r['livello'] for r in c.execute('SELECT * FROM permessi WHERE utente_id=?', (uid,))}
     return render_template('admin_utente.html', u=u, settori=settori, comandi=comandi, perm=perm, livelli=LIVELLI, specs=specs_u, wauc=wauc_u)
 
@@ -367,7 +370,7 @@ def admin_config():
             except Exception:
                 flash('Voce già esistente.', 'danger')
             return redirect(url_for('admin_config'))
-        return render_template('admin_config.html', comandi=c.execute('SELECT * FROM comandi ORDER BY nome').fetchall(),
+        return render_template('admin_config.html', comandi=c.execute(ORDINE_SEDI).fetchall(),
                                settori=c.execute('SELECT * FROM settori ORDER BY nome').fetchall(),
                                specs=c.execute("""SELECT s.codice, s.descrizione, s.fonte, s.data_inizio_validita, s.data_fine_validita,
                                    (SELECT COUNT(*) FROM specializzazioni_utente s2 WHERE s2.codice=s.codice AND (s2.fine IS NULL OR s2.fine='' OR s2.fine>=date('now','localtime'))) AS persone
@@ -393,16 +396,17 @@ def _num(v, lo, hi):
 @app.route('/admin/comandi', methods=['GET', 'POST'])
 def admin_comandi():
     """Scheda di ogni comando: telefoni, email, PEC, indirizzo, coordinate, NUE sì/no, sito e intranet. Dati inseriti a mano: gli aggiornamenti WAUC non li toccano."""
-    admin_only(); q = request.args.get('q', '').strip(); mod = request.args.get('modifica', type=int)
+    admin_only(); q = request.args.get('q', '').strip(); mod = request.args.get('modifica', type=int); tipo = request.args.get('tipo', '')
     with db.connect() as c:
         if request.method == 'POST':
             f = request.form; cid = f.get('id', type=int); k = c.execute('SELECT * FROM comandi WHERE id=?', (cid,)).fetchone() or abort(404)
             t = lambda n, m=120: f.get(n, '').strip()[:m] or None
-            v = dict(telefono=t('telefono', 40), telefono2=t('telefono2', 40), indirizzo=t('indirizzo', 160), cap=t('cap', 10), comune=t('comune', 80), nue_note=t('nue_note', 200), note=t('note', 400))
+            v = dict(telefono=t('telefono', 40), telefono2=t('telefono2', 40), telefono_so=t('telefono_so', 40), canale_radio=t('canale_radio', 20),
+                     indirizzo=t('indirizzo', 160), cap=t('cap', 10), comune=t('comune', 80), nue_note=t('nue_note', 200), note=t('note', 400))
             err = None
-            for campo in ('email', 'pec'):
+            for campo in ('email', 'pec', 'email_so', 'pec_so'):
                 x = f.get(campo, '').strip().lower()[:120]
-                if x and not EMAIL_SEMPLICE.match(x): err = f'{campo.upper() if campo == "pec" else "Email"} non valida.'
+                if x and not EMAIL_SEMPLICE.match(x): err = f'{campo.replace("_", " ").upper()} non valida.'
                 v[campo] = x or None
             for campo in ('sito_web', 'sito_intranet'):
                 u = _url(f.get(campo)); v[campo] = u or None
@@ -417,10 +421,11 @@ def admin_comandi():
             return redirect(url_for('admin_comandi'))
         righe = c.execute("""SELECT k.*, s.descrizione AS sede_desc, s.lat AS wlat, s.lon AS wlon, s.coordinate_raw
                              FROM comandi k LEFT JOIN sedi_wauc s ON s.id=k.wauc_sede_id
-                             WHERE ?='' OR k.nome LIKE ? OR k.sigla LIKE ? ORDER BY k.nome""", (q, f'%{q}%', f'%{q}%')).fetchall()
+                             WHERE (?='' OR k.nome LIKE ? OR k.sigla LIKE ?) AND (?='' OR k.tipo=?)
+                             ORDER BY CASE k.tipo WHEN 'comando' THEN 0 WHEN 'direzione' THEN 1 ELSE 2 END, k.nome""", (q, f'%{q}%', f'%{q}%', tipo, tipo)).fetchall()
         m = next((r for r in righe if r['id'] == mod), None) if mod else None
         if mod and not m: m = c.execute('SELECT k.*, s.descrizione AS sede_desc, s.lat AS wlat, s.lon AS wlon, s.coordinate_raw FROM comandi k LEFT JOIN sedi_wauc s ON s.id=k.wauc_sede_id WHERE k.id=?', (mod,)).fetchone()
-    return render_template('admin_comandi.html', righe=righe, m=m, q=q)
+    return render_template('admin_comandi.html', righe=righe, m=m, q=q, tipo=tipo)
 
 @app.route('/admin/organico', methods=['GET', 'POST'])
 def admin_organico():
@@ -444,7 +449,7 @@ def admin_organico():
             return redirect(url_for('admin_organico'))
         righe = c.execute("SELECT * FROM organico WHERE ?='' OR email LIKE ? OR cognome LIKE ? OR nome LIKE ? ORDER BY cognome,nome LIMIT 500", (q, *[f'%{q}%']*3)).fetchall()
         m = c.execute('SELECT * FROM organico WHERE id=?', (mod,)).fetchone() if mod else None
-        comandi = c.execute('SELECT * FROM comandi ORDER BY nome').fetchall()
+        comandi = c.execute(ORDINE_SEDI).fetchall()
     return render_template('admin_organico.html', righe=righe, m=m, comandi=comandi, q=q)
 
 @app.route('/admin/audit')

@@ -35,12 +35,14 @@ PUMA ha la stessa grafica del sito <https://gesaddvvf.github.io/PUMA/>. In alto 
 | Area | Cosa contiene |
 |---|---|
 | **Home Page** | presentazione, aree, addestramenti di oggi, settori abilitati |
-| **Attività** (rosso) | Profilazione individuale (i tuoi dati da WAUC), Registrazione attività, Interventi reali, Pianificazione addestramenti collettivi, Attività formative |
+| **Attività** (rosso) | **Addestramenti di oggi** (con «➕ Mi aggiungo»), **Programma un addestramento** (giorno, tipologia, manovre previste), Calendario, **Piani di sicurezza**, Registrazione individuale, Interventi reali, Profilazione |
 | **Real Time** (verde) | Presenze Odierne, Mappa Real Time, Riepilogo Globale, Registro odierno |
 | **Documentazione** (blu) | Manuali P.U.M.A., Manuali di settore, Circolari di settore (gli stessi file Drive del sito), Archivio |
-| **Report Individuale** (giallo) | il tuo libretto: scadenze, collettivi e individuali |
-| **Report Collettivo** (giallo) | scadenze del personale per settore; solo per ROP, ROR, Nazionale e amministratori |
+| **Report Individuale** (giallo) | il tuo libretto, con le regole del sito: ore per corso nel periodo, quota collettive, manovre previste fatte e da fare, «in regola / non in regola» |
+| **Report Collettivo** (giallo) | per Comando o Direzione, tipologia e anno, come nel sito; più il **Cruscotto corsi**. Solo per ROP, ROR, Nazionale e amministratori |
 | **Area Comando** (bianco) | Impostazioni del Comando, Livelli utenti, Utenti e permessi, Organico, Configurazione e WAUC, Registro. Al posto della password del sito si entra in base ai propri permessi |
+
+**Come si usa un addestramento collettivo:** il responsabile lo *programma* per un giorno (tipologia e manovre previste) → quel giorno compare in *Addestramenti di oggi* e ognuno preme **Mi aggiungo** → il responsabile prepara il *piano di sicurezza* e a fine giornata convalida le presenze → ore e manovre finiscono nel libretto di ognuno.
 
 Il riquadro **Turno / Salto** mostra chi è in servizio adesso, come nel sito e in FireOps. Il menu **☰** contiene tutte le pagine, i tuoi dati e il pulsante **Esci**.
 
@@ -85,6 +87,12 @@ Per ripartire da zero con i dati di prova: doppio clic su **`AZZERA_PROVA.bat`**
 
    Il livello di visibilità (comando / regione / nazionale) si assegna da **Area Comando → Livelli utenti**.
 7. Per fermare PUMA **chiudi la finestra nera**. I dati restano in `data\`.
+
+### Corsi, ore minime e manovre previste (una volta, poi a ogni aggiornamento)
+I report usano gli stessi dati del sito: i fogli *Formazione*, *Manovre_PREVISTE* ed *Elenco_Filtrato* del Google Sheet «PUMA VVF Database Personale».
+1. Apri il foglio Google → **File → Scarica → Microsoft Excel (.xlsx)**.
+2. In PUMA: **Area Comando → Corsi e foglio PUMA → Importa** e scegli il file (oppure `py manage.py importa-foglio "file.xlsx"`).
+Gli altri fogli (registrazioni, piani) non vengono letti. I corsi in possesso arrivano da WAUC (specializzazioni, es. S1A, SBA, TPS…) e, per chi WAUC non trova, da *Elenco_Filtrato*.
 
 ### Velocizzare il primo accesso (consigliato)
 Senza indicazioni PUMA cerca la persona in WAUC in tutte le 107 province, e la prima volta può volerci un po'. Per cercare solo nel tuo Comando:

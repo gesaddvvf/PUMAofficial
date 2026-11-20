@@ -1,0 +1,11 @@
+<form method="get" class="puma-filtri selettore">
+  <label>Ente <select name="ente">
+    {% if nazionale %}<option value="tutti" {{ 'selected' if ente == 'tutti' }}>Tutta Italia</option>{% endif %}
+    {% if dirz %}<optgroup label="Direzioni regionali">{% for d in dirz %}<option value="d{{ d.id }}" {{ 'selected' if ente == 'd' ~ d.id }}>Direzione {{ d.nome }}</option>{% endfor %}</optgroup>{% endif %}
+    <optgroup label="Comandi e sedi">{% for s in sedi %}<option value="c{{ s.id }}" {{ 'selected' if ente == 'c' ~ s.id }}>{{ s.nome }}</option>{% endfor %}</optgroup>
+  </select></label>
+  {% if tip is defined %}<label>Tipologia <select name="tipologia">{% for x in tip %}<option value="{{ x.id }}" {{ 'selected' if t and t.id == x.id }}>{{ x.nome }}</option>{% endfor %}</select></label>{% endif %}
+  <label>Anno <input type="number" name="anno" value="{{ y }}" min="2000" max="2100" class="campo-anno"></label>
+  {% if tutti is defined %}<label class="puma-chk"><input type="checkbox" name="tutti" value="1" {{ 'checked' if tutti }}> anche chi non ha il corso</label>{% endif %}
+  <button>Mostra</button>
+</form>

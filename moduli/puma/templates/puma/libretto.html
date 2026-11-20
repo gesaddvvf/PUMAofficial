@@ -1,0 +1,46 @@
+{% extends 'base.html' %}{% block main %}{% include "puma/_nav.html" %}
+{% macro ore(h) %}{% if h is none %}—{% else %}{{ '%d:%02d'|format(h|int, ((h - h|int) * 60)|round|int) }}{% endif %}{% endmacro %}
+{% macro stato(s) %}<span class="stato stato-{{ s }}">{{ {'ok': 'In regola', 'ko': 'Non in regola', 'nd': 'Requisiti non definiti'}[s] }}</span>{% endmacro %}
+<div class="libretto-testa">
+  <div><h2 class="puma-h">Libretto di formazione · {{ chi['cognome'] }} {{ chi['nome'] }}</h2>
+    <p class="muted">{{ chi['qualifica'] or '' }}{% if chi['comando'] %} · {{ chi['comando'] }}{% endif %}{% if chi['distaccamento'] %} · {{ chi['distaccamento'] }}{% endif %}</p></div>
+  <div class="puma-filtri">Anno {% for a in lib.anni %}<a class="puma-btn{{ ' puma-on' if a == y }}" href="?anno={{ a }}{{ '&utente=' ~ chi['id'] if not proprio }}">{{ a }}</a>{% endfor %}</div>
+</div>
+
+<div class="tessere">
+  <div class="tessera area-rep"><div class="num">{{ ore(lib.anno.tot.ore) }}</div><h4>Ore di addestramento {{ y }}</h4><p>{{ lib.anno.tot.n }} attività in {{ lib.anno.tot.giorni }} giorni</p></div>
+  <div class="tessera area-att"><div class="num">{{ ore(lib.anno.coll.ore) }}</div><h4>Collettivi</h4><p>{{ lib.anno.coll.n }} addestramenti</p></div>
+  <div class="tessera area-rt"><div class="num">{{ ore(lib.anno.ind.ore) }}</div><h4>Individuali</h4><p>{{ lib.anno.ind.n }} registrazioni</p></div>
+  <div class="tessera area-doc"><div class="num">{{ lib.anno.int.n }}</div><h4>Interventi reali</h4><p>registrati nell'anno</p></div>
+</div>
+
+<h3>Ore per mese ({{ y }})</h3>
+{% set massimo = (lib.anno.mesi|max) or 1 %}
+<div class="mesi">{% for h in lib.anno.mesi %}<div class="mese" title="{{ ore(h) }} ore"><div class="barra" data-h="{{ (h / massimo * 100)|round|int }}"></div><span>{{ ['gen','feb','mar','apr','mag','giu','lug','ago','set','ott','nov','dic'][loop.index0] }}</span></div>{% endfor %}</div>
+
+<h3>Corsi e requisiti</h3>
+{% if not lib.corsi %}<p class="puma-empty">Nessun corso in possesso né attività registrate. I corsi in possesso arrivano da WAUC (specializzazioni) o dal foglio PUMA.</p>{% endif %}
+{% for s in lib.settori %}
+<section class="puma-evento area-rep">
+  <header><h4>{{ s.nome }}</h4><span>{{ stato(s.stato) }} <span class="muted">ore {{ ore(s.ore) }}{% if s.min_tot %} su {{ ore(s.min_tot) }} richieste{% endif %}{% if s.coll_tot %} · collettive {{ ore(s.ore_coll) }} su {{ ore(s.coll_tot) }}{% endif %}{% if s.interventi %} · {{ s.interventi }} interventi{% endif %} · dal {{ s.dal }}</span></span></header>
+  <table><tr><th></th><th>Tipologia</th><th>Possesso</th><th>Ore nel periodo</th><th>Collettive</th><th>Manovre previste</th><th>Stato</th></tr>
+  {% for r in s.righe %}<tr>
+    <td>{% if r.t.chiave %}<img class="logo-tip" src="{{ url_for('puma.static', filename='img/tipologie/' ~ r.t.chiave ~ '.svg') }}" alt="">{% endif %}</td>
+    <td><b>{{ r.t.nome }}</b><br><span class="muted">periodo {{ r.dal }}–{{ y }} · {{ r.n_att }} attività, {{ r.giorni }} giorni</span></td>
+    <td>{% if r.possesso %}✔ <span class="muted">{{ r.origine }}</span>{% else %}<span class="muted">no (solo attività)</span>{% endif %}</td>
+    <td>{{ ore(r.ore) }}{% if r.t.ore_minime %} / {{ ore(r.t.ore_minime) }}{% endif %}</td>
+    <td>{{ ore(r.ore_coll) }}{% if r.coll_min %} / {{ ore(r.coll_min) }}{% endif %}</td>
+    <td>{% if r.t.previste %}<details><summary>{{ r.fatte|length }} su {{ r.t.previste|length }}</summary>
+      <ul class="manovre">{% for m in r.t.previste %}{% set f = r.fatte.get(m.id) %}<li class="{{ 'fatta' if f else 'da-fare' }}">{{ '✔' if f else '○' }} {{ m.nome }}{% if m.lettera %} <span class="muted">({{ m.lettera }})</span>{% endif %}{% if f %} <span class="muted">· {{ f.n }} volte, ultima {{ f.ultima.strftime('%d/%m/%Y') }}</span>{% endif %}</li>{% endfor %}</ul></details>
+      {% else %}<span class="muted">—</span>{% endif %}</td>
+    <td>{{ stato(r.stato) }}</td></tr>{% endfor %}</table>
+</section>
+{% endfor %}
+
+<h3>Attività {{ y }}</h3>
+{% set anno_att = lib.att|selectattr('anno', 'equalto', y)|list %}
+{% if anno_att %}<table><tr><th>Data</th><th>Tipo</th><th>Attività</th><th>Ore</th><th>Manovre</th></tr>
+{% for a in anno_att|reverse %}<tr><td>{{ a.data.strftime('%d/%m/%Y') }}</td><td>{{ a.tipo }}{% if not a.convalidato %} <span class="muted">(da convalidare)</span>{% endif %}</td><td>{{ a.titolo }}</td><td>{{ ore(a.ore) }}</td><td>{{ a.manovre|length or '—' }}</td></tr>{% endfor %}</table>
+{% else %}<p class="puma-empty">Nessuna attività registrata nel {{ y }}.</p>{% endif %}
+<p class="muted piccolo">Regole come nel sito P.U.M.A.: ore nel periodo del corso (anno scelto più gli anni indicati in «Delta anni»), quota collettive sulle ore minime, manovre previste dal foglio Manovre_PREVISTE (le «C» valgono in qualunque addestramento del periodo). Ore minime e manovre si aggiornano importando il foglio Formazione.</p>
+{% endblock %}

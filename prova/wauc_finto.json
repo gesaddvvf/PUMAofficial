@@ -67,8 +67,8 @@
    },
    "specializzazioni": [
     {
-     "codice": "TPSS",
-     "descrizione": "Tecniche di Primo Soccorso Sanitario",
+     "codice": "TPS",
+     "descrizione": "TECNICHE PRIMO SOCCORSO",
      "dataInizioValidita": "2019-03-01",
      "dataFineValidita": null
     }
@@ -105,14 +105,14 @@
    },
    "specializzazioni": [
     {
-     "codice": "SAF1A",
-     "descrizione": "SAF 1A - Speleo Alpino Fluviale basico",
+     "codice": "S1A",
+     "descrizione": "SAF 1A",
      "dataInizioValidita": "2021-05-10",
      "dataFineValidita": null
     },
     {
-     "codice": "TPSS",
-     "descrizione": "Tecniche di Primo Soccorso Sanitario",
+     "codice": "TPS",
+     "descrizione": "TECNICHE PRIMO SOCCORSO",
      "dataInizioValidita": "2022-01-20",
      "dataFineValidita": null
     }
@@ -149,26 +149,26 @@
    },
    "specializzazioni": [
     {
-     "codice": "SAF1A",
-     "descrizione": "SAF 1A - Speleo Alpino Fluviale basico",
+     "codice": "S1A",
+     "descrizione": "SAF 1A",
      "dataInizioValidita": "2015-04-01",
      "dataFineValidita": null
     },
     {
-     "codice": "SAF1B",
-     "descrizione": "SAF 1B - Speleo Alpino Fluviale basico (fluviale)",
+     "codice": "SBA",
+     "descrizione": "SAF BASICO",
      "dataInizioValidita": "2016-06-01",
      "dataFineValidita": null
     },
     {
-     "codice": "SAF2A",
-     "descrizione": "SAF 2A - Speleo Alpino Fluviale avanzato",
+     "codice": "SAV",
+     "descrizione": "SAF AVANZATO",
      "dataInizioValidita": "2018-09-15",
      "dataFineValidita": null
     },
     {
-     "codice": "TPSS",
-     "descrizione": "Tecniche di Primo Soccorso Sanitario",
+     "codice": "TPS",
+     "descrizione": "TECNICHE PRIMO SOCCORSO",
      "dataInizioValidita": "2017-02-01",
      "dataFineValidita": null
     }
@@ -205,14 +205,14 @@
    },
    "specializzazioni": [
     {
-     "codice": "SAF2A",
-     "descrizione": "SAF 2A - Speleo Alpino Fluviale avanzato",
+     "codice": "SAV",
+     "descrizione": "SAF AVANZATO",
      "dataInizioValidita": "2012-10-01",
      "dataFineValidita": null
     },
     {
-     "codice": "NBCR1",
-     "descrizione": "NBCR 1° livello",
+     "codice": "N1",
+     "descrizione": "NBCR LIVELLO 1",
      "dataInizioValidita": "2014-03-01",
      "dataFineValidita": null
     }
@@ -249,8 +249,8 @@
    },
    "specializzazioni": [
     {
-     "codice": "USAR",
-     "descrizione": "USAR - ricerca e soccorso urbano",
+     "codice": "USL",
+     "descrizione": "URBAN SEARCH & RESCUE LIGHT",
      "dataInizioValidita": "2016-05-01",
      "dataFineValidita": null
     }
@@ -287,14 +287,14 @@
    },
    "specializzazioni": [
     {
-     "codice": "SAF1A",
-     "descrizione": "SAF 1A - Speleo Alpino Fluviale basico",
+     "codice": "S1A",
+     "descrizione": "SAF 1A",
      "dataInizioValidita": "2018-03-01",
      "dataFineValidita": "2025-12-31"
     },
     {
-     "codice": "NAUT",
-     "descrizione": "Soccorso acquatico - nautico",
+     "codice": "SA",
+     "descrizione": "SOCCORSO ACQUATICO",
      "dataInizioValidita": "2020-06-01",
      "dataFineValidita": null
     }
@@ -331,8 +331,8 @@
    },
    "specializzazioni": [
     {
-     "codice": "SAF1A",
-     "descrizione": "SAF 1A - Speleo Alpino Fluviale basico",
+     "codice": "S1A",
+     "descrizione": "SAF 1A",
      "dataInizioValidita": "2019-09-01",
      "dataFineValidita": null
     }
@@ -369,8 +369,8 @@
    },
    "specializzazioni": [
     {
-     "codice": "TPSS",
-     "descrizione": "Tecniche di Primo Soccorso Sanitario",
+     "codice": "TPS",
+     "descrizione": "TECNICHE PRIMO SOCCORSO",
      "dataInizioValidita": "2023-04-01",
      "dataFineValidita": null
     }
@@ -407,14 +407,14 @@
    },
    "specializzazioni": [
     {
-     "codice": "SAF1A",
-     "descrizione": "SAF 1A - Speleo Alpino Fluviale basico",
+     "codice": "S1A",
+     "descrizione": "SAF 1A",
      "dataInizioValidita": "2017-05-01",
      "dataFineValidita": null
     },
     {
-     "codice": "SAF2A",
-     "descrizione": "SAF 2A - Speleo Alpino Fluviale avanzato",
+     "codice": "SAV",
+     "descrizione": "SAF AVANZATO",
      "dataInizioValidita": "2020-10-01",
      "dataFineValidita": null
     }
@@ -423,74 +423,80 @@
  ],
  "specializzazioni": [
   {
-   "codice": "SAF1A",
-   "descrizione": "SAF 1A - Speleo Alpino Fluviale basico",
+   "codice": "S1A",
+   "descrizione": "SAF 1A",
    "dataInizioValidita": "2010-01-01",
    "dataFineValidita": null
   },
   {
-   "codice": "SAF1B",
-   "descrizione": "SAF 1B - Speleo Alpino Fluviale basico (fluviale)",
+   "codice": "S1B",
+   "descrizione": "SAF 1B",
    "dataInizioValidita": "2010-01-01",
    "dataFineValidita": null
   },
   {
-   "codice": "SAF2A",
-   "descrizione": "SAF 2A - Speleo Alpino Fluviale avanzato",
+   "codice": "SBA",
+   "descrizione": "SAF BASICO",
    "dataInizioValidita": "2010-01-01",
    "dataFineValidita": null
   },
   {
-   "codice": "SAF2B",
-   "descrizione": "SAF 2B - Speleo Alpino Fluviale avanzato (forre)",
+   "codice": "SAV",
+   "descrizione": "SAF AVANZATO",
    "dataInizioValidita": "2010-01-01",
    "dataFineValidita": null
   },
   {
-   "codice": "TPSS",
-   "descrizione": "Tecniche di Primo Soccorso Sanitario",
+   "codice": "S2A",
+   "descrizione": "SAF 2A",
    "dataInizioValidita": "2010-01-01",
    "dataFineValidita": null
   },
   {
-   "codice": "NBCR1",
-   "descrizione": "NBCR 1° livello",
+   "codice": "TPS",
+   "descrizione": "TECNICHE PRIMO SOCCORSO",
    "dataInizioValidita": "2010-01-01",
    "dataFineValidita": null
   },
   {
-   "codice": "NBCR2",
-   "descrizione": "NBCR 2° livello",
+   "codice": "N1",
+   "descrizione": "NBCR LIVELLO 1",
    "dataInizioValidita": "2010-01-01",
    "dataFineValidita": null
   },
   {
-   "codice": "TAS1",
-   "descrizione": "Topografia Applicata al Soccorso 1° livello",
+   "codice": "N2",
+   "descrizione": "NBCR LIVELLO 2",
    "dataInizioValidita": "2010-01-01",
    "dataFineValidita": null
   },
   {
-   "codice": "USAR",
-   "descrizione": "USAR - ricerca e soccorso urbano",
+   "codice": "T1",
+   "descrizione": "OPERATORE BASE TAS (TAS1)",
    "dataInizioValidita": "2010-01-01",
    "dataFineValidita": null
   },
   {
-   "codice": "SMZT",
-   "descrizione": "Sommozzatori",
+   "codice": "USL",
+   "descrizione": "URBAN SEARCH & RESCUE LIGHT",
    "dataInizioValidita": "2010-01-01",
    "dataFineValidita": null
   },
   {
-   "codice": "NAUT",
-   "descrizione": "Soccorso acquatico - nautico",
+   "codice": "SOM",
+   "descrizione": "SOMMOZZATORE",
    "dataInizioValidita": "2010-01-01",
    "dataFineValidita": null
   },
   {
-   "codice": "CINO",
-   "descrizione": "Cinofili",
+   "codice": "SA",
+   "descrizione": "SOCCORSO ACQUATICO",
+   "dataInizioValidita": "2010-01-01",
+   "dataFineValidita": null
+  },
+  {
+   "codice": "CIN",
+   "descrizione": "CINOFILO",
    "dataInizioValidita": "2010-01-01",
    "dataFineValidita": null
   }

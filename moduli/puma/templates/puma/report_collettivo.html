@@ -1,12 +1,21 @@
 {% extends 'base.html' %}{% block main %}{% include "puma/_nav.html" %}
-<h2 class="puma-h">Report collettivo <small>scadenze del personale · {{ ambito }}</small></h2>
-{% for x in sezioni %}
-<section class="puma-evento area-rep">
-  <header><h4>{{ x.s.codice }} · {{ x.s.nome }}</h4><span class="muted">{{ x.sc|length }} abilitazioni · <span class="puma-scad">{{ x.scadute }} scadute</span> · <span class="puma-in-scad">{{ x.in_scadenza }} entro 60 giorni</span></span></header>
-  {% if x.sc %}<table><tr><th>Nominativo</th><th>Livello</th><th>Comando</th><th>Ultimo addestramento</th><th>Scadenza</th></tr>
-  {% for r in x.sc|sort(attribute='giorni') %}<tr><td>{{ r.username }}</td><td>{{ r.livello }}</td><td>{{ nomi.get(r.comando_id, '') }}</td><td>{{ r.ultima|datait }}</td>
-    <td class="{{ 'puma-scad' if r.giorni < 0 else 'puma-in-scad' if r.giorni <= 60 else '' }}">{{ r.scadenza|datait }} ({{ r.giorni }} gg)</td></tr>{% endfor %}</table>
-  {% else %}<p class="puma-empty">Nessun addestramento registrato per questo settore.</p>{% endif %}
-</section>
-{% else %}<p class="puma-empty">Non ci sono settori di cui puoi vedere il report collettivo.</p>{% endfor %}
+{% macro ore(h) %}{% if h is none %}—{% else %}{{ '%d:%02d'|format(h|int, ((h - h|int) * 60)|round|int) }}{% endif %}{% endmacro %}
+<h2 class="puma-h">Report collettivo per tipologia <small>{{ t.nome if t else '' }} · {{ nome_ente }} · {{ y }}</small></h2>
+{% include "puma/_selettore_ente.html" %}
+<div class="tessere">
+  <div class="tessera area-rep"><div class="num">{{ stat.persone }}</div><h4>Nominativi</h4><p>con il corso o con attività nel periodo</p></div>
+  <div class="tessera area-rt"><div class="num">{{ stat.ok }}</div><h4>In regola</h4><p>ore minime e quota collettive raggiunte</p></div>
+  <div class="tessera area-att"><div class="num">{{ stat.ko }}</div><h4>Non in regola</h4><p>mancano ore o collettivi</p></div>
+  <div class="tessera area-neu"><div class="num">{{ stat.nd }}</div><h4>Non valutabili</h4><p>requisiti non definiti o nessuna attività</p></div>
+</div>
+{% if t %}<p class="muted piccolo">Requisiti di «{{ t.nome }}»: {% if t.ore_minime %}{{ ore(t.ore_minime) }} ore{% if t.quota_collettive %}, di cui {{ (t.quota_collettive * 100)|round|int }}% in collettivo{% endif %}, periodo {{ y - (t.delta_anni or 0) }}–{{ y }}{% else %}non ancora definiti (importa il foglio Formazione){% endif %} · {{ t.previste|length }} manovre previste.</p>{% endif %}
+<table><tr><th>Nominativo</th><th>Sede</th><th>Possesso</th><th>Ore</th><th>Collettive</th><th>Manovre</th><th>Stato</th></tr>
+{% for x in righe %}{% set r = x.r %}<tr>
+  <td><a href="{{ url_for('puma.profilo', utente=x.p['id'], anno=y) }}"><b>{{ x.p['cognome'] }} {{ x.p['nome'] }}</b></a><br><span class="muted">{{ x.p['qualifica'] or '' }}</span></td>
+  <td>{{ x.p['comando'] or '' }}</td>
+  <td>{% if r and r.possesso %}✔ <span class="muted">{{ r.origine }}</span>{% else %}—{% endif %}</td>
+  <td>{{ ore(r.ore) if r else '—' }}</td><td>{{ ore(r.ore_coll) if r else '—' }}</td>
+  <td>{% if r and r.t.previste %}{{ r.fatte|length }}/{{ r.t.previste|length }}{% else %}—{% endif %}</td>
+  <td>{% if r %}<span class="stato stato-{{ r.stato }}">{{ {'ok': 'In regola', 'ko': 'Non in regola', 'nd': 'n.d.'}[r.stato] }}</span>{% else %}<span class="muted">nessun dato</span>{% endif %}</td></tr>
+{% else %}<tr><td colspan="7" class="puma-empty">Nessun nominativo con questa tipologia nel perimetro scelto.</td></tr>{% endfor %}</table>
 {% endblock %}

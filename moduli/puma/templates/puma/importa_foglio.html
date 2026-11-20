@@ -1,0 +1,12 @@
+{% extends 'base.html' %}{% block main %}{% include "puma/_nav.html" %}
+<h2 class="puma-h">Foglio PUMA: corsi, requisiti e manovre previste</h2>
+<p class="muted">Come il sito P.U.M.A., i report usano i fogli <b>Formazione</b> (ore minime, quota collettive, anni), <b>Manovre_PREVISTE</b> e <b>Elenco_Filtrato</b> (corsi in possesso) del «PUMA VVF Database Personale». Scaricalo da Google con <b>File → Scarica → Microsoft Excel (.xlsx)</b> e caricalo qui: gli altri fogli (registrazioni, piani) non vengono letti.</p>
+<form method="post" enctype="multipart/form-data" class="puma-form area-com"><input type="hidden" name="csrf" value="{{ csrf }}"><h3>Importa il file .xlsx</h3>
+<input type="file" name="file" accept=".xlsx" required><button>Importa</button></form>
+<h3>Tipologie ({{ righe|length }}) · corsi in possesso dal foglio: {{ n_poss[0] }} persone{% if n_poss[1] %} (import del {{ n_poss[1][:10]|datait }}){% endif %}</h3>
+<table><tr><th></th><th>Tipologia</th><th>Sigla</th><th>Ore minime</th><th>Collettive</th><th>Anni</th><th>Manovre</th><th>Codici WAUC</th><th>Dal foglio</th></tr>
+{% for t in righe %}<tr><td>{% if t.chiave %}<img class="logo-tip" src="{{ url_for('puma.static', filename='img/tipologie/' ~ t.chiave ~ '.svg') }}" alt="">{% endif %}</td>
+<td>{{ t.nome }}{% if t.di_tutti %} <span class="muted">(di tutti)</span>{% endif %}</td><td>{{ t.sigla or '' }}</td><td>{{ t.ore_minime|round(1) if t.ore_minime else '—' }}</td>
+<td>{{ ((t.quota_collettive or 0) * 100)|round|int ~ '%' if t.quota_collettive else '—' }}</td><td>{{ t.delta_anni or 0 }}</td><td>{{ n_man.get(t.id, 0) }}</td>
+<td class="muted">{{ t.codici_wauc or '' }}</td><td>{{ t.da_foglio[:10]|datait if t.da_foglio else '—' }}</td></tr>{% endfor %}</table>
+{% endblock %}
