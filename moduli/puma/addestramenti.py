@@ -381,7 +381,8 @@ def individuali():
 def api_manovre(lid):
     current_user()
     lid = db().execute("SELECT COALESCE(equivale_a, id) FROM puma_livelli WHERE id=?", (lid,)).fetchone() or [lid]
-    return jsonify([dict(r) for r in db().execute("SELECT id,nome,ciclo,lettera FROM puma_manovre WHERE livello_id IN (?, ?) AND COALESCE(lettera, '')<>'N' ORDER BY ordine,id", (lid[0], request.view_args["lid"]))])
+    # anche le (N): attività generiche (le ore contano) che si possono indicare, ma non sono manovre previste nel libretto
+    return jsonify([dict(r) for r in db().execute("SELECT id,nome,ciclo,lettera FROM puma_manovre WHERE livello_id IN (?, ?) ORDER BY COALESCE(lettera,'')='N', ordine, id", (lid[0], request.view_args["lid"]))])
 
 TIPI_INTERVENTO = ["Soccorso a persona", "Ricerca persona dispersa", "Recupero in ambiente impervio", "Soccorso in acqua", "Crollo / dissesto",
                    "Incendio", "Incidente stradale", "Sostanze pericolose", "Supporto ad altri enti", "Altro"]

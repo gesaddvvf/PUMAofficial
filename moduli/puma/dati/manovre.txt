@@ -1,4 +1,6 @@
 # Manovre per corso/specializzazione: corso|ciclo|numero|manovra   (corso: AVA=SAF Avanzato, BAS=SAF Basico, TPS=TPSS; per TPS il "ciclo" è la Parte)
+# Come nel foglio Manovre_PREVISTE: lettera finale (A)/(B) manovre previste, (C) si conta con ogni collettivo, (N) attività generica (le ore contano, non è una manovra prevista).
+# Le righe mancanti vengono aggiunte all'avvio; se il foglio PUMA è stato importato, per quel corso vale il foglio.
 AVA|III|26|Recupero con la tecnica del contrappeso
 AVA|II|27|Autosoccorso nella progressione in verticale al 1° e al 2° operatore
 AVA|II|28|Discesa e accompagnamento della vittima in corda doppia
@@ -32,6 +34,10 @@ BAS|I|2|Esecuzione di nodi e ancoraggi (A)
 BAS|I|3|Movimentazione autonoma su corda singola e frazionamenti (A)
 BAS|I|4|Progressione dal basso (B)
 BAS|I|5|Svincolo e accompagnamento con l'impiego di paranco (B)
+BAS|I|6|Addestramento provinciale di gruppo (C)
+BAS|N|7|Manovra autoscala-operatore-barella (N)
+BAS|N|8|Calata o recupero di una barella su piani inclinati (N)
+BAS|N|9|Kit di assicurazione ed evacuazione individuale - Sacco tetto (N)
 TPS|I|1|BLS-D - Basic Life Support and Defibillation
 TPS|I|2|SVT - Supporto Vitale al Traumatizzato
 TPS|II|3|PBLS-D - Pediatric Basic Life Support and Defibillation

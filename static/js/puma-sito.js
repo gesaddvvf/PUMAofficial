@@ -1,5 +1,5 @@
 // P.U.M.A. — comportamento dell'intestazione come nel sito gesaddvvf.github.io/PUMA:
-// menu laterale (☰), turno e salto in servizio adesso, ricerca nella documentazione.
+// menu laterale (☰), turno e salto della persona (o quello in servizio adesso), ricerca nella documentazione.
 (function () {
   var $ = function (id) { return document.getElementById(id); };
 
@@ -78,13 +78,37 @@
     var i = (((Math.round((Date.UTC(y, m - 1, g) - RIFERIMENTO_CICLO) / MS_GIORNO)) % GIORNI_CICLO) + GIORNI_CICLO) % GIORNI_CICLO * 3;
     return { notteUscente: SEQUENZA_TURNI[i], giorno: SEQUENZA_TURNI[i + 1], notte: SEQUENZA_TURNI[i + 2] };
   }
+  // Con l'utente collegato la casella mostra il SUO turno e salto (dal profilo), con lo stato di adesso
+  // (in servizio / di salto / libero) e il prossimo servizio; senza turno nel profilo mostra il turno in servizio adesso.
+  function servizioDi(lettera, salto, codice) {   // codice del turno in servizio (es. B4): 'servizio', 'salto' o ''
+    if (!codice || codice.charAt(0) !== lettera) return '';
+    return salto && codice.slice(1) === salto ? 'salto' : 'servizio';
+  }
   function aggiornaTurno() {
-    if (!$('turno-box')) return;
+    var box = $('turno-box'); if (!box) return;
     var r = oraRoma(new Date()), T = turniDelGiorno(r.y, r.m, r.g), min = r.h * 60 + r.min;
     var s = min < 480 ? [T.notteUscente, 'notturno fino alle 08'] : min < 1200 ? [T.giorno, 'diurno 08–20'] : [T.notte, 'notturno 20–08'];
-    $('turno-lettera').textContent = s[0].charAt(0);
-    $('turno-salto').textContent = s[0].slice(1);
-    $('turno-box').title = 'In servizio ora: turno ' + s[0].charAt(0) + ', salto ' + s[0].slice(1) + ' (' + s[1] + ')\nOggi: diurno ' + T.giorno + ' · notturno ' + T.notte;
+    var ora = 'In servizio ora: turno ' + s[0].charAt(0) + ', salto ' + s[0].slice(1) + ' (' + s[1] + ')\nOggi: diurno ' + T.giorno + ' · notturno ' + T.notte;
+    var mio = (box.getAttribute('data-turno') || '').trim().toUpperCase().charAt(0);
+    if (!mio || !/[A-D]/.test(mio)) {
+      $('turno-lettera').textContent = s[0].charAt(0); $('turno-salto').textContent = s[0].slice(1); box.title = ora; return;
+    }
+    var salto = ((box.getAttribute('data-salto') || '').match(/\d+/) || [''])[0];
+    $('turno-etichetta').textContent = 'Mio turno';
+    $('turno-lettera').textContent = mio; $('turno-salto').textContent = salto || '–';
+    var adesso = servizioDi(mio, salto, s[0]);
+    box.classList.toggle('in-servizio', adesso === 'servizio'); box.classList.toggle('di-salto', adesso === 'salto');
+    // prossimo servizio (diurno 08 / notturno 20) nei prossimi 32 giorni, saltando il proprio salto
+    var prossimo = '', base = Date.UTC(r.y, r.m - 1, r.g);
+    for (var g = 0; g < 33 && !prossimo; g++) {
+      var d = new Date(base + g * MS_GIORNO), t = turniDelGiorno(d.getUTCFullYear(), d.getUTCMonth() + 1, d.getUTCDate());
+      var data = ('0' + d.getUTCDate()).slice(-2) + '/' + ('0' + (d.getUTCMonth() + 1)).slice(-2);
+      if (!(g === 0 && min >= 480) && servizioDi(mio, salto, t.giorno) === 'servizio') prossimo = 'diurno ' + data + ' 08–20';
+      else if (!(g === 0 && min >= 1200) && servizioDi(mio, salto, t.notte) === 'servizio') prossimo = 'notturno ' + data + ' 20–08';
+    }
+    box.title = 'Il tuo turno: ' + mio + (salto ? ', salto ' + salto : '') + '\n' +
+      (adesso === 'servizio' ? 'Adesso sei IN SERVIZIO (' + s[1] + ')' : adesso === 'salto' ? 'Adesso il tuo turno è in servizio ma sei DI SALTO' : 'Adesso sei libero') +
+      (prossimo && adesso !== 'servizio' ? '\nProssimo servizio: ' + prossimo : '') + '\n\n' + ora;
   }
 
   /* ---------- documentazione: ricerca per titolo o settore ---------- */

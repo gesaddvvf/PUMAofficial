@@ -13,10 +13,12 @@
       if (!r.length) { box.appendChild(testo('Nessuna manovra prevista per questa tipologia (si aggiungono importando il foglio Manovre_PREVISTE o da Impostazioni).')); return; }
       var ciclo = null;
       r.forEach(function (x) {
-        if (x.ciclo && x.ciclo !== ciclo) { ciclo = x.ciclo; var h = document.createElement('div'); h.className = 'man-ciclo'; h.textContent = x.ciclo; box.appendChild(h); }
+        var gruppo = x.lettera === 'N' ? 'Altre attività (N) — le ore contano, non sono manovre previste' : (x.ciclo ? 'Ciclo ' + x.ciclo : null);
+        if (gruppo && gruppo !== ciclo) { ciclo = gruppo; var h = document.createElement('div'); h.className = 'man-ciclo'; h.textContent = gruppo; box.appendChild(h); }
         var l = document.createElement('label'); l.className = 'puma-chk';
         var i = document.createElement('input'); i.type = 'checkbox'; i.name = 'manovre'; i.value = x.nome;
-        l.appendChild(i); l.appendChild(document.createTextNode(' ' + x.nome + (x.lettera ? ' (' + x.lettera + ')' : '')));
+        var gia = /\([A-Z]\)\s*$/.test(x.nome);
+        l.appendChild(i); l.appendChild(document.createTextNode(' ' + x.nome + (x.lettera && !gia ? ' (' + x.lettera + ')' : '')));
         box.appendChild(l);
       });
     });

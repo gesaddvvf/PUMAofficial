@@ -293,3 +293,7 @@ p.intro.centro { text-align: center; margin: 18px auto 0; max-width: 760px; }
 .area-per  { --ac: #8e24aa; --acl: #ce93d8; --acf: #fff; }      /* Area personale: viola */
 @media (max-width: 560px) { .hero.hero-compatto { gap: 10px; } .hero-compatto .hero-logo img { width: 56px; } }
 [hidden] { display: none !important; }
+/* turno della persona: pallino verde se in servizio, arancio se di salto */
+#turno-stato { display: none; width: 9px; height: 9px; border-radius: 50%; align-self: center; }
+#turno-box.in-servizio #turno-stato { display: inline-block; background: #43a047; box-shadow: 0 0 6px #43a047; }
+#turno-box.di-salto #turno-stato { display: inline-block; background: #fb8c00; }

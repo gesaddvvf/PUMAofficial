@@ -13,8 +13,8 @@
       <h2>Piattaforma Unificata Monitoraggio Addestramenti{% if prova %} <span class="badge-prova" title="Utenti fittizi e dati WAUC simulati: nessun dato reale">MODALITÀ PROVA</span>{% endif %}</h2>
     </div>
   </div>
-  <div id="turno-box" title="">
-    <span class="t-lbl">Turno</span><b id="turno-lettera">–</b><span class="t-lbl">Salto</span><b id="turno-salto">–</b>
+  <div id="turno-box" title=""{% if utente and utente['turno'] %} data-turno="{{ utente['turno'] }}" data-salto="{{ utente['salto_turno'] or '' }}"{% endif %}>
+    <span class="t-lbl" id="turno-etichetta">Turno</span><b id="turno-lettera">–</b><span class="t-lbl">Salto</span><b id="turno-salto">–</b><i id="turno-stato" aria-hidden="true"></i>
   </div>
   {% if utente and utente['stato']=='attivo' %}
   <nav id="nav-buttons">

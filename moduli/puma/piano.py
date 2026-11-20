@@ -1,5 +1,5 @@
 """Piano di sicurezza P.U.M.A.: meteo a passi di 3 h, organizzazione, matrici di rischio, PDF, invio alle SO."""
-import json, os, sqlite3, urllib.parse, urllib.request
+import json, os, re, sqlite3, urllib.parse, urllib.request
 from datetime import date, datetime
 from flask import render_template, request, redirect, url_for, flash, abort, Response, current_app
 from . import bp as puma_bp, current_user, can_write, get_db
@@ -22,15 +22,23 @@ def seed():
                 if p[0] == "M": m = p[1]; d.execute("INSERT INTO puma_matrici(codice,nome) VALUES(?,?)", (p[1], p[2])); n = 0
                 elif p[0] == "F": n += 1; f = d.execute("INSERT INTO puma_fattori(matrice,codice,descrizione,peso_max,ordine) VALUES(?,?,?,?,?)", (m, p[1], p[2], int(p[3]), n)).lastrowid; o = 0
                 elif p[0] == "O": o += 1; d.execute("INSERT INTO puma_opzioni(fattore_id,testo,punteggio,ordine) VALUES(?,?,?,?)", (f, p[1], int(p[2]), o))
-        if not d.execute("SELECT 1 FROM puma_manovre WHERE codice IS NOT NULL LIMIT 1").fetchone():
-            liv = {r["nome"]: r["id"] for r in d.execute("SELECT id,nome FROM puma_livelli")}
-            for riga in open(os.path.join(DATI, "manovre.txt"), encoding="utf-8"):
-                if riga.startswith("#") or not riga.strip(): continue
-                corso, ciclo, nr, nome = riga.rstrip("\n").split("|"); nr = int(nr); lid = liv.get(CORSO_LIVELLO[corso])
-                if not lid: continue
-                et = f"{ciclo} {'Parte' if corso == 'TPS' else 'Ciclo'} - {nr} - {nome}"
-                d.execute("INSERT OR IGNORE INTO puma_manovre(livello_id,nome,ordine,corso,codice,ciclo,numero) VALUES(?,?,?,?,?,?,?)",
-                          (lid, et, ROM[ciclo] * 100 + nr, corso, f"{corso}_{ciclo}_{nr:03d}", ciclo, nr))
+        # manovre di serie (dati/manovre.txt): aggiunge quelle che mancano, tranne nei corsi importati dal foglio PUMA
+        liv = {r["nome"]: r["id"] for r in d.execute("SELECT id,nome FROM puma_livelli")}
+        dal_foglio = {r[0] for r in d.execute("SELECT DISTINCT livello_id FROM puma_manovre WHERE da_foglio=1")}
+        for riga in open(os.path.join(DATI, "manovre.txt"), encoding="utf-8"):
+            if riga.startswith("#") or not riga.strip(): continue
+            corso, ciclo, nr, nome = riga.rstrip("\n").split("|"); nr = int(nr); lid = liv.get(CORSO_LIVELLO[corso])
+            if not lid or lid in dal_foglio: continue
+            cod = f"{corso}_{ciclo}_{nr:03d}"
+            if d.execute("SELECT 1 FROM puma_manovre WHERE livello_id=? AND codice=?", (lid, cod)).fetchone(): continue
+            et = f"{ciclo} {'Parte' if corso == 'TPS' else 'Ciclo'} - {nr} - {nome}"
+            m = re.search(r"\(([A-Z])\)\s*$", nome)
+            d.execute("INSERT INTO puma_manovre(livello_id,nome,ordine,corso,codice,ciclo,numero,lettera,testo) VALUES(?,?,?,?,?,?,?,?,?)",
+                      (lid, et, ROM.get(ciclo, 9) * 100 + nr, corso, cod, ciclo, nr, m.group(1) if m else None, et))
+        # lettera (A/B/C/N) anche sulle manovre di serie caricate prima
+        for r in d.execute("SELECT id, nome FROM puma_manovre WHERE lettera IS NULL OR lettera=''").fetchall():
+            m = re.search(r"\(([A-Z])\)\s*$", r["nome"] or "")
+            if m: d.execute("UPDATE puma_manovre SET lettera=? WHERE id=?", (m.group(1), r["id"]))
         d.commit()
     except sqlite3.IntegrityError:
         d.rollback()   # un altro processo ha già importato
