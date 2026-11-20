@@ -35,8 +35,15 @@ def presenze():
 
 
 def comandi_visibili(u):
-    """Sedi di cui l'utente vede i report: None = tutte (Nazionale, amministratori); Direzione = sedi della Direzione; altrimenti la propria."""
+    """Sedi di cui l'utente vede i report: None = tutte (Nazionale, amministratori); Direzione = sedi della Direzione; altrimenti la propria.
+    Con i livelli di accesso v1.3: le sedi dei ruoli con capacità «report» (più la propria)."""
+    from .ruoli import accessi
     if u['ruolo'] == 'ADMIN' or u['livello'] == 'nazionale': return None
+    acc = accessi()
+    if acc.righe:
+        s = acc.sedi('report')
+        if s is None: return None
+        if s: return sorted(set(s) | {u['comando_id']})
     if u['livello'] == 'regione':
         return [r[0] for r in get_db().execute('SELECT comando_id FROM puma_comando_dir WHERE direzione_id=?', (u['direzione_id'],))]
     return [u['comando_id']]
@@ -77,11 +84,13 @@ def report_collettivo():
     from .navigazione import permessi
     from flask import g, current_app
     u = current_user()
-    if not permessi(g.utente, current_app.extensions['puo'])['comando']: abort(403)
+    if not permessi(g.utente, current_app.extensions['puo'])['report']: abort(403)
     ente, nome_ente, sedi_id, sedi, dirz = _perimetro(u)
     y = request.args.get('anno', type=int) or date.today().year
     cat = L.Catalogo(get_db())
-    tip = [t for t in cat.tip.values() if t['corso']]
+    from .ruoli import accessi
+    aree = accessi().aree('report') if accessi().righe else None
+    tip = [t for t in cat.tip.values() if t['corso'] and (aree is None or (t['settore'] or '').upper() in aree)]
     tip.sort(key=lambda t: (t['ordine'], t['nome']))
     tid = request.args.get('tipologia', type=int) or (tip[0]['id'] if tip else None)
     tutti = request.args.get('tutti') == '1'
@@ -103,11 +112,14 @@ def cruscotto():
     from . import libretto as L
     from .navigazione import permessi
     u = current_user()
-    if not permessi(g.utente, current_app.extensions['puo'])['comando']: abort(403)
+    if not permessi(g.utente, current_app.extensions['puo'])['report']: abort(403)
     ente, nome_ente, sedi_id, sedi, dirz = _perimetro(u)
     y = request.args.get('anno', type=int) or date.today().year
     cat = L.Catalogo(get_db())
-    tab = {t['id']: dict(t=t, possesso=0, ok=0, ko=0, nd=0, senza=0, ore=0.0, manovre_fatte=0, manovre_tot=0) for t in cat.tip.values() if t['corso']}
+    from .ruoli import accessi
+    aree = accessi().aree('report') if accessi().righe else None
+    tab = {t['id']: dict(t=t, possesso=0, ok=0, ko=0, nd=0, senza=0, ore=0.0, manovre_fatte=0, manovre_tot=0) for t in cat.tip.values()
+           if t['corso'] and (aree is None or (t['settore'] or '').upper() in aree)}
     persone = L.persone_ente(get_db(), sedi_id)
     for p in persone:
         for r in L.libretto(get_db(), p, y, cat)['corsi']:
@@ -159,13 +171,15 @@ def attivita_oggi():
 def piani():
     """Attività · Piani di sicurezza: gli addestramenti del mio Comando da oggi in avanti (e degli ultimi 30 giorni) con lo stato del piano."""
     from datetime import timedelta
-    from .addestramenti import can_write
+    from . import responsabile
+    from .ruoli import accessi
     u = current_user()
-    if not can_write(u): abort(403)
+    if not (accessi().puo('piano') or responsabile(u, {'comando_id': u['comando_id'], 'tipologia': ''})): abort(403)
     dal = (date.today() - timedelta(days=30)).isoformat()
     righe = get_db().execute("""SELECT e.*, l.nome AS tipologia_nome, l.chiave, (SELECT COUNT(*) FROM puma_checkin c WHERE c.evento_id=e.id) AS presenti
         FROM puma_eventi e LEFT JOIN puma_livelli l ON l.id=e.livello_id WHERE e.comando_id=? AND e.data>=? ORDER BY e.data, e.ora_inizio""",
         (u['comando_id'], dal)).fetchall()
+    righe = [r for r in righe if responsabile(u, r)]
     return render_template('puma/piani.html', righe=righe, oggi=date.today().isoformat())
 
 

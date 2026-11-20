@@ -10,23 +10,32 @@ DATI = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'dati')
 def seed_tipologie(d):
     """Carica (una volta, poi solo i campi vuoti) tipologie, categorie e collegamenti WAUC da dati/tipologie.json."""
     with open(os.path.join(DATI, 'tipologie.json'), encoding='utf-8') as f: t = json.load(f)
-    for cod, nome in t['categorie']:
-        d.execute('INSERT INTO puma_settori(codice, nome) VALUES(?,?) ON CONFLICT(codice) DO UPDATE SET nome=excluded.nome', (cod, nome))
+    # le aree modificate a mano (Area Comando -> Aree corsi) non vengono toccate
+    for i, (cod, nome) in enumerate(t['categorie']):
+        d.execute('INSERT INTO puma_settori(codice, nome, ordine) VALUES(?,?,?) ON CONFLICT(codice) DO UPDATE SET nome=excluded.nome, ordine=excluded.ordine '
+                  'WHERE puma_settori.modificata=0', (cod, nome, i + 1))
     for x in t['tipologie']:
         r = d.execute('SELECT * FROM puma_livelli WHERE nome=?', (x['nome'],)).fetchone()
         if not r:
             d.execute('INSERT INTO puma_livelli(settore, nome, mesi_validita) VALUES(?,?,12)', (x['categoria'], x['nome']))
             r = d.execute('SELECT * FROM puma_livelli WHERE nome=?', (x['nome'],)).fetchone()
-        d.execute("""UPDATE puma_livelli SET settore=?, chiave=?, corso=?, di_tutti=?, ordine=?, sigla=COALESCE(sigla, ?),
+        d.execute("""UPDATE puma_livelli SET settore=CASE WHEN area_manuale=1 THEN settore ELSE ? END, chiave=?, corso=?, di_tutti=?, ordine=?, sigla=COALESCE(sigla, ?),
                      codici_wauc=COALESCE(codici_wauc, ?) WHERE id=?""",
                   (x['categoria'], x['chiave'], x['corso'], x['di_tutti'], x['ordine'], x['sigla'], x['codici_wauc'] or None, r['id']))
     for da, a in t['equivalenti'].items():
         d.execute('UPDATE puma_livelli SET equivale_a=(SELECT id FROM puma_livelli WHERE nome=?) WHERE nome=?', (a, da))
 
 
-def tipologie(d, solo_corsi=False):
-    return d.execute('SELECT l.*, s.nome AS categoria FROM puma_livelli l LEFT JOIN puma_settori s ON s.codice=l.settore '
-                     + ('WHERE l.corso=1 ' if solo_corsi else '') + 'ORDER BY l.ordine, l.sovraordinazione, l.nome').fetchall()
+def tipologie(d, solo_corsi=False, attive=False, aree=None):
+    """Tipologie (corsi) con il nome dell'area. attive: solo corsi e aree attivi; aree: solo queste aree corsi (None = tutte)."""
+    w = ['1=1']
+    if solo_corsi: w.append('l.corso=1')
+    if attive: w.append('l.attiva=1 AND COALESCE(s.attiva, 1)=1')
+    par = []
+    if aree is not None:
+        w.append('l.settore IN (%s)' % ','.join('?' * len(aree)) if aree else '0'); par += list(aree)
+    return d.execute('SELECT l.*, s.nome AS categoria FROM puma_livelli l LEFT JOIN puma_settori s ON s.codice=l.settore WHERE '
+                     + ' AND '.join(w) + ' ORDER BY s.ordine, l.ordine, l.sovraordinazione, l.nome', par).fetchall()
 
 
 def equivalente(d, lid):

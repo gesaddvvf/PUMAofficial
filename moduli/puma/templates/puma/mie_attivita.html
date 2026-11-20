@@ -1,0 +1,12 @@
+{% extends 'base.html' %}{% block main %}{% include "puma/_nav.html" %}
+<h2 class="puma-h">Le mie attività <small>{{ y }} · {{ righe|length }} attività · {{ ore|round(1) }} ore</small></h2>
+<form method="get" class="filtri">
+  <label>Anno <select name="anno" class="auto-invio">{% for a in anni %}<option {{ 'selected' if a == y }}>{{ a }}</option>{% endfor %}</select></label>
+  <label>Tipo <select name="tipo" class="auto-invio"><option value="">Tutte</option>{% for k, t in [('collettivo', 'Addestramenti collettivi'), ('individuale', 'Attività individuali'), ('intervento', 'Interventi reali')] %}<option value="{{ k }}" {{ 'selected' if tipo == k }}>{{ t }}</option>{% endfor %}</select></label>
+  <noscript><button>Filtra</button></noscript>
+</form>
+<table class="puma-tab"><thead><tr><th>Data</th><th>Tipo</th><th>Attività</th><th>Area</th><th>Ore</th><th>Stato</th></tr></thead><tbody>
+{% for a in righe %}<tr><td>{{ a.giorno|datait }}</td><td>{{ {'collettivo': 'Collettivo', 'individuale': 'Individuale', 'intervento': 'Intervento'}[a.tipo] }}</td>
+  <td>{{ a.titolo }}</td><td>{{ a.settore }}</td><td>{{ (a.ore|round(1)) if a.ore is not none else '—' }}</td><td>{{ 'convalidato' if a.convalidato else 'da convalidare' }}</td></tr>
+{% else %}<tr><td colspan="6" class="puma-empty">Nessuna attività nel periodo.</td></tr>{% endfor %}</tbody></table>
+{% endblock %}

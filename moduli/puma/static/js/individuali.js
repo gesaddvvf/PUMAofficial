@@ -8,7 +8,7 @@
     if (tipo) tipo.value = (o && o.dataset.s) || '';
     if (!box) return;
     var legenda = box.querySelector('legend'); box.textContent = ''; if (legenda) box.appendChild(legenda);
-    if (!liv.value) { box.appendChild(testo('Scegli prima la tipologia.')); return; }
+    if (!liv.value) { box.appendChild(testo('Scegli prima il corso.')); return; }
     fetch(liv.dataset.url.replace(/0$/, liv.value), { credentials: 'same-origin' }).then(function (r) { return r.json(); }).then(function (r) {
       if (!r.length) { box.appendChild(testo('Nessuna manovra prevista per questa tipologia (si aggiungono importando il foglio Manovre_PREVISTE o da Impostazioni).')); return; }
       var ciclo = null;

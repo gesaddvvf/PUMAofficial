@@ -3,7 +3,7 @@
 <form method="post" class="box box-largo"><input type="hidden" name="csrf" value="{{ csrf }}">
 <label for="st">Stato</label><select id="st" name="stato">{% for s in ['in_attesa','attivo','disabilitato'] %}<option value="{{ s }}" {{ 'selected' if u['stato']==s }}>{{ s.replace('_',' ') }}</option>{% endfor %}</select>
 <label for="co">Comando</label><select id="co" name="comando_id"><option value="">—</option>{% for k in comandi %}<option value="{{ k['id'] }}" {{ 'selected' if u['comando_id']==k['id'] }}>{{ k['nome'] }}</option>{% endfor %}</select>
-<label><input type="checkbox" name="is_admin" {{ 'checked' if u['is_admin'] }}> Amministratore di P.U.M.A. (accesso a tutti i settori e all'amministrazione)</label>
+<label><input type="checkbox" name="is_admin" {{ 'checked' if u['is_admin'] }}> Amministratore Generale (tutta Italia, tutte le aree corsi e l'amministrazione)</label>
 {% if wauc %}<h2>Dati WAUC</h2><table>
 <tr><th>Qualifica</th><td>{{ wauc['desc_qualifica'] or wauc['nome_qualifica'] or '—' }} <span class="muted">{{ wauc['cod_qualifica'] }}</span></td></tr>
 <tr><th>Gruppo</th><td>{{ wauc['desc_gruppo'] or '—' }} <span class="muted">{{ wauc['ambito'] }}</span></td></tr>
@@ -14,6 +14,7 @@
 <tr><th>Account</th><td>{{ wauc['account_dipvvf'] or '—' }}</td></tr>
 <tr><th>Ultimo aggiornamento</th><td>{{ wauc['ultima_sync'] }}</td></tr></table>{% endif %}
 <h2>Specializzazioni</h2>{% if specs %}<table><tr><th>Codice</th><th>Descrizione</th><th>Validità</th></tr>{% for s in specs %}<tr><td>{{ s['codice'] }}</td><td>{{ s['descrizione'] or '—' }}</td><td>{{ ('fino al ' ~ s['fine']) if s['fine'] else 'senza scadenza' }}{{ ' · aggiunta dall\'utente' if s['origine']=='manuale' }}</td></tr>{% endfor %}</table>{% else %}<p class="muted">Nessuna specializzazione rilevata.</p>{% endif %}
-<h2>Settori e livelli</h2>
+<h2>Livelli di accesso</h2><p class="muted">Ruoli per sede e area corsi: si assegnano da <a href="{{ url_for('puma.accessi', utente=u['id']) }}">Area Comando → Livelli di accesso</a>.</p>
+<h2>Permessi tecnici per applicazione</h2>
 {% for s in settori %}<div class="riga"><span>{{ s['nome'] }}</span><select name="liv_{{ s['id'] }}"><option value="">nessun accesso</option>{% for l in livelli %}<option value="{{ l }}" {{ 'selected' if perm.get(s['id'])==l }}>{{ l }}</option>{% endfor %}</select></div>{% endfor %}
 <button class="btn btn-primary" type="submit">Salva</button></form>{% endblock %}

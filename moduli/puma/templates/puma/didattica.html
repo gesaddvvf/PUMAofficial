@@ -1,0 +1,16 @@
+{% extends 'base.html' %}{% block main %}{% include "puma/_nav.html" %}
+<h2 class="puma-h">Didattica e documentazione</h2>
+<p class="muted">Manuali, circolari e materiale didattico. Qui verranno aggiunti anche i moduli didattici (lezioni, video, quiz…).</p>
+<div class="sez-tit">Documentazione</div>
+<div class="tessere">
+  <a class="tessera area-doc" href="{{ url_for('puma.documentazione', cat='manuali-puma') }}"><div class="ic">📘</div><h4>Manuali P.U.M.A.</h4><p>Guide all'uso della piattaforma.{% if n.get('manuali-puma') %} · {{ n['manuali-puma'] }} caricati{% endif %}</p></a>
+  <a class="tessera area-doc" href="{{ url_for('puma.documentazione', cat='manuali-settore') }}"><div class="ic">📗</div><h4>Manuali di settore</h4><p>Manuali delle aree corsi (SAF, TPSS, NBCR…).{% if n.get('manuali-settore') %} · {{ n['manuali-settore'] }} caricati{% endif %}</p></a>
+  <a class="tessera area-doc" href="{{ url_for('puma.documentazione', cat='circolari-settore') }}"><div class="ic">📄</div><h4>Circolari di settore</h4><p>Circolari e disposizioni.{% if n.get('circolari-settore') %} · {{ n['circolari-settore'] }} caricate{% endif %}</p></a>
+  <a class="tessera area-doc" href="{{ url_for('puma.archivio') }}"><div class="ic">🗄️</div><h4>Archivio</h4><p>Attività archiviate e addestramenti passati.</p></a>
+</div>
+<div class="sez-tit">Moduli didattici</div>
+<div class="tessere">
+  {% for x in extra %}<a class="tessera area-doc" href="{{ x.url }}"><div class="ic">🧩</div><h4>{{ x.etichetta }}</h4><p>Modulo didattico.</p></a>{% endfor %}
+  {% for ic, t, d in in_arrivo %}<div class="tessera area-doc spenta" title="In arrivo"><div class="ic">{{ ic }}</div><h4>{{ t }}</h4><p>{{ d }}<br><b>In arrivo</b></p></div>{% endfor %}
+</div>
+{% endblock %}

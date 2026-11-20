@@ -1,0 +1,36 @@
+{% extends 'base.html' %}{% block main %}{% include "puma/_nav.html" %}
+<h2 class="puma-h">Area personale <small>{{ utente['nome'] }} {{ utente['cognome'] }}</small></h2>
+<div class="griglia-pers">
+<div class="box area-per"><h1>👤 I miei dati</h1>
+  <table class="kv">
+    <tr><th>Qualifica</th><td>{{ utente['qualifica'] or '—' }}</td></tr>
+    <tr><th>Sede</th><td>{{ utente['comando'] or '—' }}{{ ' · ' ~ utente['distaccamento'] if utente['distaccamento'] }}</td></tr>
+    <tr><th>Turno</th><td>{{ utente['turno'] or '—' }}{{ ' (salto ' ~ utente['salto_turno'] ~ ')' if utente['salto_turno'] }}</td></tr>
+    <tr><th>Utente</th><td>{{ utente['email'] }}</td></tr>
+    <tr><th>Dati da</th><td>{{ 'WAUC (' ~ wauc['ultima_sync'][:10]|datait ~ ')' if wauc else (utente['origine_profilo'] or 'inseriti a mano') }}</td></tr>
+  </table>
+  <a class="puma-btn" href="{{ url_for('profilo_view') }}">Profilazione</a></div>
+<div class="box area-per"><h1>🔑 I miei livelli di accesso</h1>
+  {% if ruoli %}<ul class="lista-ruoli">{% for a in ruoli %}<li><b>{{ a.ruolo_nome }}</b>{% if a.sede_nome %} · {{ a.sede_nome }}{% endif %}<small>{{ a.area_nome }}</small></li>{% endfor %}</ul>
+  {% else %}<p>{{ 'Amministratore Generale' if admin else 'Operatore' }}: partecipi agli addestramenti e registri le tue attività.</p>{% endif %}
+  <p class="muted piccolo">Li assegnano gli amministratori del Comando o della Direzione.</p></div>
+</div>
+
+<div class="sez-tit">Corsi in possesso</div>
+{% if possesso %}<div class="chips">{% for t, o in possesso %}<span class="chip" title="Fonte: {{ o }}">{{ t.sigla or t.nome }}<small>{{ o }}</small></span>{% endfor %}</div>
+{% else %}<p class="muted">Nessun corso risulta in tuo possesso. Se ne hai, controlla la <a href="{{ url_for('profilo_view') }}">Profilazione</a> (specializzazioni WAUC).</p>{% endif %}
+
+<div class="sez-tit">Situazione {{ y }}</div>
+<div class="tessere">
+  <div class="tessera area-per"><div class="num">{{ lib.anno.tot.ore|round(1) }}</div><h4>ore di addestramento</h4><p>{{ lib.anno.coll.n }} collettivi · {{ lib.anno.ind.n }} individuali · {{ lib.anno.int.n }} interventi</p></div>
+  {% for r in lib.corsi if r.possesso %}<a class="tessera area-per" href="{{ url_for('puma.profilo') }}#corso-{{ r.t.id }}"><h4>{{ r.t.sigla or r.t.nome }}</h4>
+    <p>{{ r.ore|round(1) }} h{% if r.t.ore_minime %} su {{ r.t.ore_minime|round(1) }}{% endif %} · <b class="stato-{{ r.stato }}">{{ {'ok': 'in regola', 'ko': 'non in regola', 'nd': 'requisiti da definire'}[r.stato] }}</b>
+    {% if r.da_fare %}<br>{{ r.da_fare|length }} manovre da fare{% endif %}</p></a>{% endfor %}
+</div>
+<p><a class="puma-btn" href="{{ url_for('puma.profilo') }}">Apri il Report individuale completo</a> <a class="puma-btn" href="{{ url_for('puma.mie_attivita') }}">Le mie attività</a></p>
+
+<div class="sez-tit">Prossimi addestramenti delle mie aree</div>
+<ul class="puma-list">{% for e in prossimi %}<li><div><b>{{ e.titolo or e.tipologia }}</b> · squadra {{ e.team }}<br><small>{{ e.cod_add }}</small></div>
+  <div>{{ e.data|datait }} {{ e.ora_inizio }}–{{ e.ora_fine }}{% if e.id in iscritto %} · <b>registrato</b>{% elif e.data == oggi %} · <a href="{{ url_for('puma.partecipa', i=e.id) }}">Aggiungiti</a>{% endif %}</div></li>
+{% else %}<li class="puma-empty">Nessun addestramento programmato per le tue aree corsi.</li>{% endfor %}</ul>
+{% endblock %}

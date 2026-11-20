@@ -75,3 +75,17 @@ PUMA_WAUC_HTTP=http://127.0.0.1:8799  PUMA_WAUC_HTTPS=http://127.0.0.1:8799  PUM
 - **Sì** su GitHub: `libs/`. Senza, PUMA non parte (era il problema del vecchio repository).
 - I file `.bat` hanno fine riga Windows (CRLF), gli `.sh` Linux (LF): lo garantisce `.gitattributes`.
 - Ogni script per Windows ha anche la versione `.sh` per Linux.
+
+
+## Aggiungere pagine alle aree (v1.3)
+
+Un modulo nuovo può comparire nelle aree di PUMA (schede sotto l'intestazione e menu ☰) senza toccare i template:
+
+```python
+from moduli.puma.navigazione import registra
+registra('didattica', 'quiz.index', 'Quiz di autoverifica')          # Didattica e documentazione
+registra('comando', 'magazzino.index', 'Magazzino', 'magazzino')     # Area Comando, solo con la capacità «magazzino»
+```
+
+Le capacità (permessi) dei livelli di accesso sono in `moduli/puma/ruoli.py` (CAPACITA e MATRICE). Nel codice:
+`from moduli.puma.ruoli import accessi` → `accessi().puo('programma', 'SAF', sede_id)`, `accessi().sedi('report')`, `accessi().aree('programma')`.

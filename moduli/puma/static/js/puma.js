@@ -7,6 +7,7 @@
     return L.divIcon({ className: 'puma-pin-wrap', html: '<i class="' + cls + '">' + (kind === 'h' ? 'H' : '') + '</i>', iconSize: [26, 26], iconAnchor: [13, 13] });
   }
   var NOMI = { area: 'Area addestramento', h: 'RV elicottero', amb: 'RV ambulanza' };
+  window.PUMAPin = pin;
 
 
   document.querySelectorAll('.puma-map').forEach(function (el) {
@@ -15,7 +16,11 @@
     var map = L.map(el, {
       zoomControl: true,
       attributionControl: true
-    }).setView([46.14, 12.22], 9);
+    });
+    // centro: la sede di appartenenza (data-centro="lat,lon"), altrimenti l'Italia
+    var centro = (el.dataset.centro || '').split(',').map(Number);
+    if (centro.length === 2 && isFinite(centro[0]) && isFinite(centro[1]) && centro[0]) map.setView(centro, +(el.dataset.zoom || 11));
+    else map.setView([42.5, 12.5], 6);
     el._pumaMap = map;
 
     L.tileLayer(el.dataset.tiles, {
@@ -37,27 +42,7 @@
 
     var d = el.dataset;
 
-    // --- SELEZIONE AREA / RV ---
-    if (d.pick) {
-      var mk = {};
-      map.on('click', function (e) {
-        var radio = document.querySelector('input[name=modo]:checked');
-        if (!radio) return;
-        var m = radio.value;
-        var p = (m === 'rv' ? 'rv_' : m === 'amb' ? 'amb_' : '');
-        var latEl = document.getElementById(p + 'lat');
-        var lonEl = document.getElementById(p + 'lon');
-        if (!latEl || !lonEl) return;
-        latEl.value = e.latlng.lat.toFixed(6);
-        lonEl.value = e.latlng.lng.toFixed(6);
-        if (mk[m]) {
-          mk[m].setLatLng(e.latlng);
-        } else {
-          var k = (m === 'rv' ? 'h' : m === 'amb' ? 'amb' : 'area');
-          mk[m] = L.marker(e.latlng, { icon: pin(k) }).addTo(map).bindTooltip(NOMI[k]);
-        }
-      });
-    }
+    // --- SELEZIONE DEI PUNTI: la gestisce mappa-punto.js (croce, coordinate, localizzami, centra su Comando) ---
 
     // --- MARKER AREA + RV (scheda esistente) ---
     if (d.lat) {

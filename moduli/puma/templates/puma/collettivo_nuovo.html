@@ -1,25 +1,64 @@
 {% extends 'base.html' %}{% block main %}{% include "puma/_nav.html" %}
 <h2 class="puma-h">Programma un addestramento collettivo</h2>
-<p class="muted">Scegli il giorno: quel giorno l'addestramento compare in «Addestramenti di oggi» e il personale (anche di altri Comandi, se non è riservato) può aggiungersi. Dopo la programmazione, dalla scheda prepari il piano di sicurezza.</p>
-<form method="post" class="puma-form"><input type="hidden" name="csrf" value="{{ csrf }}">
-<label>Data <input type="date" name="data" value="{{ oggi }}" required></label>
-<label>Ora inizio <input type="time" name="ora_inizio" value="08:00" required></label><label>Ora fine <input type="time" name="ora_fine" value="17:00" required></label>
-<label class="puma-chk"><input type="checkbox" name="org_dr"> Organizza la Direzione Regionale (sigla DR al posto del Comando)</label>
-<label>Tipologia di addestramento {% include "puma/_tipologie.html" %}</label>
+<p class="muted">Il giorno stabilito l'addestramento compare in «Addestramenti di oggi» e il personale può aggiungersi. Dopo la programmazione, dalla scheda prepari il piano di sicurezza. Titolo e codice COD_ADD vengono generati in automatico.</p>
+<form method="post" class="puma-form largo" id="prog" data-team="{{ url_for('puma.api_team_occupati') }}"><input type="hidden" name="csrf" value="{{ csrf }}">
+
+<fieldset class="sez"><legend>1 · Quando</legend>
+<div class="griglia3">
+<label>Data <input type="date" name="data" id="data" value="{{ giorno }}" min="{{ oggi }}" max="{{ max_data }}" required></label>
+<label>Inizio <select name="ora_inizio" id="ora_inizio">{% for o in orari %}<option {{ 'selected' if o == '08:00' }}>{{ o }}</option>{% endfor %}</select></label>
+<label>Fine <select name="ora_fine" id="ora_fine">{% for o in orari %}<option {{ 'selected' if o == '13:00' }}>{{ o }}</option>{% endfor %}</select></label>
+</div></fieldset>
+
+<fieldset class="sez"><legend>2 · Cosa</legend>
+<div class="griglia2">
+<label>Organizza <select name="organizza" id="organizza">
+  <option value="comando" data-centro="{{ centro|join(',') if centro }}">Comando di {{ mio_comando }}</option>
+  {% if dr %}<option value="dr" data-centro="{{ centro_dr|join(',') if centro_dr }}">{{ nome_dr }}</option>{% endif %}</select></label>
+<label>Area corsi <select name="area" id="area" required>{% if aree|length > 1 %}<option value="">Scegli l'area…</option>{% endif %}
+  {% for a in aree %}<option value="{{ a.codice }}">{{ a.nome }}</option>{% endfor %}</select></label>
+</div>
+<label>Corso <select name="livello_id" id="liv" required data-url="{{ url_for('puma.api_manovre', lid=0) }}"><option value="">Scegli prima l'area…</option>
+  {% for l in tipologie %}<option value="{{ l.id }}" data-s="{{ l.settore }}">{{ l.nome }}</option>{% endfor %}</select></label>
 <input type="hidden" name="tipologia" id="tipo">
-<fieldset id="man"><legend>Manovre previste</legend><small>Scegli prima la tipologia: compaiono le manovre previste dal sito P.U.M.A.</small></fieldset>
-<label>Team <select name="team">{% for t in team %}<option>{{ t }}</option>{% endfor %}</select></label>
-<input name="titolo" placeholder="Titolo (es. Addestramento in parete – Valle del Bidente)">
-<label>Descrizione <textarea name="descrizione" rows="2" placeholder="Obiettivi, luogo, materiali (facoltativa)"></textarea></label>
-<p><small>Il codice COD_ADD (es. SAF-ALFA-VENBL-20261006) viene generato in automatico.</small></p>
-<p><b>Clicca sulla mappa</b>: scegli prima l'area, poi il punto di Rendez-Vous.</p>
+<div class="griglia2">
+<label>Finalità <select name="finalita" required>{% for x in finalita %}<option>{{ x }}</option>{% endfor %}</select></label>
+<label>Squadra <select name="team" id="team">{% for t in team %}<option>{{ t }}</option>{% endfor %}</select></label>
+</div>
+<fieldset id="man"><legend>Manovre previste</legend><small>Scegli prima il corso: compaiono le manovre previste dal sito P.U.M.A.</small></fieldset>
+</fieldset>
+
+<fieldset class="sez"><legend>3 · Dove</legend>
+<label>Località <select name="localita" id="localita" required>
+  <option value="">Scegli la località…</option>
+  <option value="nuova">➕ Nuova località (la scelgo sulla mappa)</option>
+  {% for com, gr in localita %}<optgroup label="{{ com }}">{% for l in gr %}
+  <option value="{{ l.id }}" data-lat="{{ l.lat }}" data-lon="{{ l.lon }}" data-rvlat="{{ l.rv_lat or '' }}" data-rvlon="{{ l.rv_lon or '' }}" data-rvd="{{ l.rv_descr or '' }}"
+    data-amblat="{{ l.amb_lat or '' }}" data-amblon="{{ l.amb_lon or '' }}" data-ambd="{{ l.amb_descr or '' }}">{{ l.nome }}{{ ' · ' ~ l.comune if l.comune }}</option>{% endfor %}</optgroup>{% endfor %}
+</select></label>
+<div id="nuova-loc" class="griglia2" hidden>
+  <label>Nome della località <input name="nome" maxlength="80" placeholder="es. Falesia di Ridracoli"></label>
+  <label>Tipo <select name="tipo">{% for k, t in tipi_loc %}{% if k != 'sede' %}<option value="{{ k }}">{{ t }}</option>{% endif %}{% endfor %}</select></label>
+  <label class="puma-chk"><input type="checkbox" name="salva_localita" checked> Salvala nell'elenco località del Comando</label>
+  <input type="hidden" name="condivisa" value="1">
+</div>
+<p class="muted piccolo">Scegli cosa stai posizionando, poi clicca sulla mappa, usa la croce o scrivi le coordinate. I segnaposto si possono trascinare.</p>
 <div class="puma-radio"><label><input type="radio" name="modo" value="area" checked> Area addestrativa</label><label><input type="radio" name="modo" value="rv"> RV elicottero (H)</label><label><input type="radio" name="modo" value="amb"> RV ambulanza (croce)</label></div>
-<div id="map" class="puma-map" data-tiles="{{ tile_url }}" data-pick="1"></div>
+<div id="map" class="puma-map" data-tiles="{{ tile_url }}" data-pick="1" data-barra="1" data-sedi="{{ url_for('puma.api_sedi') }}" data-centro="{{ centro|join(',') if centro }}" data-zoom="11"></div>
 {% include "puma/_legenda.html" %}
-<input name="lat" id="lat" placeholder="Lat area" readonly required><input name="lon" id="lon" placeholder="Lon area" readonly required>
-<input name="rv_lat" id="rv_lat" placeholder="Lat RV elicottero" readonly><input name="rv_lon" id="rv_lon" placeholder="Lon RV elicottero" readonly>
-<input name="rv_descr" placeholder="Descrizione RV elicottero (es. prato)">
-<input name="amb_lat" id="amb_lat" placeholder="Lat RV ambulanza" readonly><input name="amb_lon" id="amb_lon" placeholder="Lon RV ambulanza" readonly>
-<input name="amb_descr" placeholder="Descrizione RV ambulanza (es. parcheggio)">
-{% include "puma/_tenant.html" %}<button>Programma l'addestramento</button></form>
-<script src="{{ url_for('puma.static', filename='vendor/leaflet.js') }}"></script><script src="{{ url_for('puma.static', filename='js/puma.js') }}"></script><script src="{{ url_for('puma.static', filename='js/individuali.js') }}"></script>{% endblock %}
+<input type="hidden" name="lat" id="lat"><input type="hidden" name="lon" id="lon">
+<input type="hidden" name="rv_lat" id="rv_lat"><input type="hidden" name="rv_lon" id="rv_lon">
+<input type="hidden" name="amb_lat" id="amb_lat"><input type="hidden" name="amb_lon" id="amb_lon">
+<div class="griglia2">
+<label>RV elicottero <select name="rv_descr" id="rv_descr"><option value="">—</option>{% for x in rv_eli %}<option>{{ x }}</option>{% endfor %}</select></label>
+<label>RV ambulanza <select name="amb_descr" id="amb_descr"><option value="">—</option>{% for x in rv_amb %}<option>{{ x }}</option>{% endfor %}</select></label>
+</div>
+</fieldset>
+
+<fieldset class="sez"><legend>4 · Visibilità e note</legend>
+{% include "puma/_visibilita.html" %}
+<label>Note <textarea name="descrizione" rows="2" maxlength="500" placeholder="Facoltative: materiali, punto di ritrovo…"></textarea></label>
+</fieldset>
+<button type="submit">Programma l'addestramento</button></form>
+{% include "puma/_mappa_js.html" %}
+<script src="{{ url_for('puma.static', filename='js/individuali.js') }}"></script><script src="{{ url_for('puma.static', filename='js/programma.js') }}"></script>{% endblock %}

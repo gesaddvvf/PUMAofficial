@@ -1,0 +1,32 @@
+{% extends 'base.html' %}{% block main %}{% include "puma/_nav.html" %}
+<h2 class="puma-h">Inviti <small>link di accesso per i colleghi</small></h2>
+{% if locale and not in_rete %}<div class="flash warning">PUMA ora è raggiungibile <b>solo da questo PC</b> ({{ base }}): i colleghi non possono aprire il link. Per condividerlo chiudi PUMA e avvialo con <b>AVVIA_RETE.bat</b>{% if ip %}; il link diventerà ad es. <code>http://{{ ip[0] }}:{{ porta }}</code>{% endif %}.</div>
+{% elif in_rete %}<p class="muted">PUMA è in rete: i colleghi della stessa rete lo aprono da {% for i in ip %}<code>http://{{ i }}:{{ porta }}</code>{{ ', ' if not loop.last }}{% endfor %}.</p>{% endif %}
+<p class="muted">Il collega apre il link, entra con le sue credenziali dipartimentali (nome.cognome e password della posta) e il suo account è subito attivo con la sede e il livello indicati, senza attendere l'abilitazione.</p>
+
+{% if nuovo %}{% set r = righe|selectattr('token', 'equalto', nuovo)|first %}{% if r %}
+<div class="box area-com box-largo"><h1>🔗 Link per {{ r.email }}</h1>
+<div class="mp-coord"><input id="link-nuovo" readonly value="{{ base }}{{ url_for('invito', token=r.token) }}"><button class="btn" type="button" data-copia="link-nuovo">Copia</button></div>
+<p class="piccolo">Valido fino al {{ r.scade_il|datait }}. <a href="mailto:{{ r.email }}?subject={{ 'Accesso a P.U.M.A.'|urlencode }}&body={{ ('Ciao, ti ho abilitato su P.U.M.A. (Piattaforma Unificata Monitoraggio Addestramenti).\nApri questo link ed entra con le tue credenziali dipartimentali (nome.cognome e password della posta):\n' ~ base ~ url_for('invito', token=r.token) ~ '\nIl link vale fino al ' ~ r.scade_il|datait ~ '.')|urlencode }}">✉️ Scrivi l'e-mail con il link</a></p></div>
+{% endif %}{% endif %}
+
+<form method="post" class="puma-form largo"><input type="hidden" name="csrf" value="{{ csrf }}"><h3>Nuovo invito</h3>
+<div class="griglia2">
+<label>Utente <span class="campo-dominio"><input name="email" placeholder="nome.cognome" required autocapitalize="none" spellcheck="false"><span class="muted">@vigilfuoco.it</span></span></label>
+<label>Comando di appartenenza <select name="comando_id" required>{% for s in sedi %}<option value="{{ s.id }}" {{ 'selected' if s.id == mio_comando }}>{{ s.nome }}</option>{% endfor %}</select></label>
+<label>Livello <select name="ruolo" data-ruolo-sede="sede_inv">{% for r in assegnabili|reverse %}<option value="{{ r.codice }}" data-livello="{{ r.livello }}">{{ r.nome }}</option>{% endfor %}</select></label>
+<label>Sede del livello <select name="sede_id" id="sede_inv"><option value="">Scegli la sede…</option>{% for s in sedi %}<option value="{{ s.id }}" data-tipo="{{ s.tipo }}">{{ s.nome }}</option>{% endfor %}</select></label>
+<label>Area corsi <select name="settore"><option value="*">Tutte le aree</option>{% for a in aree %}<option value="{{ a.codice }}">{{ a.nome }}</option>{% endfor %}</select></label>
+<label>Validità del link <select name="giorni">{% for g in [3, 7, 14, 30, 60] %}<option value="{{ g }}" {{ 'selected' if g == 14 }}>{{ g }} giorni</option>{% endfor %}</select></label>
+</div>
+<button type="submit">Crea il link</button></form>
+
+<h3>Inviti creati</h3>
+<table class="puma-tab"><thead><tr><th>Utente</th><th>Livello</th><th>Creato</th><th>Stato</th><th></th></tr></thead><tbody>
+{% for r in righe %}<tr><td>{{ r.email }}<br><small>{{ r.comando }}</small></td><td>{{ r.ruolo_nome or 'Operatore' }}{{ ' · ' ~ r.sede_nome if r.sede_nome }}{{ ' · ' ~ r.settore if r.settore != '*' }}</td>
+<td>{{ r.creato_il[:10]|datait }}<br><small>{{ r.creato_da }}</small></td>
+<td>{% if r.usato_il %}<b class="stato-ok">usato il {{ r.usato_il[:10]|datait }}</b>{% elif r.scade_il < oggi %}<span class="muted">scaduto</span>{% else %}valido fino al {{ r.scade_il|datait }}{% endif %}</td>
+<td>{% if not r.usato_il %}<a class="puma-btn" href="{{ url_for('puma.inviti', nuovo=r.token) }}">Link</a>
+<form method="post" class="in-linea"><input type="hidden" name="csrf" value="{{ csrf }}"><input type="hidden" name="azione" value="annulla"><input type="hidden" name="token" value="{{ r.token }}"><button class="puma-btn">Annulla</button></form>{% endif %}</td></tr>
+{% else %}<tr><td colspan="5" class="puma-empty">Nessun invito.</td></tr>{% endfor %}</tbody></table>
+{% endblock %}

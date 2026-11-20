@@ -1,15 +1,31 @@
 {% extends 'base.html' %}{% block titolo %}Accesso{% endblock %}
 {% block main %}<div class="home-wrap">
-  <div class="hero">
-    <div class="hero-testo">
-      <h2><span><b>P</b>iattaforma</span><span><b>U</b>nificata</span><span><b>M</b>onitoraggio</span><span><b>A</b>ddestramenti</span></h2>
-      <p class="motto">Forma. Qualifica. Avanza.</p>
-      <div class="strisce" aria-hidden="true"><i class="area-att"></i><i class="area-rt"></i><i class="area-doc"></i><i class="area-rep"></i><i class="area-com"></i></div>
-      <p class="intro">PUMA è una piattaforma unificata per la gestione completa degli addestramenti del personale.</p>
-    </div>
+  <div class="hero hero-compatto">
     <div class="hero-logo"><img src="{{ url_for('static', filename='img/puma-logo.jpg') }}" alt="Logo P.U.M.A."></div>
+    <div class="hero-testo">
+      <h2><span><b>P</b>iattaforma <b>U</b>nificata <b>M</b>onitoraggio <b>A</b>ddestramenti</span></h2>
+      <p class="motto">Forma. Qualifica. Avanza.</p>
+      <div class="strisce" aria-hidden="true"><i class="area-att"></i><i class="area-rt"></i><i class="area-doc"></i><i class="area-per"></i><i class="area-rep"></i><i class="area-com"></i></div>
+    </div>
   </div>
-
+  <div class="sez-tit">Accesso{{ ' libero' if utenti_prova }}</div>
+  <div class="accesso-griglia">
+    <form class="box area-com" method="post" action="{{ url_for('login') }}"><h1>🔐 Entra in P.U.M.A.</h1>
+      {% if invito %}<div class="flash success">Sei stato invitato da <b>{{ invito.creato_da }}</b>{% if invito.comando %} ({{ invito.comando }}){% endif %}: entra con la password della posta e il tuo account sarà subito attivo.</div>{% endif %}
+      {% if utenti_prova %}<p class="muted">Qualsiasi <code>nome.cognome</code> con password <b>dev</b> (un nome che non è nel WAUC simulato prova il caso «non trovato»).</p>
+      {% else %}<p class="muted">Usa le <b>credenziali dipartimentali</b>, quelle della posta @vigilfuoco.it: scrivi solo <strong>nome.cognome</strong>. La password non viene salvata.</p>{% endif %}
+      {% if dev_auth and not prova %}<div class="flash warning">PUMA_DEV_AUTH attivo: password «dev» per tutti. Solo per sviluppo.</div>{% endif %}
+      <input type="hidden" name="csrf" value="{{ csrf }}">
+      <label for="email">Utente</label><div class="campo-dominio"><input type="text" id="email" name="email" placeholder="nome.cognome" required {{ '' if utenti_prova or invito else 'autofocus' }}{% if invito %} value="{{ invito.email.split('@')[0] }}"{% endif %} autocomplete="username" autocapitalize="none" spellcheck="false"><span class="muted">@vigilfuoco.it</span></div>
+      <label for="password">Password</label><input type="password" id="password" name="password" required {{ 'autofocus' if invito }} autocomplete="current-password" {{ 'placeholder=dev' if prova }}>
+      <button class="btn btn-primary" type="submit">Accedi</button></form>
+    {% if not utenti_prova %}
+    <div class="box stato-rete" id="stato-rete" data-url="{{ url_for('stato_rete') }}"><h1>Collegamento alla rete VVF</h1><ul id="stato-rete-voci"><li class="muted">Verifica in corso…</li></ul><p id="stato-rete-nota" class="muted piccolo">Login e dati del personale funzionano solo in rete VVF o con FortiClient VPN collegata.</p></div>
+    {% else %}
+    <div class="box area-neu"><h1>Cosa provare</h1><p class="muted">Ogni utente vede PUMA con i suoi permessi: l'<b>Amministratore</b> e il <b>ROP</b> aprono l'Area Comando; l'<b>Operatore</b> registra attività e check-in; <b>ROR</b> e <b>Nazionale</b> vedono più Comandi; <b>Primo accesso</b> mostra la profilazione da WAUC e l'attesa di abilitazione.</p>
+    <p class="muted piccolo">I dati di prova stanno in <code>data_prova</code>: per ripartire da zero usa AZZERA_PROVA.bat.</p></div>
+    {% endif %}
+  </div>
   {% if utenti_prova %}
   <div class="sez-tit">Modalità prova · scegli un utente fittizio (password «dev», dati WAUC simulati)</div>
   {% set colori = {'demo.admin': 'com', 'demo.rop': 'att', 'demo.utente': 'rt', 'demo.ror': 'doc', 'demo.nazionale': 'rep', 'demo.nuovo': 'neu'} %}
@@ -20,22 +36,6 @@
   {% endfor %}</div>
   {% endif %}
 
-  <div class="sez-tit">Accesso{{ ' libero' if utenti_prova }}</div>
-  <div class="accesso-griglia">
-    <form class="box area-com" method="post"><h1>🔐 Entra in P.U.M.A.</h1>
-      {% if utenti_prova %}<p class="muted">Qualsiasi <code>nome.cognome</code> con password <b>dev</b> (un nome che non è nel WAUC simulato prova il caso «non trovato»).</p>
-      {% else %}<p class="muted">Usa le <b>credenziali dipartimentali</b>, quelle della posta @vigilfuoco.it: scrivi solo <strong>nome.cognome</strong>. La password non viene salvata.</p>{% endif %}
-      {% if dev_auth and not prova %}<div class="flash warning">PUMA_DEV_AUTH attivo: password «dev» per tutti. Solo per sviluppo.</div>{% endif %}
-      <input type="hidden" name="csrf" value="{{ csrf }}">
-      <label for="email">Utente</label><div class="campo-dominio"><input type="text" id="email" name="email" placeholder="nome.cognome" required {{ '' if utenti_prova else 'autofocus' }} autocomplete="username" autocapitalize="none" spellcheck="false"><span class="muted">@vigilfuoco.it</span></div>
-      <label for="password">Password</label><input type="password" id="password" name="password" required autocomplete="current-password" {{ 'placeholder=dev' if prova }}>
-      <button class="btn btn-primary" type="submit">Accedi</button></form>
-    {% if not utenti_prova %}
-    <div class="box stato-rete" id="stato-rete" data-url="{{ url_for('stato_rete') }}"><h1>Collegamento alla rete VVF</h1><ul id="stato-rete-voci"><li class="muted">Verifica in corso…</li></ul><p id="stato-rete-nota" class="muted piccolo">Login e dati del personale funzionano solo in rete VVF o con FortiClient VPN collegata.</p></div>
-    {% else %}
-    <div class="box area-neu"><h1>Cosa provare</h1><p class="muted">Ogni utente vede PUMA con i suoi permessi: l'<b>Amministratore</b> e il <b>ROP</b> aprono l'Area Comando; l'<b>Operatore</b> registra attività e check-in; <b>ROR</b> e <b>Nazionale</b> vedono più Comandi; <b>Primo accesso</b> mostra la profilazione da WAUC e l'attesa di abilitazione.</p>
-    <p class="muted piccolo">I dati di prova stanno in <code>data_prova</code>: per ripartire da zero usa AZZERA_PROVA.bat.</p></div>
-    {% endif %}
-  </div>
+  <p class="intro centro muted">PUMA è una piattaforma unificata per la gestione completa degli addestramenti del personale.</p>
 </div>
 <script src="{{ url_for('static', filename='js/login.js') }}" defer></script>{% endblock %}

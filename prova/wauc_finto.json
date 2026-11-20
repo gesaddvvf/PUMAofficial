@@ -6,23 +6,23 @@
  "utenti_prova": [
   {
    "account": "demo.admin",
-   "etichetta": "Amministratore",
-   "descrizione": "Elena Ferri · Forlì-Cesena · gestisce utenti, permessi e livelli"
+   "etichetta": "Amministratore Generale",
+   "descrizione": "Elena Ferri · Forlì-Cesena · livelli di accesso, aree corsi, inviti, configurazione"
   },
   {
    "account": "demo.rop",
-   "etichetta": "ROP / Responsabile",
-   "descrizione": "Laura Bianchi · Belluno · crea addestramenti, piano di sicurezza, scadenze"
+   "etichetta": "ROP Comando (SAF)",
+   "descrizione": "Laura Bianchi · Belluno · programma addestramenti SAF, località, piano di sicurezza"
   },
   {
    "account": "demo.utente",
    "etichetta": "Operatore",
-   "descrizione": "Mario Rossi · Belluno · check-in, individuali, il mio profilo"
+   "descrizione": "Mario Rossi · Belluno · check-in, individuali, Area personale"
   },
   {
    "account": "demo.ror",
-   "etichetta": "ROR (regione)",
-   "descrizione": "Paolo Verdi · Venezia · vede tutto il Veneto, sola lettura"
+   "etichetta": "ROR Direzione",
+   "descrizione": "Paolo Verdi · Venezia · Direzione Veneto e TAA: report e programmazione"
   },
   {
    "account": "demo.nazionale",

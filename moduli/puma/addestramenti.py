@@ -4,10 +4,10 @@ from calendar import monthrange
 from datetime import date, datetime
 from email.message import EmailMessage
 from flask import g, render_template, request, redirect, url_for, flash, abort, jsonify, current_app
-import os, re, time
+import os, re, time, sqlite3
 from flask import send_file, Response
 import config
-from . import bp as puma_bp, current_user, can_write, get_db, scope_sql, elenco, tenant_vals, settore_ok, email_utente, conf, _puo
+from . import bp as puma_bp, current_user, can_write, get_db, scope_sql, elenco, tenant_vals, settore_ok, email_utente, conf, _puo, responsabile
 
 TEAM = ["Alfa", "Bravo", "Charlie", "Delta", "Echo", "Foxtrot", "Golf", "Hotel", "India", "Juliett", "Kilo", "Lima", "Mike",
         "November", "Oscar", "Papa", "Quebec", "Romeo", "Sierra", "Tango", "Uniform", "Victor", "Whiskey", "X-ray", "Yankee", "Zulu"]
@@ -58,39 +58,117 @@ def collettivi():
     return render_template("puma/collettivi.html", righe=elenco("puma_eventi", u, filtro, par, order="data, ora_inizio, team"), scrivi=can_write(u),
                            aperti=aperti, livello=u["livello"], quando=q, giorno=giorno)
 
+ORARI = [f"{h:02d}:{m:02d}" for h in range(5, 24) for m in (0, 30)]
+FINALITA = ["Mantenimento", "Retraining", "Corso di formazione", "Esercitazione", "Verifica / esame", "Addestramento congiunto con altri enti"]
+RV_ELI = ["Elisuperficie", "Campo sportivo", "Prato", "Piazzale", "Parcheggio", "Spiaggia / greto"]
+RV_AMB = ["Parcheggio", "Piazzale", "Strada di accesso", "Sede VVF", "Ingresso dell'area"]
+DURATE = [(30, "30 minuti"), (60, "1 ora"), (90, "1 ora e mezza"), (120, "2 ore"), (180, "3 ore"), (240, "4 ore"), (300, "5 ore"), (360, "6 ore"), (480, "8 ore"), (600, "10 ore"), (720, "12 ore")]
+
+
+def _aree_programma(u):
+    """Aree corsi in cui l'utente può programmare: tutte se ha il permesso generale."""
+    from .ruoli import accessi, aree
+    al = accessi().aree("programma")
+    tutte = [r["codice"] for r in aree(db())]
+    if al is None or (not accessi().righe and _puo("puma", "scrittura")): return tutte
+    return [a for a in tutte if a in al]
+
+
+def _dr_utente(u):
+    """Direzione Regionale per cui l'utente può organizzare (ruolo «Direzione» con programmazione), altrimenti None."""
+    from .ruoli import accessi, MATRICE
+    acc = accessi()
+    for a in acc.righe:
+        if a["livello"] == "direzione" and "programma" in MATRICE.get(a["ruolo"], ()): return a["sede_id"]
+    if acc.admin or (not acc.righe and _puo("puma", "scrittura")):
+        r = db().execute("SELECT k.id FROM comandi k JOIN puma_comando_dir cd ON cd.comando_id=k.id WHERE k.tipo='direzione' AND cd.direzione_id=?",
+                         (u.get("direzione_id"),)).fetchone()
+        return r["id"] if r else None
+    return None
+
+
+@puma_bp.route("/api/team-occupati")
+def api_team_occupati():
+    u = current_user()
+    return jsonify([r[0] for r in db().execute("SELECT team FROM puma_eventi WHERE data=? AND tipologia=? AND comando_id=?",
+                                               (request.args.get("data", ""), request.args.get("area", "").upper(), u["comando_id"]))])
+
+
 @puma_bp.route("/collettivi/nuovo", methods=["GET", "POST"])
 def collettivo_nuovo():
+    """Programmazione guidata: quasi tutto da elenchi (data, orari, area, corso, finalità, squadra, località, RV, visibilità)."""
+    from .corsi import tipologie
+    from .localita import visibili, salva_nuova, centro_sede, gruppi
     u = current_user()
-    if not can_write(u): abort(403)
+    aree_ok = _aree_programma(u)
+    if not aree_ok: abort(403)
+    dr = _dr_utente(u)
+    oggi = date.today()
     if request.method == "POST":
         f = request.form
-        tipologia = f.get("tipologia") or (db().execute("SELECT settore FROM puma_livelli WHERE id=?", (f.get("livello_id"),)).fetchone() or ["ALTRO"])[0]
-        if not settore_ok(u, tipologia, "scrittura"): abort(403)
+        def errore(t):
+            flash(t, "danger"); return redirect(request.url)
+        try: giorno = date.fromisoformat(f.get("data", ""))
+        except ValueError: return errore("Scegli la data dell'addestramento.")
+        if not (oggi <= giorno <= add_months(oggi, 12)): return errore("La data deve essere tra oggi e i prossimi 12 mesi.")
+        oi, of = f.get("ora_inizio"), f.get("ora_fine")
+        if oi not in ORARI or of not in ORARI or of <= oi: return errore("Scegli ora di inizio e di fine dagli elenchi (la fine dopo l'inizio).")
+        area = (f.get("area") or "").upper()
+        if area not in aree_ok: abort(403)
+        liv = db().execute("SELECT * FROM puma_livelli WHERE id=? AND attiva=1", (f.get("livello_id", type=int),)).fetchone()
+        if not liv or (liv["settore"] or "").upper() != area: return errore("Scegli il corso dell'area indicata.")
+        if f.get("finalita") not in FINALITA: return errore("Scegli la finalità dell'addestramento.")
+        if f.get("team") not in TEAM: return errore("Scegli la squadra dall'elenco.")
+        org_dr = 1 if f.get("organizza") == "dr" and dr else 0
+        rv_d, amb_d = f.get("rv_descr") or None, f.get("amb_descr") or None
+        if (rv_d and rv_d not in RV_ELI) or (amb_d and amb_d not in RV_AMB): return errore("Scegli il tipo di RV dagli elenchi.")
+        manovre = [m["nome"] for m in db().execute("SELECT nome FROM puma_manovre WHERE livello_id IN (?, ?)", (liv["id"], liv["equivale_a"] or liv["id"]))]
+        scelte = [m for m in f.getlist("manovre") if m in manovre]
+        lid = f.get("localita")
+        if lid == "nuova":
+            nome_loc = (f.get("nome") or "").strip()
+            if not nome_loc: return errore("Dai un nome alla nuova località.")
+            if f.get("salva_localita"):
+                lid, err = salva_nuova(db(), u, f, u["comando_id"])
+                if err: return errore(err)
+            else: lid = None
+        else:
+            lid = int(lid) if (lid or "").isdigit() else None
+            ok = lid and any(r["id"] == lid for r in visibili(db(), u))
+            if not ok: return errore("Scegli la località dall'elenco (o «Nuova località»).")
+            nome_loc = db().execute("SELECT nome FROM puma_localita WHERE id=?", (lid,)).fetchone()[0]
+        lat, lon = num(f.get("lat")), num(f.get("lon"))
+        if lat is None or lon is None: return errore("Manca il punto dell'area addestrativa sulla mappa.")
+        titolo = f"{liv['sigla'] or liv['nome']} – {nome_loc}"[:120]
         try:
-            if (f.get("ora_fine") or "23:59") <= (f.get("ora_inizio") or "00:00"):
-                flash("L'ora di fine deve essere successiva all'ora di inizio."); return redirect(request.url)
-            org_dr = int(bool(f.get("org_dr")))
-            cod = cod_add(db(), tipologia, f["team"], u["comando_id"], org_dr, f["data"])
-            c = db().execute("""INSERT INTO puma_eventi(data,ora_inizio,ora_fine,org_dr,cod_add,tipologia,livello_id,team,titolo,manovre,descrizione,lat,lon,rv_lat,rv_lon,rv_descr,
-              amb_lat,amb_lon,amb_descr,responsabile,comando_id,direzione_id,is_blindato,is_condiviso_nazionale) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
-              (f["data"], f.get("ora_inizio") or "08:00", f.get("ora_fine") or "17:00", org_dr, cod, tipologia, f.get("livello_id") or None, f["team"], f.get("titolo"),
-               json.dumps(f.getlist("manovre")), (f.get("descrizione") or "").strip()[:1000] or None,
-               num(f.get("lat")), num(f.get("lon")), num(f.get("rv_lat")), num(f.get("rv_lon")), f.get("rv_descr"),
-               num(f.get("amb_lat")), num(f.get("amb_lon")), f.get("amb_descr"), u["username"], *tenant_vals(u)))
-        except Exception:
-            flash("Esiste già un addestramento %s – team %s in quella data per il tuo Comando: scegli un altro team." % (tipologia, f["team"]))
-            return redirect(request.url)
-        db().commit(); flash("Addestramento programmato: il giorno stabilito comparirà in «Addestramenti di oggi» e il personale potrà aggiungersi.")
+            cod = cod_add(db(), area, f["team"], u["comando_id"], org_dr, giorno.isoformat())
+            c = db().execute("""INSERT INTO puma_eventi(data,ora_inizio,ora_fine,org_dr,cod_add,tipologia,livello_id,team,titolo,manovre,descrizione,finalita,localita_id,
+              lat,lon,rv_lat,rv_lon,rv_descr,amb_lat,amb_lon,amb_descr,responsabile,comando_id,direzione_id,is_blindato,is_condiviso_nazionale)
+              VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
+              (giorno.isoformat(), oi, of, org_dr, cod, area, liv["id"], f["team"], titolo, json.dumps(scelte),
+               (f.get("descrizione") or "").strip()[:500] or None, f["finalita"], lid,
+               lat, lon, num(f.get("rv_lat")), num(f.get("rv_lon")), rv_d, num(f.get("amb_lat")), num(f.get("amb_lon")), amb_d,
+               u["username"], *tenant_vals(u)))
+        except sqlite3.IntegrityError:
+            return errore("Esiste già un addestramento %s – squadra %s in quella data per il tuo Comando: scegli un'altra squadra." % (area, f["team"]))
+        db().commit(); flash("Addestramento programmato: il giorno stabilito comparirà in «Addestramenti di oggi» e il personale potrà aggiungersi.", "success")
         return redirect(url_for("puma.collettivo", i=c.lastrowid))
-    from .corsi import tipologie
-    return render_template("puma/collettivo_nuovo.html", team=TEAM, tipologie=tipologie(db()), oggi=request.args.get("data") or date.today().isoformat())
+    from .localita import TIPI as TIPI_LOC
+    centro = centro_sede(db(), u["comando_id"])
+    return render_template("puma/collettivo_nuovo.html", team=TEAM, tipologie=tipologie(db(), solo_corsi=False, attive=True, aree=aree_ok),
+                           aree=[r for r in db().execute("SELECT * FROM puma_settori WHERE attiva=1 ORDER BY ordine, nome") if r["codice"] in aree_ok],
+                           oggi=oggi.isoformat(), giorno=request.args.get("data") or oggi.isoformat(), max_data=add_months(oggi, 12).isoformat(),
+                           orari=ORARI, finalita=FINALITA, rv_eli=RV_ELI, rv_amb=RV_AMB, localita=gruppi(visibili(db(), u)), tipi_loc=TIPI_LOC,
+                           centro=centro, centro_dr=centro_sede(db(), dr) if dr else None, dr=dr,
+                           nome_dr=db().execute("SELECT nome FROM comandi WHERE id=?", (dr,)).fetchone()[0] if dr else None,
+                           mio_comando=db().execute("SELECT nome FROM comandi WHERE id=?", (u["comando_id"],)).fetchone()[0])
 
 @puma_bp.route("/collettivi/<int:i>")
 def collettivo(i):
     u = current_user(); e = ev_get(i, u)
     chk = db().execute("SELECT * FROM puma_checkin WHERE evento_id=? ORDER BY ora", (i,)).fetchall()
     mio = any(c["username"] == u["username"] for c in chk)
-    return render_template("puma/collettivo.html", e=e, chk=chk, mio=mio, resp=(e["comando_id"] == u["comando_id"] and can_write(u)),
+    return render_template("puma/collettivo.html", e=e, chk=chk, mio=mio, resp=responsabile(u, e),
                            abilitato=settore_ok(u, e["tipologia"]), ruoli=ics_ruoli(), oggi=date.today().isoformat())
 
 def ics_ruoli(): return db().execute("SELECT * FROM puma_ics_ruoli ORDER BY ordine").fetchall()
@@ -121,7 +199,7 @@ def partecipa(i):
 
 def _resp(i):
     u = current_user(); e = ev_get(i, u)
-    if not (e["comando_id"] == u["comando_id"] and can_write(u)): abort(403)
+    if not responsabile(u, e): abort(403)
     return u, e
 
 @puma_bp.post("/collettivi/<int:i>/convalida")
@@ -148,21 +226,49 @@ def manda(dest, oggetto, corpo, allegati=()):
 # ---------------- 2. INDIVIDUALI / 3. INTERVENTI ----------------
 @puma_bp.route("/individuali", methods=["GET", "POST"])
 def individuali():
-    u = current_user()
+    """Registrazione individuale guidata: solo i corsi in possesso (e le attività generiche), data entro 60 giorni, orari e durata da elenco."""
+    from datetime import timedelta
+    from .corsi import tipologie, possesso
+    from .localita import visibili, gruppi
+    u = current_user(); oggi = date.today()
+    poss = possesso(db(), g.utente)
+    esclusi = ("intervento", "piano di sicurezza mancante")   # gli interventi hanno la loro pagina; il «piano mancante» è un segnale del sito
+    tip = [t for t in tipologie(db(), attive=True) if (t["id"] in poss or not t["corso"] or t["di_tutti"]) and t["nome"].split(" (")[0].strip().lower() not in esclusi]
+    aree_mie = []
+    for t in tip:
+        if t["settore"] and t["settore"] not in [a["codice"] for a in aree_mie]:
+            r = db().execute("SELECT * FROM puma_settori WHERE codice=? AND attiva=1", (t["settore"],)).fetchone()
+            if r: aree_mie.append(r)
+    aree_mie.sort(key=lambda a: (a["ordine"], a["nome"]))
     if request.method == "POST":
         f = request.form
-        if not settore_ok(u, f["tipologia"]): abort(403)
-        if (f.get("fine") or "") <= (f.get("inizio") or ""):
-            flash("La fine deve essere successiva all'inizio."); return redirect(url_for("puma.individuali"))
-        db().execute("""INSERT INTO puma_individuali(username,tipologia,livello_id,inizio,fine,manovre,descrizione,comando_id,direzione_id,is_blindato,
-            is_condiviso_nazionale) VALUES(?,?,?,?,?,?,?,?,?,0,0)""", (u["username"], f["tipologia"], f.get("livello_id") or None,
-            f["inizio"], f["fine"], json.dumps(f.getlist("manovre")), (f.get("descrizione") or "").strip()[:500] or None, u["comando_id"], u.get("direzione_id")))
-        db().commit(); flash("Addestramento individuale registrato."); return redirect(url_for("puma.individuali"))
-    mie = db().execute("""SELECT i.*, l.nome livello FROM puma_individuali i LEFT JOIN puma_livelli l ON l.id=i.livello_id
-        WHERE username=? ORDER BY inizio DESC""", (u["username"],)).fetchall()
-    from .corsi import tipologie
-    return render_template("puma/individuali.html", righe=mie, tipologie=tipologie(db()),
-                           adesso=datetime.now().strftime("%Y-%m-%dT%H:%M"))
+        def errore(t):
+            flash(t, "danger"); return redirect(url_for("puma.individuali"))
+        liv = next((t for t in tip if t["id"] == f.get("livello_id", type=int)), None)
+        if not liv: return errore("Scegli il corso tra quelli in tuo possesso.")
+        try: giorno = date.fromisoformat(f.get("data", ""))
+        except ValueError: return errore("Scegli la data.")
+        if not (oggi - timedelta(days=60) <= giorno <= oggi): return errore("Si registrano attività degli ultimi 60 giorni (non future).")
+        if f.get("ora") not in ORARI: return errore("Scegli l'ora di inizio dall'elenco.")
+        durata = f.get("durata", type=int)
+        if durata not in [d for d, _ in DURATE]: return errore("Scegli la durata dall'elenco.")
+        inizio = datetime.fromisoformat(f"{giorno.isoformat()}T{f['ora']}")
+        fine = inizio + timedelta(minutes=durata)
+        if fine > datetime.now() + timedelta(minutes=5): return errore("L'attività non può finire nel futuro.")
+        manovre = [m["nome"] for m in db().execute("SELECT nome FROM puma_manovre WHERE livello_id IN (?, ?)", (liv["id"], liv["equivale_a"] or liv["id"]))]
+        lid = f.get("localita", type=int)
+        if lid and not any(r["id"] == lid for r in visibili(db(), u)): lid = None
+        db().execute("""INSERT INTO puma_individuali(username,tipologia,livello_id,inizio,fine,manovre,descrizione,localita_id,comando_id,direzione_id,is_blindato,
+            is_condiviso_nazionale) VALUES(?,?,?,?,?,?,?,?,?,?,0,0)""", (u["username"], liv["settore"], liv["id"], inizio.isoformat(timespec="minutes"),
+            fine.isoformat(timespec="minutes"), json.dumps([m for m in f.getlist("manovre") if m in manovre]), (f.get("descrizione") or "").strip()[:500] or None,
+            lid, u["comando_id"], u.get("direzione_id")))
+        db().commit(); flash("Attività individuale registrata: la trovi nel tuo Report individuale.", "success"); return redirect(url_for("puma.individuali"))
+    mie = db().execute("""SELECT i.*, l.nome livello, lo.nome localita FROM puma_individuali i LEFT JOIN puma_livelli l ON l.id=i.livello_id
+        LEFT JOIN puma_localita lo ON lo.id=i.localita_id WHERE username=? ORDER BY inizio DESC LIMIT 30""", (u["username"],)).fetchall()
+    ora = datetime.now(); proposta = f"{max(5, ora.hour - 2):02d}:00"
+    return render_template("puma/individuali.html", righe=mie, tipologie=tip, aree=aree_mie, oggi=oggi.isoformat(),
+                           min_data=(oggi - timedelta(days=60)).isoformat(), orari=ORARI, durate=DURATE, proposta=proposta,
+                           localita=gruppi(visibili(db(), u)), possesso=poss)
 
 @puma_bp.route("/api/manovre/<int:lid>")
 def api_manovre(lid):
@@ -170,18 +276,35 @@ def api_manovre(lid):
     lid = db().execute("SELECT COALESCE(equivale_a, id) FROM puma_livelli WHERE id=?", (lid,)).fetchone() or [lid]
     return jsonify([dict(r) for r in db().execute("SELECT id,nome,ciclo,lettera FROM puma_manovre WHERE livello_id IN (?, ?) AND COALESCE(lettera, '')<>'N' ORDER BY ordine,id", (lid[0], request.view_args["lid"]))])
 
+TIPI_INTERVENTO = ["Soccorso a persona", "Ricerca persona dispersa", "Recupero in ambiente impervio", "Soccorso in acqua", "Crollo / dissesto",
+                   "Incendio", "Incidente stradale", "Sostanze pericolose", "Supporto ad altri enti", "Altro"]
+
+
 @puma_bp.route("/interventi", methods=["GET", "POST"])
 def interventi():
-    u = current_user()
+    """Interventi reali: area corsi tra quelle dei corsi in possesso, data non futura, tipo di intervento da elenco."""
+    from datetime import timedelta
+    from .corsi import possesso
+    u = current_user(); oggi = date.today()
+    poss = possesso(db(), g.utente)
+    codici = {r["settore"] for r in db().execute("SELECT id, settore FROM puma_livelli") if r["id"] in poss}
+    mie = [s for s in db().execute("SELECT * FROM puma_settori WHERE attiva=1 ORDER BY ordine, nome") if s["codice"] in codici] or \
+          [s for s in db().execute("SELECT * FROM puma_settori WHERE attiva=1 ORDER BY ordine, nome") if settore_ok(u, s["codice"])]
     if request.method == "POST":
         f = request.form
-        if not settore_ok(u, f["macro"]): abort(403)
+        if f.get("macro") not in [s["codice"] for s in mie]: abort(403)
+        try: giorno = date.fromisoformat(f.get("data", ""))
+        except ValueError: giorno = None
+        if not giorno or not (oggi - timedelta(days=365) <= giorno <= oggi):
+            flash("Data non valida: l'intervento deve essere dell'ultimo anno e non futuro.", "danger"); return redirect(url_for("puma.interventi"))
+        tipo = f.get("tipo") if f.get("tipo") in TIPI_INTERVENTO else "Altro"
+        note = (f.get("descrizione") or "").strip()[:300]
         db().execute("""INSERT INTO puma_interventi(username,macro,data,descrizione,comando_id,direzione_id,is_blindato,is_condiviso_nazionale)
-            VALUES(?,?,?,?,?,?,0,0)""", (u["username"], f["macro"], f["data"], f.get("descrizione"), u["comando_id"], u.get("direzione_id")))
-        db().commit(); flash("Intervento registrato."); return redirect(url_for("puma.interventi"))
-    r = db().execute("SELECT * FROM puma_interventi WHERE username=? ORDER BY data DESC", (u["username"],)).fetchall()
-    return render_template("puma/interventi.html", righe=r, oggi=date.today().isoformat(),
-                           mie=[s for s in db().execute("SELECT * FROM puma_settori") if settore_ok(u, s["codice"])])
+            VALUES(?,?,?,?,?,?,0,0)""", (u["username"], f["macro"], giorno.isoformat(), tipo + (f" – {note}" if note else ""), u["comando_id"], u.get("direzione_id")))
+        db().commit(); flash("Intervento registrato.", "success"); return redirect(url_for("puma.interventi"))
+    r = db().execute("SELECT * FROM puma_interventi WHERE username=? ORDER BY data DESC LIMIT 50", (u["username"],)).fetchall()
+    return render_template("puma/interventi.html", righe=r, oggi=oggi.isoformat(), min_data=(oggi - timedelta(days=365)).isoformat(),
+                           mie=mie, tipi=TIPI_INTERVENTO)
 
 # ---------------- 4. MAPPA + DASHBOARD ----------------
 @puma_bp.route("/mappa")
@@ -238,7 +361,7 @@ def profilo():
 def settore(cod):
     u = current_user()
     if not settore_ok(u, cod): abort(403)
-    s = db().execute("SELECT * FROM puma_settori WHERE codice=?", (cod,)).fetchone() or abort(404)
+    s = db().execute("SELECT * FROM puma_settori WHERE codice=UPPER(?)", (cod,)).fetchone() or abort(404)
     liv = u["livello"]
     vede = settore_ok(u, cod, "gestore") or liv in ("regione", "nazionale")   # ROP del Comando, ROR della regione, Nazionale
     if liv == "nazionale": comandi = None
@@ -247,26 +370,12 @@ def settore(cod):
     else: comandi = [u["comando_id"]]
     return render_template("puma/settore.html", s=s, rop=vede, livello=liv, sc=scadenze(settore=cod, comando=comandi) if vede else [])
 
-@puma_bp.route("/livelli", methods=["GET", "POST"])
-def livelli_utente():
-    """Solo amministratori: livello di visibilità (comando / regione / nazionale) di ogni utente."""
-    u = current_user()
-    if u["ruolo"] != "ADMIN": abort(403)
-    if request.method == "POST":
-        for k, v in request.form.items():
-            if k.startswith("l_") and v in ("comando", "regione", "nazionale"):
-                db().execute("INSERT INTO puma_livello_utente(utente_id,livello) VALUES(?,?) ON CONFLICT(utente_id) DO UPDATE SET livello=excluded.livello", (int(k[2:]), v))
-        db().commit(); flash("Livelli di visibilità salvati."); return redirect(url_for("puma.livelli_utente"))
-    righe = db().execute("""SELECT u.id, u.email, u.nome, u.cognome, k.nome comando, d.nome direzione, COALESCE(l.livello,'comando') livello
-        FROM utenti u LEFT JOIN comandi k ON k.id=u.comando_id LEFT JOIN puma_comando_dir cd ON cd.comando_id=u.comando_id
-        LEFT JOIN puma_direzioni d ON d.id=cd.direzione_id LEFT JOIN puma_livello_utente l ON l.utente_id=u.id
-        WHERE u.stato='attivo' ORDER BY u.cognome""").fetchall()
-    return render_template("puma/livelli.html", righe=righe)
-
 @puma_bp.route("/impostazioni", methods=["GET", "POST"])
 def impostazioni():
     u = current_user()
-    if not _puo("puma", "gestore"): abort(403)
+    from .ruoli import accessi
+    acc = accessi()
+    if not (acc.puo("impostazioni", sede=u["comando_id"]) or (not acc.righe and _puo("puma", "gestore"))): abort(403)
     cid, f = u["comando_id"], request.form
     if request.method == "POST":
         a = f["azione"]

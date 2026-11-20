@@ -32,6 +32,17 @@ def crea(silenzioso=False):
                 c.execute("INSERT OR REPLACE INTO permessi VALUES(?,?,?)", (uid, sett[cod], liv))
             c.execute("INSERT OR REPLACE INTO puma_livello_utente VALUES(?,?)", (uid, vis))
             c.execute("INSERT OR REPLACE INTO puma_persone VALUES(?,?)", (uid, CF[em]))
+        # livelli di accesso v1.3: Operatore, ROP Comando SAF (Belluno), ROR Direzione (Veneto e TAA)
+        from .ruoli import assegna
+        dr_ve = c.execute("SELECT k.id FROM comandi k JOIN puma_comando_dir cd ON cd.comando_id=k.id JOIN puma_comando_dir cv ON cv.direzione_id=cd.direzione_id "
+                          "WHERE k.tipo='direzione' AND cv.comando_id=?", (com["VE"],)).fetchone()
+        ruoli_demo = {"demo.utente": ("OPERATORE", None, "*"), "demo.rop": ("ROP_CMD", com["BL"], "SAF"),
+                      "demo.ror": ("ROR_DIR", dr_ve[0] if dr_ve else None, "*")}
+        for em, (ruolo, sede, area) in ruoli_demo.items():
+            uid = c.execute("SELECT id FROM utenti WHERE email=?", (em + DOM,)).fetchone()[0]
+            if ruolo != "ROR_DIR" or sede: assegna(c, uid, ruolo, sede, area, "demo")
+        adm = c.execute("SELECT id FROM utenti WHERE email='demo.admin'||?", (DOM,)).fetchone()
+        if adm: assegna(c, adm[0], "AMM_GEN", None, "*", "demo")
         lv = c.execute("SELECT id FROM puma_livelli WHERE nome='SAF (Speleo Alpino Fluviale) BASICO'").fetchone()[0]
         for sig, team, blind, naz, lat, lon in EVENTI:
             cod = f"SAF-{team.upper()}-" + c.execute("SELECT COALESCE(dz.sigla,'XXX') FROM puma_comando_dir cd JOIN puma_direzioni dz ON dz.id=cd.direzione_id WHERE cd.comando_id=?", (com[sig],)).fetchone()[0] + sig + "-" + oggi.strftime("%Y%m%d")
@@ -58,5 +69,6 @@ def rimuovi():
         for t in ("puma_individuali", "puma_interventi"): c.execute(f"DELETE FROM {t} WHERE username LIKE 'demo.%'")
         c.execute("DELETE FROM puma_destinatari WHERE email LIKE 'demo.%'")
         c.execute("DELETE FROM puma_alert_inviati WHERE username LIKE 'demo.%'")
+        c.execute("DELETE FROM puma_inviti WHERE email LIKE 'demo.%' OR creato_da LIKE 'demo.%'")
         for i in ids: c.execute("DELETE FROM utenti WHERE id=?", (i,))
     print(f"Rimossi {len(ids)} utenti demo e i relativi dati.")

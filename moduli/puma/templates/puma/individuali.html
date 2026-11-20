@@ -1,15 +1,26 @@
 {% extends 'base.html' %}{% block main %}{% include "puma/_nav.html" %}
 <h2 class="puma-h">Registrazione attività individuale</h2>
-<p class="muted">Addestramento svolto da solo (o fuori da un collettivo programmato): conta nel tuo libretto per la tipologia scelta, con le manovre previste spuntate.</p>
-<form method="post" class="puma-form"><input type="hidden" name="csrf" value="{{ csrf }}"><h3>Nuova registrazione</h3>
-<label>Tipologia di addestramento {% include "puma/_tipologie.html" %}</label>
+<p class="muted">Addestramento svolto da solo (o fuori da un collettivo programmato): conta nel tuo libretto per il corso scelto. Puoi scegliere solo i corsi che hai in possesso e le attività generiche, negli ultimi 60 giorni.</p>
+<form method="post" class="puma-form largo" id="indiv"><input type="hidden" name="csrf" value="{{ csrf }}"><h3>Nuova registrazione</h3>
+{% if not aree %}<div class="flash warning">Non risultano corsi in tuo possesso: controlla la <a href="{{ url_for('profilo_view') }}">Profilazione</a>.</div>{% endif %}
+<div class="griglia2">
+<label>Area corsi <select name="area" id="area" required>{% if aree|length > 1 %}<option value="">Scegli l'area…</option>{% endif %}{% for a in aree %}<option value="{{ a.codice }}">{{ a.nome }}</option>{% endfor %}</select></label>
+<label>Corso <select name="livello_id" id="liv" required data-url="{{ url_for('puma.api_manovre', lid=0) }}"><option value="">Scegli prima l'area…</option>
+  {% for l in tipologie %}<option value="{{ l.id }}" data-s="{{ l.settore }}">{{ l.nome }}{{ ' (attività generica)' if not l.corso }}</option>{% endfor %}</select></label>
+</div>
 <input type="hidden" name="tipologia" id="tipo">
-<label>Inizio <input type="datetime-local" name="inizio" value="{{ adesso }}" required></label>
-<label>Fine <input type="datetime-local" name="fine" value="{{ adesso }}" required></label>
-<fieldset id="man"><legend>Manovre previste svolte</legend><small>Scegli prima la tipologia.</small></fieldset>
-<label>Descrizione dell'attività <textarea name="descrizione" rows="2" placeholder="Facoltativa"></textarea></label>
-<button>Registra</button></form>
-<h3>Le mie registrazioni</h3>
-<ul class="puma-list">{% for r in righe %}<li><div><b>{{ r.livello or r.tipologia }}</b>{% if r.descrizione %} · {{ r.descrizione }}{% endif %}<br><small>{{ (r.manovre|from_json)|join(', ') if r.manovre }}</small></div><div>{{ r.inizio[:10]|datait }} {{ r.inizio[11:16] }} → {{ r.fine[11:16] }}</div></li>
+<div class="griglia3">
+<label>Data <input type="date" name="data" value="{{ oggi }}" min="{{ min_data }}" max="{{ oggi }}" required></label>
+<label>Inizio <select name="ora">{% for o in orari %}<option {{ 'selected' if o == proposta }}>{{ o }}</option>{% endfor %}</select></label>
+<label>Durata <select name="durata">{% for m, t in durate %}<option value="{{ m }}" {{ 'selected' if m == 120 }}>{{ t }}</option>{% endfor %}</select></label>
+</div>
+<label>Località <select name="localita"><option value="">Non indicata</option>
+  {% for com, gr in localita %}<optgroup label="{{ com }}">{% for l in gr %}<option value="{{ l.id }}">{{ l.nome }}</option>{% endfor %}</optgroup>{% endfor %}</select></label>
+<fieldset id="man"><legend>Manovre previste svolte</legend><small>Scegli prima il corso.</small></fieldset>
+<label>Note <textarea name="descrizione" rows="2" maxlength="500" placeholder="Facoltative"></textarea></label>
+<button type="submit">Registra</button></form>
+<h3>Le mie ultime registrazioni</h3>
+<ul class="puma-list">{% for r in righe %}<li><div><b>{{ r.livello or r.tipologia }}</b>{% if r.localita %} · {{ r.localita }}{% endif %}{% if r.descrizione %} · {{ r.descrizione }}{% endif %}<br><small>{{ (r.manovre|from_json)|join(', ') if r.manovre }}</small></div><div>{{ r.inizio[:10]|datait }} {{ r.inizio[11:16] }} → {{ r.fine[11:16] }}</div></li>
 {% else %}<li class="puma-empty">Nessuna attività individuale registrata.</li>{% endfor %}</ul>
-<script src="{{ url_for('puma.static', filename='js/individuali.js') }}"></script>{% endblock %}
+<p><a class="puma-btn" href="{{ url_for('puma.mie_attivita') }}">Tutte le mie attività →</a></p>
+<script src="{{ url_for('puma.static', filename='js/individuali.js') }}"></script><script src="{{ url_for('puma.static', filename='js/programma.js') }}"></script>{% endblock %}

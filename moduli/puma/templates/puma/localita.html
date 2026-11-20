@@ -1,0 +1,16 @@
+{% extends 'base.html' %}{% block main %}{% include "puma/_nav.html" %}
+<h2 class="puma-h">Database località</h2>
+<p class="muted">Luoghi di addestramento con area, RV elicottero e RV ambulanza: compaiono negli elenchi della programmazione e delle registrazioni. Le sedi dei Comandi sono già caricate.</p>
+<form method="get" class="filtri">
+<label>Sede <select name="sede" class="auto-invio">{% for s in sedi %}<option value="{{ s.id }}" {{ 'selected' if s.id == sede }}>{{ s.nome }}</option>{% endfor %}</select></label>
+<label>Tipo <select name="tipo" class="auto-invio"><option value="">Tutti</option>{% for k, t in tipi %}<option value="{{ k }}" {{ 'selected' if tipo == k }}>{{ t }}</option>{% endfor %}</select></label></form>
+<table class="puma-tab"><thead><tr><th>Località</th><th>Tipo</th><th>Aree</th><th>RV</th><th>Condivisa</th></tr></thead><tbody>
+{% for r in righe %}<tr class="{{ '' if r.attiva else 'spenta' }}"><td><a href="{{ url_for('puma.localita_scheda', i=r.id) }}"><b>{{ r.nome }}</b></a>{{ ' · ' ~ r.comune if r.comune }}{% if not r.attiva %} <small>(disattivata)</small>{% endif %}</td>
+<td>{{ nomi_tipi.get(r.tipo, r.tipo) }}</td><td>{{ r.aree or 'tutte' }}</td><td>{{ 'H' if r.rv_lat }} {{ '✚' if r.amb_lat }}</td><td>{{ 'sì' if r.condivisa else 'no' }}</td></tr>
+{% else %}<tr><td colspan="5" class="puma-empty">Nessuna località per questa sede.</td></tr>{% endfor %}</tbody></table>
+{% if modifica %}
+<form method="post" class="puma-form largo"><input type="hidden" name="csrf" value="{{ csrf }}"><input type="hidden" name="comando_id" value="{{ sede }}"><h3>Nuova località</h3>
+{% set r = None %}{% include "puma/_localita_campi.html" %}
+<button type="submit">Salva la località</button></form>
+{% include "puma/_mappa_js.html" %}{% endif %}
+{% endblock %}

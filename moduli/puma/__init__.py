@@ -60,8 +60,11 @@ def _user_or_none():
     d = get_db()
     r = d.execute("SELECT livello FROM puma_livello_utente WHERE utente_id=?", (u['id'],)).fetchone()
     z = d.execute("SELECT direzione_id FROM puma_comando_dir WHERE comando_id=?", (u['comando_id'],)).fetchone()
-    return {'username': u['email'], 'nome': nome, 'ruolo': 'ADMIN' if u['is_admin'] else 'UTENTE',
-            'livello': r['livello'] if r else 'comando', 'comando_id': u['comando_id'],
+    from .ruoli import accessi
+    acc = accessi(); ordine = ['comando', 'regione', 'nazionale']
+    liv = max(r['livello'] if r else 'comando', acc.livello_visibilita(), key=ordine.index)
+    return {'username': u['email'], 'nome': nome, 'ruolo': 'ADMIN' if acc.admin else 'UTENTE',
+            'livello': liv, 'comando_id': u['comando_id'],
             'direzione_id': z['direzione_id'] if z else None}
 
 def current_user():
@@ -71,11 +74,15 @@ def current_user():
     return u
 
 def settore_ok(u, cod, minimo='lettura'):
-    """Permessi per categoria (SAF, TPSS...). Partecipare e registrare le proprie attività: basta l'accesso a P.U.M.A.
-    Per programmare (scrittura) o vedere le scadenze (gestore): il permesso sul settore, se esiste tra i settori dei permessi,
-    altrimenti quello su P.U.M.A."""
+    """Permessi per area corsi (SAF, TPSS...). Partecipare e registrare le proprie attività: basta l'accesso a P.U.M.A.
+    Programmare (scrittura): capacità «programma» dei livelli di accesso per quell'area (moduli/puma/ruoli.py);
+    vedere scadenze e report (gestore): capacità «report». Restano validi i permessi di prima sul settore o su P.U.M.A."""
+    from .ruoli import accessi
     cod = (cod or '').lower()
     if minimo == 'lettura': return _puo('puma', 'lettura') or _puo(cod, 'lettura')
+    acc = accessi()
+    if acc.puo('programma' if minimo == 'scrittura' else 'report', cod.upper()): return True
+    if acc.righe: return False   # chi ha livelli di accesso v1.3 segue solo quelli (area per area)
     esiste = get_db().execute('SELECT 1 FROM settori WHERE codice=?', (cod,)).fetchone()
     return _puo(cod, minimo) if esiste else _puo('puma', minimo)
 
@@ -83,7 +90,25 @@ def email_utente(username):
     return username if "@" in username else None
 
 def can_write(u):
-    return _puo('puma', 'scrittura')
+    """Può programmare addestramenti (in almeno un'area corsi)."""
+    from .ruoli import accessi
+    acc = accessi()
+    return acc.puo('programma') or (not acc.righe and _puo('puma', 'scrittura'))
+
+
+def responsabile(u, e):
+    """Può fare il piano di sicurezza e convalidare le presenze dell'addestramento e: Comando organizzatore + capacità «piano» per l'area."""
+    from .ruoli import accessi
+    acc = accessi()
+    if acc.admin: return True
+    if e["comando_id"] != u["comando_id"]: return False
+    return acc.puo("piano", e["tipologia"]) or (not acc.righe and _puo("puma", "scrittura"))
+
+
+def puo_cap(cap, settore=None, sede=None):
+    """Capacità dei livelli di accesso (moduli/puma/ruoli.py) per l'utente della richiesta."""
+    from .ruoli import accessi
+    return accessi().puo(cap, settore, sede)
 
 def conf(chiave, default=None):
     """Configurazione: app.config oppure variabile d'ambiente (PUMA_SMTP_HOST, PUMA_TILE_URL...)."""
@@ -130,8 +155,13 @@ def elenco(tab, u, extra="1=1", params=(), order="id DESC"):
     ).fetchall()
 
 
+VISIBILITA = [("direzione", "Il mio Comando e la Direzione regionale"), ("nazionale", "Tutti i Comandi d'Italia"), ("riservato", "Solo il mio Comando (riservato)")]
+
 def tenant_vals(u):
     f = request.form
+    v = f.get("visibilita")
+    if v in ("direzione", "nazionale", "riservato"):
+        return (u["comando_id"], u.get("direzione_id"), int(v == "riservato"), int(v == "nazionale"))
     return (u["comando_id"], u.get("direzione_id"),
             int(bool(f.get("is_blindato"))),
             int(bool(f.get("is_condiviso_nazionale")) and not f.get("is_blindato")))
@@ -148,7 +178,11 @@ def _fj(v):
 
 @bp.context_processor
 def _ctx():
+    from .localita import centro_sede
+    u = g.get("utente")
     return {
+        "centro_mio": centro_sede(get_db(), u["comando_id"]) if u else None,
+        "visibilita": VISIBILITA,
         "tile_url": url_for("puma.tile", z=0, x=0, y=0).replace("/0/0/0.png", "/{z}/{x}/{y}.png"),
         "settori_all": get_db().execute("SELECT * FROM puma_settori").fetchall(),
         "nomi": {r["id"]: r["nome"] for r in get_db().execute("SELECT id, nome FROM comandi")},
@@ -224,7 +258,7 @@ def documentazione(cat):
         abort(404)
     u = current_user()
     if request.method == "POST":
-        if not can_write(u):
+        if not puo_cap("documenti", request.form.get("settore") or None):
             abort(403)
         fl = request.files.get("file")
         if not fl or not fl.filename:
@@ -245,7 +279,7 @@ def documentazione(cat):
     return render_template("puma/documenti.html",
                            cat=cat, catalogo=catalogo(cat),
                            righe=elenco("puma_documenti", u, "categoria=?", (cat,)),
-                           scrivi=can_write(u))
+                           scrivi=puo_cap("documenti"))
 
 
 @bp.route("/documento/<int:i>")
@@ -284,4 +318,4 @@ def archivia(i):
     return redirect(url_for("puma.attivita"))
 
 
-from . import addestramenti, piano, pagine  # noqa: E402,F401  (registra le route dei moduli)
+from . import addestramenti, piano, pagine, aree, localita  # noqa: E402,F401  (registra le route dei moduli)

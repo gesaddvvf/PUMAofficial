@@ -282,3 +282,14 @@ a.card:hover { background: #2e2e2e; transform: translateY(-2px); } .card .ico { 
   .puma-split { grid-template-columns: 1fr !important; }
   .puma-split .puma-map { min-height: 320px; }
 }
+
+/* v1.3 — accesso in alto: intestazione compatta, poi subito utente e password */
+.hero.hero-compatto { flex-wrap: nowrap; justify-content: flex-start; gap: 18px; padding: 4px 0 14px; }
+.hero-compatto .hero-logo img { width: 84px; border-radius: 14px; }
+.hero-compatto h2 { font-size: clamp(18px, 2.6vw, 28px); }
+.hero-compatto .motto { margin: 4px 0 6px; font-size: 14px; }
+.hero-compatto .strisce { margin: 0; }
+p.intro.centro { text-align: center; margin: 18px auto 0; }
+.area-per  { --ac: #8e24aa; --acl: #ce93d8; --acf: #fff; }      /* Area personale: viola */
+@media (max-width: 560px) { .hero.hero-compatto { gap: 10px; } .hero-compatto .hero-logo img { width: 56px; } }
+[hidden] { display: none !important; }

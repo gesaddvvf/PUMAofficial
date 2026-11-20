@@ -1,0 +1,21 @@
+{% extends 'base.html' %}{% block main %}{% include "puma/_nav.html" %}
+<h2 class="puma-h">Aree corsi</h2>
+<p class="muted">Le aree corsi individuano i settori: i livelli di accesso si assegnano area per area. Puoi rinominarle, riordinarle, disattivarle (spariscono dagli elenchi) e crearne di nuove; poi spostare i corsi nell'area giusta.</p>
+<form method="post" class="puma-form largo"><input type="hidden" name="csrf" value="{{ csrf }}"><input type="hidden" name="azione" value="salva">
+<table class="puma-tab"><thead><tr><th>Sigla</th><th>Nome</th><th>Descrizione</th><th>Ordine</th><th>Attiva</th><th>Corsi</th><th>Livelli</th></tr></thead><tbody>
+{% for a in aree %}<tr><td><b>{{ a.codice }}</b></td><td><input name="nome_{{ a.codice }}" value="{{ a.nome }}" maxlength="80"></td>
+<td><input name="descr_{{ a.codice }}" value="{{ a.descrizione or '' }}" maxlength="300"></td><td><input name="ordine_{{ a.codice }}" type="number" value="{{ a.ordine }}" min="0" max="999" class="corto"></td>
+<td><input type="checkbox" name="attiva_{{ a.codice }}" {{ 'checked' if a.attiva }}></td><td>{{ a.n_corsi }}</td><td>{{ a.n_ruoli }}</td></tr>{% endfor %}</tbody></table>
+<button type="submit">Salva le aree</button></form>
+
+<form method="post" class="puma-form"><input type="hidden" name="csrf" value="{{ csrf }}"><input type="hidden" name="azione" value="nuova"><h3>Nuova area corsi</h3>
+<div class="griglia2"><label>Sigla <input name="codice" maxlength="12" placeholder="es. GOS" required></label><label>Nome <input name="nome" maxlength="80" placeholder="es. GOS (Gruppo Operativo Speciale)" required></label></div>
+<label>Descrizione <input name="descrizione" maxlength="300"></label><button type="submit">Crea l'area</button></form>
+
+<form method="post" class="puma-form largo" id="corsi"><input type="hidden" name="csrf" value="{{ csrf }}"><input type="hidden" name="azione" value="corsi"><h3>Corsi e area di appartenenza</h3>
+<table class="puma-tab"><thead><tr><th>Corso</th><th>Area</th><th>Attivo</th></tr></thead><tbody>
+{% for t in corsi %}<tr><td>{{ t.nome }}{% if not t.corso %} <small class="muted">(attività)</small>{% endif %}{% if t.area_manuale %} <small class="muted">spostato a mano</small>{% endif %}</td>
+<td><select name="area_{{ t.id }}">{% for a in aree %}<option value="{{ a.codice }}" {{ 'selected' if a.codice == t.settore }}>{{ a.codice }} – {{ a.nome }}</option>{% endfor %}</select></td>
+<td><input type="checkbox" name="attivo_{{ t.id }}" {{ 'checked' if t.attiva }}></td></tr>{% endfor %}</tbody></table>
+<button type="submit">Salva i corsi</button></form>
+{% endblock %}

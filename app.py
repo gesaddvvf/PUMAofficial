@@ -105,9 +105,12 @@ def prima():
                 g.utente = u
                 g.perm = {r['codice']: r['livello'] for r in c.execute(
                     'SELECT s.codice, p.livello FROM permessi p JOIN settori s ON s.id=p.settore_id WHERE p.utente_id=?', (uid,))}
+                # chi ha un livello di accesso di P.U.M.A. (anche solo Operatore) entra nel modulo principale
+                if config.MODULO_PRINCIPALE not in g.perm and c.execute('SELECT 1 FROM puma_ruoli_utente WHERE utente_id=?', (uid,)).fetchone():
+                    g.perm[config.MODULO_PRINCIPALE] = 'lettura'
         if not g.utente: session.clear()
     if not g.utente:
-        return None if request.endpoint in ('login', 'stato_rete') else redirect(url_for('login'))
+        return None if request.endpoint in ('login', 'stato_rete', 'invito') else redirect(url_for('login'))
     if not g.utente['profilo_confermato'] and request.endpoint not in ('profilo_view', 'profilo_spec_aggiungi', 'logout'):
         return redirect(url_for('profilo_view'))
     if g.utente['stato'] == 'in_attesa' and request.endpoint not in ('attesa', 'logout', 'profilo_view', 'profilo_spec_aggiungi'):
@@ -137,8 +140,19 @@ def bloccato(k):
     t = time.time(); TENTATIVI[k] = [x for x in TENTATIVI.get(k, []) if t - x < 300]
     return len(TENTATIVI[k]) >= 5
 
-def pagina_login():
-    return render_template('login.html', utenti_prova=prova.UTENTI if config.PROVA else [])
+def pagina_login(invito=None):
+    return render_template('login.html', utenti_prova=prova.UTENTI if config.PROVA and not invito else [], invito=invito)
+
+@app.route('/invito/<token>')
+def invito(token):
+    """Link di invito mandato da un collega: pagina di accesso con l'utente già scritto."""
+    if g.utente: return redirect(url_for('home'))
+    with db.connect() as c:
+        r = c.execute('SELECT i.*, k.nome AS comando FROM puma_inviti i LEFT JOIN comandi k ON k.id=i.comando_id WHERE token=?', (token,)).fetchone()
+    if not r or r['usato_il'] or (r['scade_il'] and r['scade_il'] < datetime.date.today().isoformat()):
+        flash('Link di invito non valido o scaduto: accedi comunque con le tue credenziali, un amministratore ti abiliterà.', 'warning')
+        return redirect(url_for('login'))
+    return pagina_login(invito=r)
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
@@ -170,6 +184,10 @@ def login():
             if u['stato'] == 'disabilitato':
                 flash('Account disabilitato. Contatta un amministratore di P.U.M.A.', 'danger')
                 return pagina_login()
+            from moduli.puma import ruoli as _ruoli
+            if _ruoli.applica_inviti(c, u):   # invitato da un collega: account subito attivo con il livello indicato
+                db.audit(c, email, 'invito_usato', 'account abilitato dal link di invito')
+                u = c.execute('SELECT * FROM utenti WHERE id=?', (u['id'],)).fetchone()
             origine, errw = profilo.profila(c, u)   # ricerca con l'email inserita: WAUC, poi organico locale
             if origine and not u['profilo_confermato']: db.audit(c, email, 'profilo_precompilato', origine)
             if errw: db.audit(c, email, 'wauc_errore', errw[:200])
@@ -334,6 +352,9 @@ def admin_utente(uid):
                 c.execute('UPDATE utenti SET approvato_da=?, approvato_il=? WHERE id=?',
                           (g.utente['id'], datetime.datetime.now().isoformat(timespec='seconds'), uid))
             c.execute('UPDATE utenti SET stato=?, comando_id=?, is_admin=? WHERE id=?', (stato, cid, adm, uid))
+            if adm: c.execute("INSERT OR IGNORE INTO puma_ruoli_utente(utente_id,ruolo,sede_id,settore,assegnato_da,assegnato_il) VALUES(?, 'AMM_GEN', NULL, '*', ?, ?)",
+                              (uid, g.utente['email'], datetime.datetime.now().isoformat(timespec='seconds')))
+            else: c.execute("DELETE FROM puma_ruoli_utente WHERE utente_id=? AND ruolo='AMM_GEN'", (uid,))
             c.execute('DELETE FROM permessi WHERE utente_id=?', (uid,))
             for s in settori:
                 l = request.form.get(f"liv_{s['id']}")
@@ -499,7 +520,13 @@ if __name__ == '__main__':
         print(' MODALITA REALE: credenziali dipartimentali + dati WAUC (serve FortiClient VPN o rete VVF).')
         if config.DEV_AUTH: print(' *** ATTENZIONE: PUMA_DEV_AUTH attivo, password "dev" per tutti. Solo sviluppo! ***')
     print(f' Apri il browser su:  {indirizzo}')
-    if config.HOST == '0.0.0.0': print(f' (raggiungibile anche dagli altri PC della rete sulla porta {config.PORT})')
+    if config.HOST == '0.0.0.0':
+        from moduli.puma.aree import indirizzi_rete
+        ip = indirizzi_rete()
+        print(' IN RETE: i colleghi della stessa rete aprono PUMA da:')
+        for i in ip or ['(indirizzo di questo PC non trovato: usa ipconfig)']: print(f'     http://{i}:{config.PORT}' if '(' not in i else '     ' + i)
+        print(' Area Comando -> Inviti crea il link da mandare a ciascun collega.')
+        print(' Se Windows chiede il permesso del Firewall, consenti le reti PRIVATE (o di dominio).')
     print(' Per fermare PUMA chiudi questa finestra o premi CTRL+C.')
     print('=' * 64)
     if config.env('APRI_BROWSER') == '1':

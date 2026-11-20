@@ -27,7 +27,31 @@
     Array.prototype.forEach.call(document.querySelectorAll('[data-w]'), function (el) { el.style.width = el.getAttribute('data-w') + '%'; });
     Array.prototype.forEach.call(document.querySelectorAll('[data-h]'), function (el) { el.style.height = el.getAttribute('data-h') + '%'; });
     // selettori dei report: cambiando l'ente si aggiorna subito la pagina
-    Array.prototype.forEach.call(document.querySelectorAll('form.selettore select[name=ente]'), function (s) { s.addEventListener('change', function () { s.form.submit(); }); });
+    Array.prototype.forEach.call(document.querySelectorAll('form.selettore select[name=ente], select.auto-invio'), function (s) { s.addEventListener('change', function () { s.form.submit(); }); });
+    // pulsanti «Copia» (link di invito): appunti se disponibili, altrimenti seleziona il testo
+    Array.prototype.forEach.call(document.querySelectorAll('[data-copia]'), function (b) {
+      b.addEventListener('click', function () {
+        var c = document.getElementById(b.getAttribute('data-copia')); if (!c) return;
+        var t = c.value || c.textContent;
+        if (navigator.clipboard && window.isSecureContext) navigator.clipboard.writeText(t).then(function () { b.textContent = 'Copiato ✓'; });
+        else { if (c.select) c.select(); else { var r = document.createRange(); r.selectNodeContents(c); var sl = window.getSelection(); sl.removeAllRanges(); sl.addRange(r); }
+               try { document.execCommand('copy'); b.textContent = 'Copiato ✓'; } catch (e) { b.textContent = 'Premi Ctrl+C'; } }
+      });
+    });
+    // livelli di accesso: la sede dipende dal ruolo (Direzione -> Direzioni regionali, Comando -> Comandi, Generale/Operatore -> nessuna)
+    Array.prototype.forEach.call(document.querySelectorAll('select[data-ruolo-sede]'), function (r) {
+      var sede = document.getElementById(r.getAttribute('data-ruolo-sede')), riga = sede && sede.closest('label');
+      function agg() {
+        var liv = (r.selectedOptions[0] || {}).dataset ? r.selectedOptions[0].dataset.livello : '';
+        if (!sede) return;
+        var nessuna = liv === 'nazionale' || liv === 'base'; if (riga) riga.hidden = nessuna; sede.required = !nessuna;
+        Array.prototype.forEach.call(sede.options, function (o) {
+          if (!o.value) return; var ok = (liv === 'direzione') === (o.dataset.tipo === 'direzione'); o.hidden = !ok; o.disabled = !ok;
+        });
+        if (sede.selectedOptions[0] && sede.selectedOptions[0].disabled) sede.value = '';
+      }
+      r.addEventListener('change', agg); agg();
+    });
   });
 
   /* ---------- turno e salto in servizio (stessa sequenza del sito P.U.M.A. e di FireOps) ---------- */

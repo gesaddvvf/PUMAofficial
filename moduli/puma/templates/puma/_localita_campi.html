@@ -1,0 +1,18 @@
+<div class="griglia2">
+<label>Nome <input name="nome" value="{{ r.nome if r else '' }}" maxlength="80" required placeholder="es. Falesia di Ridracoli"></label>
+<label>Tipo <select name="tipo">{% for k, t in tipi %}<option value="{{ k }}" {{ 'selected' if r and r.tipo == k }}>{{ t }}</option>{% endfor %}</select></label>
+<label>Comune <input name="comune" value="{{ r.comune or '' if r else '' }}" maxlength="60"></label>
+<label class="puma-chk"><input type="checkbox" name="condivisa" {{ 'checked' if not r or r.condivisa }}> La vedono anche gli altri Comandi</label>
+</div>
+<fieldset class="sez"><legend>Aree corsi adatte (nessuna = tutte)</legend><div class="chips">{% for a in aree %}<label class="puma-chk chip"><input type="checkbox" name="aree" value="{{ a.codice }}" {{ 'checked' if r and a.codice in aree_sel }}> {{ a.codice }}</label>{% endfor %}</div></fieldset>
+<div class="puma-radio"><label><input type="radio" name="modo" value="area" checked> Punto della località</label><label><input type="radio" name="modo" value="rv"> RV elicottero (H)</label><label><input type="radio" name="modo" value="amb"> RV ambulanza (croce)</label></div>
+<div id="map" class="puma-map" data-tiles="{{ tile_url }}" data-pick="1" data-barra="1" data-sedi="{{ url_for('puma.api_sedi') }}" data-centro="{{ (centro or centro_mio or [])|join(',') }}" data-zoom="12"></div>
+{% include "puma/_legenda.html" %}
+<input type="hidden" name="lat" id="lat" value="{{ r.lat if r else '' }}"><input type="hidden" name="lon" id="lon" value="{{ r.lon if r else '' }}">
+<input type="hidden" name="rv_lat" id="rv_lat" value="{{ r.rv_lat or '' if r else '' }}"><input type="hidden" name="rv_lon" id="rv_lon" value="{{ r.rv_lon or '' if r else '' }}">
+<input type="hidden" name="amb_lat" id="amb_lat" value="{{ r.amb_lat or '' if r else '' }}"><input type="hidden" name="amb_lon" id="amb_lon" value="{{ r.amb_lon or '' if r else '' }}">
+<div class="griglia2">
+<label>Descrizione RV elicottero <input name="rv_descr" value="{{ r.rv_descr or '' if r else '' }}" maxlength="120" placeholder="es. Campo sportivo"></label>
+<label>Descrizione RV ambulanza <input name="amb_descr" value="{{ r.amb_descr or '' if r else '' }}" maxlength="120" placeholder="es. Parcheggio"></label>
+</div>
+<label>Note <textarea name="note" rows="2" maxlength="500">{{ r.note or '' if r else '' }}</textarea></label>

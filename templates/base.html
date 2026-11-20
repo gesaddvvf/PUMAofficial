@@ -21,10 +21,10 @@
     <a class="nav-btn area-neu{{ ' attivo' if nav_chiave=='home' }}" href="{{ url_for('home') }}">Home Page</a>
     <a class="nav-btn area-att{{ ' attivo' if nav_chiave=='attivita' }}" href="{{ url_for('puma.attivita_oggi') }}">Attività</a>
     <a class="nav-btn area-rt{{ ' attivo' if nav_chiave=='realtime' }}" href="{{ url_for('puma.presenze') }}">Real Time</a>
-    <a class="nav-btn area-doc{{ ' attivo' if nav_chiave=='documentazione' }}" href="{{ url_for('puma.documentazione', cat='manuali-puma') }}">Documentazione</a>
-    <a class="nav-btn area-rep{{ ' attivo' if nav_chiave=='individuale' }}" href="{{ url_for('puma.profilo') }}">Report Individuale</a>
-    {% if nav_perm and nav_perm.comando %}<a class="nav-btn area-rep{{ ' attivo' if nav_chiave=='collettivo' }}" href="{{ url_for('puma.report_collettivo') }}">Report Collettivo</a>{% endif %}
-    <a class="nav-btn area-com{{ ' attivo' if nav_chiave=='comando' }}{{ ' sbloccato' if nav_perm and nav_perm.comando }}" href="{{ url_for('puma.area_comando') }}">{{ '🔓' if nav_perm and nav_perm.comando else '🔒' }} Area Comando</a>
+    <a class="nav-btn area-doc{{ ' attivo' if nav_chiave=='didattica' }}" href="{{ url_for('puma.didattica') }}">Didattica e documentazione</a>
+    <a class="nav-btn area-per{{ ' attivo' if nav_chiave=='personale' }}" href="{{ url_for('puma.personale') }}">Area personale</a>
+    {% if nav_perm and nav_perm.report %}<a class="nav-btn area-rep{{ ' attivo' if nav_chiave=='collettivo' }}" href="{{ url_for('puma.report_collettivo') }}">Reportistica</a>{% endif %}
+    <a class="nav-btn area-com{{ ' attivo' if nav_chiave=='comando' }}{{ ' sbloccato' if nav_perm and nav_perm.area_comando }}" href="{{ url_for('puma.area_comando') }}">{{ '🔓' if nav_perm and nav_perm.area_comando else '🔒' }} Area Comando</a>
   </nav>
   {% endif %}
 </header>
@@ -43,22 +43,18 @@
 <aside id="menu" aria-label="Menu" aria-hidden="true">
   <div class="menu-testa"><b>☰ Menu P.U.M.A.</b><button id="menu-chiudi" type="button" aria-label="Chiudi menu">✕</button></div>
   <div class="menu-corpo">
-    <div class="menu-utente"><b>👤 {{ utente['nome'] }} {{ utente['cognome'] }}</b><small>{{ utente['email'] }}{% if utente['comando'] %} · {{ utente['comando'] }}{% endif %}</small></div>
+    <div class="menu-utente"><b>👤 {{ utente['nome'] }} {{ utente['cognome'] }}</b><small>{{ utente['email'] }}{% if utente['comando'] %} · {{ utente['comando'] }}{% endif %}</small>{% if nav_perm and nav_perm.ruolo %}<small class="ruolo">🔑 {{ nav_perm.ruolo }}</small>{% endif %}</div>
     <div class="sez-titolo">Navigazione</div>
     <a class="voce area-neu{{ ' attivo' if nav_chiave=='home' }}" href="{{ url_for('home') }}"><span>🏠 Home Page</span></a>
-    {% for nome, area, ic, voci in nav_voci_menu or [] %}{% if area not in ('com', 'rep') %}
+    {% for nome, area, ic, voci in nav_voci_menu or [] %}{% if area != 'com' %}
     <div class="sotto-titolo area-{{ area }}">{{ ic }} {{ nome }}</div>
     {% for url, etichetta, attiva in voci %}<a class="voce liv2 area-{{ area }}{{ ' attivo' if attiva }}" href="{{ url }}"><span>{{ etichetta }}</span></a>{% endfor %}
     {% endif %}{% endfor %}
-    <div class="sotto-titolo area-rep">📊 Reportistica</div>
-    <a class="voce liv2 area-rep{{ ' attivo' if nav_chiave=='individuale' }}" href="{{ url_for('puma.profilo') }}"><span>Report Individuale</span></a>
-    {% if nav_perm and nav_perm.comando %}<a class="voce liv2 area-rep{{ ' attivo' if request.endpoint=='puma.report_collettivo' }}" href="{{ url_for('puma.report_collettivo') }}"><span>Report Collettivo</span></a>
-    <a class="voce liv2 area-rep{{ ' attivo' if request.endpoint=='puma.cruscotto' }}" href="{{ url_for('puma.cruscotto') }}"><span>Cruscotto corsi</span></a>{% endif %}
     <div class="sez-titolo area-com">Area Comando</div>
-    {% if nav_perm and nav_perm.comando %}{% for nome, area, ic, voci in nav_voci_menu or [] %}{% if area == 'com' %}
+    {% if nav_perm and nav_perm.area_comando %}{% for nome, area, ic, voci in nav_voci_menu or [] %}{% if area == 'com' %}
     {% for url, etichetta, attiva in voci %}<a class="voce liv2 area-com{{ ' attivo' if attiva }}" href="{{ url }}"><span>{{ etichetta }}</span></a>{% endfor %}
     {% endif %}{% endfor %}{% else %}
-    <a class="voce area-com" href="{{ url_for('puma.area_comando') }}"><span>🔒 Riservata<small>ROP, ROR, Funzionario di settore e amministratori</small></span></a>{% endif %}
+    <a class="voce area-com" href="{{ url_for('puma.area_comando') }}"><span>🔒 Riservata<small>Amministratori, Funzionari di settore, ROR, ROP, Staff e Magazzino</small></span></a>{% endif %}
     {% if app_utente|length > 1 %}<div class="sez-titolo">Applicazioni</div>
     {% for m in app_utente %}<a class="voce area-neu" href="{{ url_for(m['codice'] ~ '.index') }}"><span>{{ m.get('icona', '🧩') }} {{ m['nome'] }}<small>{{ m.get('descrizione', '') }}</small></span></a>{% endfor %}{% endif %}
     <div class="sez-titolo">Link</div>

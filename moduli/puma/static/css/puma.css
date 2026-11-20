@@ -86,3 +86,56 @@ details summary{cursor:pointer;color:var(--gold)}
 .ev-titolo{display:flex;gap:10px;align-items:center}.ev-azioni{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
 .puma-evento>p{margin:6px 0 0}.man-ciclo{font-weight:700;color:var(--acl);margin:8px 0 2px;font-size:12.5px}
 tr.passato td{opacity:.6}
+
+/* v1.3 — barra delle mappe: centra su Comando, localizzami, croce, coordinate */
+.mp-barra { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin: 8px 0 6px; }
+.mp-barra select.mp-sede { flex: 1 1 260px; min-width: 0; margin: 0; }
+.mp-barra .btn { margin: 0; white-space: nowrap; }
+.mp-coord { display: flex; gap: 6px; flex: 1 1 100%; }
+.mp-coord input { flex: 1; min-width: 0; margin: 0; }
+.mp-msg { flex: 1 1 100%; font-size: 13px; color: var(--gold, #f5c518); min-height: 0; }
+.mp-msg:empty { display: none; }
+.puma-map { position: relative; }
+.mp-mirino { position: absolute; left: 50%; top: 50%; width: 34px; height: 34px; margin: -17px 0 0 -17px; z-index: 450; pointer-events: none; }
+.mp-mirino::before, .mp-mirino::after { content: ''; position: absolute; background: #e53935; box-shadow: 0 0 0 1px rgba(255,255,255,.85); }
+.mp-mirino::before { left: 16px; top: 0; width: 2px; height: 34px; }
+.mp-mirino::after { top: 16px; left: 0; height: 2px; width: 34px; }
+.mp-letto { display: flex; flex-wrap: wrap; gap: 4px 14px; align-items: baseline; font-size: 13px; margin: 6px 0 10px; }
+.mp-letto .mp-f { font-family: ui-monospace, Consolas, monospace; user-select: all; }
+.mp-letto small { color: #9e9e9e; }
+.puma-form.largo { max-width: 900px; }
+.puma-form fieldset.sez { border: 1px solid #3a3a3a; border-radius: 6px; padding: 10px 12px 12px; margin: 0; display: grid; gap: .6rem; min-width: 0; }
+.puma-form fieldset.sez > legend { color: var(--acl, #f0f0f0); font-weight: 700; padding: 0 6px; }
+.griglia2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .6rem; }
+.griglia3 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .6rem; }
+@media (max-width: 640px) { .griglia2, .griglia3 { grid-template-columns: 1fr; } }
+select option:disabled { color: #777; }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.chip { display: inline-flex; align-items: center; gap: 6px; background: #2b2b2b; border: 1px solid #444; border-radius: 14px; padding: 3px 10px; font-size: 12.5px; margin: 2px 4px 2px 0; }
+.chip small { color: #9e9e9e; }
+.chip .x { background: none; border: 0; color: #ef9a9a; cursor: pointer; padding: 0 2px; font-size: 12px; }
+label.chip { cursor: pointer; }
+label.chip input { width: auto; margin: 0; }
+form.in-linea { display: inline; margin: 0; }
+.filtri { display: flex; flex-wrap: wrap; gap: 10px; align-items: end; margin: 14px 0 8px; }
+.filtri label { display: grid; gap: 3px; color: #bbb; font-size: 13px; }
+.tab-scorre { overflow-x: auto; }
+.matrice-ruoli th, .matrice-ruoli td { font-size: 12px; text-align: center; }
+.matrice-ruoli tbody th { text-align: left; font-weight: 400; }
+.matrice-ruoli td { color: var(--ac, var(--gold)); }
+.griglia-pers { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 14px; }
+.griglia-pers .box { margin: 0; max-width: none; }
+table.kv th { text-align: left; width: 34%; color: #9e9e9e; font-weight: 400; }
+.lista-ruoli { list-style: none; padding: 0; margin: 0 0 8px; }
+.lista-ruoli li { padding: 5px 0; border-bottom: 1px solid #333; }
+.lista-ruoli small { display: block; color: #9e9e9e; }
+.stato-ok { color: #81c784; } .stato-ko { color: #ef9a9a; } .stato-nd { color: #bdbdbd; }
+tr.spenta { opacity: .55; }
+input.corto { width: 5em !important; }
+.menu-utente small.ruolo { color: var(--gold, #f5c518); }
+.puma-split > div { display: flex; flex-direction: column; min-width: 0; }
+.puma-split > div > .puma-map { flex: 1; }
+@media (max-width: 800px) { .puma-split { grid-template-columns: 1fr; } }
+.matrice-ruoli tbody th { text-transform: none; letter-spacing: 0; min-width: 230px; font-size: 12.5px; color: #ddd; }
+.matrice-ruoli thead th { min-width: 84px; }
+.matrice-ruoli td { font-size: 15px; }

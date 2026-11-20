@@ -35,12 +35,25 @@ PUMA ha la stessa grafica del sito <https://gesaddvvf.github.io/PUMA/>. In alto 
 | Area | Cosa contiene |
 |---|---|
 | **Home Page** | presentazione, aree, addestramenti di oggi, settori abilitati |
-| **Attività** (rosso) | **Addestramenti di oggi** (con «➕ Mi aggiungo»), **Programma un addestramento** (giorno, tipologia, manovre previste), Calendario, **Piani di sicurezza**, Registrazione individuale, Interventi reali, Profilazione |
+| **Attività** (rosso) | **Addestramenti di oggi** (con «➕ Mi aggiungo»), **Programma un addestramento** (guidato: data, orari, area corsi, corso, finalità, squadra, località e RV da elenchi), Calendario, **Piani di sicurezza**, Registrazione individuale (solo corsi in possesso), Interventi reali |
 | **Real Time** (verde) | Presenze Odierne, Mappa Real Time, Riepilogo Globale, Registro odierno |
-| **Documentazione** (blu) | Manuali P.U.M.A., Manuali di settore, Circolari di settore (gli stessi file Drive del sito), Archivio |
-| **Report Individuale** (giallo) | il tuo libretto, con le regole del sito: ore per corso nel periodo, quota collettive, manovre previste fatte e da fare, «in regola / non in regola» |
-| **Report Collettivo** (giallo) | per Comando o Direzione, tipologia e anno, come nel sito; più il **Cruscotto corsi**. Solo per ROP, ROR, Nazionale e amministratori |
-| **Area Comando** (bianco) | Impostazioni del Comando, Livelli utenti, Utenti e permessi, Organico, Configurazione e WAUC, Registro. Al posto della password del sito si entra in base ai propri permessi |
+| **Didattica e documentazione** (blu) | Manuali P.U.M.A., Manuali di settore, Circolari di settore, Archivio; qui arriveranno i moduli didattici (lezioni, video, quiz, schede tecniche) |
+| **Area personale** (viola) | i tuoi dati, i tuoi livelli di accesso, corsi in possesso, situazione dell'anno, **Report individuale** (libretto), le tue attività, Profilazione |
+| **Reportistica** (giallo) | Report collettivo e Cruscotto corsi, per chi ha la capacità «report» (solo nelle sue aree corsi) |
+| **Area Comando** (bianco) | Località, **Livelli di accesso**, **Inviti**, Aree corsi, Impostazioni, Corsi e foglio PUMA e — per l'Amministratore Generale — Utenti, Organico, Configurazione e WAUC, Comandi e Direzioni, Registro |
+
+### Livelli di accesso
+Ogni persona può avere uno o più livelli; ognuno vale per una **sede** e per un'**area corsi** (SAF, TPSS, NBCR… oppure tutte):
+
+- **Amministratore Generale** (tutta Italia)
+- **Direzione** (sede = Direzione Regionale, valgono anche per i suoi Comandi): Amministratore, Funzionario di settore, ROR, Staff, Magazzino
+- **Comando** (sede = Comando, CON o SOCAV): Amministratore, Funzionario di settore, ROP, Staff, Magazzino
+- **Operatore**: tutti gli altri (partecipa e registra le proprie attività)
+
+Si assegnano da **Area Comando → Livelli di accesso** (l'Amministratore di Comando o di Direzione assegna quelli della sua sede e può abilitare chi è in attesa). Cosa può fare ogni livello è nella tabella in fondo a quella pagina: **è provvisoria** e si cambia in un solo punto, `moduli/puma/ruoli.py` (MATRICE). Le aree corsi si gestiscono da **Area Comando → Aree corsi**.
+
+### Mappe
+In tutte le mappe: **📍 Centra la mappa su un Comando** (poi sposti la mappa e scegli il luogo), **🎯 Localizzami** (funziona aprendo PUMA dal PC stesso o in https), **✛ croce** al centro con il pulsante **Usa la croce**, e una casella dove incollare le coordinate in qualunque formato: gradi decimali (`44.2225, 12.0408`), gradi-primi-secondi (`44°13'21"N 12°02'27"E`), gradi e primi, **UTM** (`33T 263634 4900845`), **MGRS**, link di Google Maps o OpenStreetMap. Sotto la mappa il punto è riportato in tutti i formati. Chi programma un addestramento parte dalla mappa centrata sul proprio Comando; le località salvate (Area Comando → Località) riempiono da sole area, RV elicottero e RV ambulanza.
 
 **Come si usa un addestramento collettivo:** il responsabile lo *programma* per un giorno (tipologia e manovre previste) → quel giorno compare in *Addestramenti di oggi* e ognuno preme **Mi aggiungo** → il responsabile prepara il *piano di sicurezza* e a fine giornata convalida le presenze → ore e manovre finiscono nel libretto di ognuno.
 
@@ -85,7 +98,7 @@ Per ripartire da zero con i dati di prova: doppio clic su **`AZZERA_PROVA.bat`**
    - **P.U.M.A.**: `lettura` per entrare, `scrittura` per creare e registrare, `gestore` per le Impostazioni;
    - **SAF / TPSS**: `lettura` = partecipa, `scrittura` = Responsabile, `gestore` = ROP (vede le scadenze).
 
-   Il livello di visibilità (comando / regione / nazionale) si assegna da **Area Comando → Livelli utenti**.
+   I livelli di accesso (Amministratore, Funzionario, ROR/ROP, Staff, Magazzino per sede e area corsi) si assegnano da **Area Comando → Livelli di accesso**.
 7. Per fermare PUMA **chiudi la finestra nera**. I dati restano in `data\`.
 
 ### Corsi, ore minime e manovre previste (una volta, poi a ogni aggiornamento)
@@ -100,9 +113,12 @@ Senza indicazioni PUMA cerca la persona in WAUC in tutte le 107 province, e la p
 2. aprila con il Blocco note e togli il `#` davanti alla riga `PUMA_WAUC_SEDI=FC` (metti le sigle che ti servono, separate da virgola, es. `FC,RA,RN`);
 3. salva e riavvia `AVVIA.bat`.
 
-### Usarlo da altri PC della rete
-Di default PUMA si apre **solo dal PC su cui gira**. Per farlo usare anche ai colleghi, in `puma.env` togli il `#` da `PUMA_HOST=0.0.0.0` e riavvia. Gli altri PC aprono `http://<nome-o-IP-del-tuo-PC>:8080`; se Windows chiede il permesso del firewall, consenti la rete privata/di dominio.
-Un PC personale con la VPN va bene per provare. Per un uso stabile serve un PC o server sempre acceso nella rete VVF, da concordare con chi gestisce la rete.
+### Usarlo da altri PC della rete e mandare i link ai colleghi
+1. Chiudi PUMA e avvialo con **`AVVIA_RETE.bat`** (invece di `AVVIA.bat`). La finestra nera mostra gli indirizzi da usare, es. `http://10.12.34.56:8080`. Se Windows chiede il permesso del firewall, consenti le reti **private / di dominio**.
+2. In **Area Comando → Inviti** scrivi `nome.cognome` del collega, il Comando e il livello: PUMA crea un **link** (con il pulsante «Scrivi l'e-mail» lo mandi subito).
+3. Il collega apre il link, entra con le sue credenziali dipartimentali e il suo account è **già attivo** con il livello scelto.
+
+Cosa serve perché funzioni: il PC con PUMA deve restare **acceso con la finestra aperta** e i colleghi devono essere **nella stessa rete** (rete VVF del Comando). Da casa con FortiClient di solito due PC non si vedono tra loro: il link funziona per chi è in sede. Per un uso stabile serve un PC o server sempre acceso nella rete VVF, da concordare con chi gestisce la rete. Non va esposto su Internet.
 
 ---
 

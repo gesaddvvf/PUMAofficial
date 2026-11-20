@@ -1,0 +1,29 @@
+{% extends 'base.html' %}{% block main %}{% include "puma/_nav.html" %}
+<h2 class="puma-h">Livelli di accesso <small>per sede e area corsi</small></h2>
+<p class="muted">Ogni livello vale per una <b>sede</b> (Direzione Regionale per i livelli «Direzione», Comando per quelli «Comando») e per un'<b>area corsi</b> (SAF, TPSS, NBCR… oppure tutte). Chi non ha livelli è <b>Operatore</b>. Assegnare un livello a chi è in attesa lo abilita.</p>
+
+<form method="post" class="puma-form largo"><input type="hidden" name="csrf" value="{{ csrf }}"><input type="hidden" name="azione" value="assegna"><h3>Assegna un livello</h3>
+<div class="griglia2">
+<label>Persona <select name="utente_id" required><option value="">Scegli…</option>{% for p in persone %}<option value="{{ p.id }}" {{ 'selected' if sel == p.id }}>{{ p.cognome }} {{ p.nome }} · {{ p.comando or 'senza sede' }}{{ ' (in attesa)' if p.stato == 'in_attesa' }}</option>{% endfor %}</select></label>
+<label>Livello <select name="ruolo" required data-ruolo-sede="sede_ass"><option value="">Scegli il livello…</option>{% for r in assegnabili %}<option value="{{ r.codice }}" data-livello="{{ r.livello }}">{{ r.nome }}</option>{% endfor %}</select></label>
+<label>Sede <select name="sede_id" id="sede_ass"><option value="">Scegli la sede…</option>{% for s in sedi %}<option value="{{ s.id }}" data-tipo="{{ s.tipo }}">{{ s.nome }}</option>{% endfor %}</select></label>
+<label>Area corsi <select name="settore"><option value="*">Tutte le aree</option>{% for a in aree %}<option value="{{ a.codice }}">{{ a.nome }}</option>{% endfor %}</select></label>
+</div>
+<button type="submit">Assegna</button></form>
+
+<form method="get" class="filtri"><label>Sede <select name="sede" class="auto-invio"><option value="">Tutte le sedi che gestisci</option>{% for s in tutti_comandi %}<option value="{{ s.id }}" {{ 'selected' if filtro == s.id }}>{{ s.nome }}</option>{% endfor %}</select></label>
+{% if sel %}<a class="puma-btn" href="{{ url_for('puma.accessi') }}">Mostra tutti</a>{% endif %}</form>
+<table class="puma-tab"><thead><tr><th>Persona</th><th>Sede</th><th>Livelli di accesso</th></tr></thead><tbody>
+{% for p in persone %}<tr><td><b>{{ p.cognome }} {{ p.nome }}</b><br><small>{{ p.email }}</small>{% if p.stato == 'in_attesa' %}<br><span class="badge stato-ko">in attesa</span>{% endif %}</td>
+<td>{{ p.comando or '—' }}</td>
+<td>{% for a in ass.get(p.id, []) %}<span class="chip">{{ a.ruolo_nome }}{% if a.sede_nome %} · {{ a.sede_nome }}{% endif %}<small>{{ a.area_nome }}</small>
+  {% if gestibile(a) %}<form method="post" class="in-linea"><input type="hidden" name="csrf" value="{{ csrf }}"><input type="hidden" name="azione" value="togli"><input type="hidden" name="id" value="{{ a.id }}"><button class="x" title="Togli questo livello" aria-label="Togli">✕</button></form>{% endif %}</span>
+{% else %}<span class="muted">Operatore</span>{% endfor %}
+{% if p.stato == 'in_attesa' %}<form method="post" class="in-linea"><input type="hidden" name="csrf" value="{{ csrf }}"><input type="hidden" name="azione" value="abilita"><input type="hidden" name="utente_id" value="{{ p.id }}"><button class="puma-btn">Abilita come Operatore</button></form>{% endif %}</td></tr>
+{% else %}<tr><td colspan="3" class="puma-empty">Nessuna persona nelle sedi che gestisci.</td></tr>{% endfor %}</tbody></table>
+
+<div class="sez-tit">Cosa può fare ogni livello <small class="muted">(provvisorio: verrà definito livello per livello)</small></div>
+<div class="tab-scorre"><table class="puma-tab matrice-ruoli"><thead><tr><th></th>{% for r in tutti_ruoli %}<th title="{{ r.nome }}">{{ r.nome }}</th>{% endfor %}</tr></thead><tbody>
+{% for k, (d, per_area) in capacita.items() %}<tr><th>{{ d }}{% if per_area %} <small>(per area)</small>{% endif %}</th>{% for r in tutti_ruoli %}<td>{{ '✔' if k in matrice.get(r.codice, []) else '' }}</td>{% endfor %}</tr>{% endfor %}
+</tbody></table></div>
+{% endblock %}

@@ -46,7 +46,7 @@ def env(nome, default=None):
 
 NOME_APP = 'P.U.M.A.'
 NOME_ESTESO = 'Piattaforma Unificata Monitoraggio Addestramenti'
-VERSIONE = '1.2.0'
+VERSIONE = "1.3.0"
 
 MODALITA = 'prova' if env('MODALITA', 'reale').strip().lower() == 'prova' else 'reale'
 PROVA = MODALITA == 'prova'
