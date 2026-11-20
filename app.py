@@ -470,9 +470,26 @@ def admin_audit():
     with db.connect() as c:
         return render_template('admin_audit.html', righe=c.execute('SELECT * FROM audit ORDER BY id DESC LIMIT 300').fetchall())
 
+def gia_avviato(porta):
+    """True se sulla porta risponde già un programma (di solito un PUMA lasciato aperto in un'altra finestra).
+    Su Windows due programmi possono restare in ascolto sulla stessa porta: le pagine arriverebbero a volte dal PUMA vecchio."""
+    import socket
+    try:
+        with socket.create_connection(('127.0.0.1', porta), timeout=1): return True
+    except OSError: return False
+
+
 if __name__ == '__main__':
+    import sys
     from waitress import serve
     indirizzo = f"http://{'localhost' if config.HOST in ('127.0.0.1', '0.0.0.0') else config.HOST}:{config.PORT}"
+    if gia_avviato(config.PORT):
+        print('=' * 64)
+        print(f' ATTENZIONE: sulla porta {config.PORT} c\'e gia un PUMA in funzione (un\'altra finestra nera).')
+        print(' Chiudi TUTTE le finestre nere di PUMA e avvia di nuovo AVVIA.bat una sola volta.')
+        print(' (Se ti serve un secondo PUMA, ad esempio quello di prova, imposta PUMA_PORT=8081 in puma.env.)')
+        print('=' * 64)
+        sys.exit(1)
     print('=' * 64)
     print(f' {config.NOME_APP} {config.VERSIONE} - {config.NOME_ESTESO}')
     if config.PROVA:
@@ -488,4 +505,4 @@ if __name__ == '__main__':
     if config.env('APRI_BROWSER') == '1':
         import webbrowser
         threading.Timer(1.5, webbrowser.open, [indirizzo]).start()
-    serve(app, host=config.HOST, port=config.PORT, threads=8)
+    serve(app, host=config.HOST, port=config.PORT, threads=8, ident='PUMA')
