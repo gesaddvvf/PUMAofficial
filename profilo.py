@@ -37,15 +37,28 @@ def risolvi_sede(c, d):
     if sede and _parole(sede).startswith('comando') and trova_comando(c, sede): return cid or trova_comando(c, sede), ''
     return cid, sede
 
+def codice_wauc(c, comando_id):
+    """Codice WAUC della sede di un Comando: quello della sede collegata da /api/Sedi (es. Forlì-Cesena = FO, Pesaro-Urbino = PS),
+    altrimenti la sigla provinciale."""
+    r = c.execute("""SELECT COALESCE(NULLIF(s.codice,''), k.sigla) FROM comandi k LEFT JOIN sedi_wauc s ON s.id=k.wauc_sede_id
+                     WHERE k.id=?""", (comando_id,)).fetchone() if comando_id else None
+    return (r[0] or '').upper() if r and r[0] else None
+
+
 def sedi_wauc(c):
-    """Sedi (codici) in cui cercare: quelle impostate in config, altrimenti quelle scoperte con personale, altrimenti tutte le sigle provinciali."""
+    """Sedi (codici WAUC) in cui cercare: quelle impostate in config; altrimenti i codici veri dei comandi letti da /api/Sedi
+    (FO, PS... diversi dalle sigle FC, PU), più le sedi scoperte con personale e le sigle provinciali come ripiego."""
     if config.WAUC_SEDI: return list(config.WAUC_SEDI)
-    note = [r[0] for r in c.execute('SELECT codice FROM wauc_sedi WHERE n_persone>0 ORDER BY n_persone DESC')]
-    if note: return note
-    sigle = [r[0] for r in c.execute("SELECT sigla FROM comandi WHERE sigla IS NOT NULL AND tipo='comando' ORDER BY sigla")]
-    # codici dei comandi letti da /api/Sedi (se diversi dalle sigle provinciali, es. sigle storiche)
-    extra = [r[0] for r in c.execute("SELECT DISTINCT upper(codice) FROM sedi_wauc WHERE cod_tipo_dipartimento='CMD' AND codice<>''")]
-    return sigle + sorted(set(extra) - set(sigle))
+    out = []
+    def metti(x):
+        x = (x or '').strip().upper()
+        if x and x not in out: out.append(x)
+    for r in c.execute("""SELECT COALESCE(NULLIF(s.codice,''), k.sigla) FROM comandi k LEFT JOIN sedi_wauc s ON s.id=k.wauc_sede_id
+                          WHERE k.tipo='comando' ORDER BY k.sigla"""): metti(r[0])
+    for r in c.execute("SELECT DISTINCT codice FROM sedi_wauc WHERE cod_tipo_dipartimento='CMD' ORDER BY codice"): metti(r[0])
+    for r in c.execute('SELECT codice FROM wauc_sedi WHERE n_persone>0 ORDER BY n_persone DESC'): metti(r[0])
+    return out
+
 
 def registra_osservati(c):
     """Travasa nel db i valori incontrati nei record WAUC scaricati (qualifiche, tipi personale, turni, salti turno, distaccamenti)."""
@@ -76,7 +89,11 @@ def trova(c, email):
         assicura_sedi(c)
         try:
             prima = c.execute('SELECT a.cod_sede FROM anagrafica_wauc a JOIN utenti u ON u.id=a.utente_id WHERE u.email=?', (email,)).fetchone()
-            w = wauc.cerca_persona(email, sedi_wauc(c), prima[0] if prima and prima[0] else None)
+            prima = prima[0] if prima and prima[0] else None
+            if not prima:   # prima la sede del Comando scelto nel profilo (codice WAUC vero: FO per Forlì-Cesena)
+                u = c.execute('SELECT comando_id FROM utenti WHERE email=?', (email,)).fetchone()
+                prima = codice_wauc(c, u[0]) if u else None
+            w = wauc.cerca_persona(email, sedi_wauc(c), prima)
             registra_osservati(c)
             if w: return 'wauc', w['dati'], w['specs'], None
         except Exception as e:
@@ -200,6 +217,14 @@ def profila(c, u):
     confermato dall'utente. Ritorna (origine, errore)."""
     origine, d, specs, err = trova(c, u['email'])
     if origine == 'wauc': salva_specializzazioni(c, u['id'], specs); salva_anagrafica(c, u['id'], d['extra'])
+    if origine == 'wauc' and u['profilo_confermato']:
+        # profilo già confermato (anche compilato a mano): da WAUC si riempiono solo i campi ancora vuoti
+        cid, dist = risolvi_sede(c, d); ex = d.get('extra') or {}
+        cand = {k: d.get(k) for k in ('qualifica', 'matricola', 'telefono') if d.get(k)}
+        cand.update(distaccamento=dist, comando_id=cid, turno=ex.get('turno'), salto_turno=ex.get('salto_turno'), cod_tipo_personale=ex.get('cod_tipo_personale'),
+                    tipo_personale=ex.get('desc_tipo_personale'), cod_qualifica=ex.get('cod_qualifica'), cod_gruppo=ex.get('cod_gruppo'))
+        vuoti = {k: v for k, v in cand.items() if v and not u[k]}
+        if vuoti: c.execute('UPDATE utenti SET ' + ','.join(f'{k}=?' for k in vuoti) + ' WHERE id=?', (*vuoti.values(), u['id']))
     if origine and not u['profilo_confermato']:
         cid, dist = risolvi_sede(c, d)
         nuovi = {k: d.get(k) for k in CAMPI if d.get(k) and k != 'distaccamento'}
