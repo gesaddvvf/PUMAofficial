@@ -1,6 +1,6 @@
 {% extends 'base.html' %}{% block main %}{% include "puma/_nav.html" %}
-<h2 class="puma-h">Programma un addestramento collettivo</h2>
-<p class="muted">Il giorno stabilito l'addestramento compare in «Addestramenti di oggi» e il personale può aggiungersi. Dopo la programmazione, dalla scheda prepari il piano di sicurezza. Titolo e codice COD_ADD vengono generati in automatico.</p>
+<h2 class="puma-h">Pianifica addestramento</h2>
+<p class="muted">Il giorno stabilito l'addestramento compare in «Partecipa ad addestramento»: le persone previste confermano la presenza e chiunque altro può aggiungersi. Dopo la programmazione, dalla scheda prepari il piano di sicurezza. Titolo e codice COD_ADD vengono generati in automatico.</p>
 <form method="post" class="puma-form largo" id="prog" data-team="{{ url_for('puma.api_team_occupati') }}"><input type="hidden" name="csrf" value="{{ csrf }}">
 
 <fieldset class="sez"><legend>1 · Quando</legend>
@@ -55,10 +55,15 @@
 </div>
 </fieldset>
 
-<fieldset class="sez"><legend>4 · Visibilità e note</legend>
+<fieldset class="sez"><legend>4 · Persone previste <small class="muted">(si confermano il giorno dell'addestramento)</small></legend>
+{% set gia = [] %}{% include "puma/_scegli_persone.html" %}
+<p class="muted piccolo">Facoltativo: dopo la pianificazione puoi aggiungerne altre dalla scheda, o mandare il link d'invito perché si segnino da soli.</p>
+</fieldset>
+
+<fieldset class="sez"><legend>5 · Visibilità e note</legend>
 {% include "puma/_visibilita.html" %}
 <label>Note <textarea name="descrizione" rows="2" maxlength="500" placeholder="Facoltative: materiali, punto di ritrovo…"></textarea></label>
 </fieldset>
-<button type="submit">Programma l'addestramento</button></form>
+<button type="submit">Pianifica l'addestramento</button></form>
 {% include "puma/_mappa_js.html" %}
 <script src="{{ url_for('puma.static', filename='js/individuali.js') }}"></script><script src="{{ url_for('puma.static', filename='js/programma.js') }}"></script>{% endblock %}

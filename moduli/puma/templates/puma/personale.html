@@ -29,8 +29,8 @@
 </div>
 <p><a class="puma-btn" href="{{ url_for('puma.profilo') }}">Apri il Report individuale completo</a> <a class="puma-btn" href="{{ url_for('puma.mie_attivita') }}">Le mie attività</a></p>
 
-<div class="sez-tit">Prossimi addestramenti delle mie aree</div>
-<ul class="puma-list">{% for e in prossimi %}<li><div><b>{{ e.titolo or e.tipologia }}</b> · squadra {{ e.team }}<br><small>{{ e.cod_add }}</small></div>
-  <div>{{ e.data|datait }} {{ e.ora_inizio }}–{{ e.ora_fine }}{% if e.id in iscritto %} · <b>registrato</b>{% elif e.data == oggi %} · <a href="{{ url_for('puma.partecipa', i=e.id) }}">Aggiungiti</a>{% endif %}</div></li>
+<div class="sez-tit">Prossimi addestramenti (delle mie aree e dove sono previsto)</div>
+<ul class="puma-list">{% for e in prossimi %}<li><div><a href="{{ url_for('puma.collettivo', i=e.id) }}"><b>{{ e.titolo or e.tipologia }}</b></a> · squadra {{ e.team }}<br><small>{{ e.cod_add }}</small></div>
+  <div>{{ e.data|datait }} {{ e.ora_inizio }}–{{ e.ora_fine }}{% if e.id in iscritto %} · <b>registrato</b>{% elif previsto.get(e.id) == 'previsto' %} · <b>📋 sei previsto</b>{% if e.data == oggi %} · <a href="{{ url_for('puma.partecipa', i=e.id) }}">Conferma</a>{% endif %}{% elif e.data == oggi %} · <a href="{{ url_for('puma.partecipa', i=e.id) }}">Aggiungiti</a>{% endif %}</div></li>
 {% else %}<li class="puma-empty">Nessun addestramento programmato per le tue aree corsi.</li>{% endfor %}</ul>
 {% endblock %}

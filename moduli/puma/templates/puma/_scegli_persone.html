@@ -1,0 +1,5 @@
+<input type="search" class="filtro-persone" data-filtra="lista-persone" placeholder="🔍 Cerca per cognome, nome o qualifica…" aria-label="Cerca persona">
+<div class="lista-persone" id="lista-persone">{% for p in persone if p.email not in (gia or []) %}
+  <label class="puma-chk"><input type="checkbox" name="previsti" value="{{ p.email }}"> <b>{{ p.cognome }} {{ p.nome }}</b> <small>{{ p.qualifica or '' }}{{ ' · ' ~ p.distaccamento if p.distaccamento }}</small></label>
+{% else %}<p class="muted piccolo">Nessun altro collega del Comando è ancora entrato in PUMA: scrivi i nominativi qui sotto.</p>{% endfor %}</div>
+<label>Altri nominativi (anche di chi non è ancora entrato in PUMA) <input name="altri" placeholder="nome.cognome, nome.cognome…" autocapitalize="none" spellcheck="false"></label>

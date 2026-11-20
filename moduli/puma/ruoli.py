@@ -175,3 +175,15 @@ def applica_inviti(c, utente):
     if utente['stato'] == 'in_attesa':
         c.execute("UPDATE utenti SET stato='attivo', approvato_il=? WHERE id=?", (adesso, utente['id']))
     return True
+
+
+def applica_invito_evento(c, utente, percorso):
+    """Al login da un link d'invito di un addestramento (/puma/i/<token>): chi è in attesa diventa Operatore
+    (è personale VVF: la password dipartimentale è già stata verificata) e può aprire l'addestramento."""
+    import re
+    m = re.fullmatch(r'/puma/i/([A-Za-z0-9]+)', percorso or '')
+    if not m or not c.execute('SELECT 1 FROM puma_eventi WHERE invito_token=?', (m.group(1),)).fetchone(): return False
+    if utente['stato'] != 'in_attesa': return False
+    assegna(c, utente['id'], 'OPERATORE', None, '*', 'invito addestramento')
+    c.execute("UPDATE utenti SET stato='attivo', approvato_il=? WHERE id=?", (datetime.datetime.now().isoformat(timespec='seconds'), utente['id']))
+    return True

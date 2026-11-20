@@ -139,3 +139,19 @@ input.corto { width: 5em !important; }
 .matrice-ruoli tbody th { text-transform: none; letter-spacing: 0; min-width: 230px; font-size: 12.5px; color: #ddd; }
 .matrice-ruoli thead th { min-width: 84px; }
 .matrice-ruoli td { font-size: 15px; }
+.lista-persone { max-height: 260px; overflow-y: auto; border: 1px solid #3a3a3a; border-radius: 6px; padding: 6px 10px; display: grid; gap: 2px; background: #1e1e1e; }
+.lista-persone label { margin: 0; }
+.lista-persone small { color: #9e9e9e; }
+.io-box { margin: 12px 0; }
+.io-box p { margin: 6px 0; }
+details.aggiungi-previsti { margin: 10px 0 18px; }
+details.aggiungi-previsti summary { list-style: none; cursor: pointer; }
+details.aggiungi-previsti summary::-webkit-details-marker { display: none; }
+.puma-list .x { background: none; border: 0; color: #ef9a9a; cursor: pointer; }
+.box .mp-coord { display: flex; gap: 8px; align-items: center; }
+.box .mp-coord input { flex: 1 1 auto; min-width: 0; width: auto; margin: 0; }
+.box .mp-coord .btn { width: auto; margin: 0; flex: 0 0 auto; }
+.io-box p { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.io-box form.in-linea { display: inline-flex; }
+.io-box .azioni { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin: 6px 0; }
+.io-box .azioni form { margin: 0; }

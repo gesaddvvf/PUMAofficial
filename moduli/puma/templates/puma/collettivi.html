@@ -1,6 +1,6 @@
 {% extends 'base.html' %}{% block main %}{% include "puma/_nav.html" %}
 {% set riepilogo = request.args.get('vista') == 'riepilogo' %}
-<h2 class="puma-h">{{ 'Riepilogo globale degli addestramenti collettivi' if riepilogo else 'Pianificazione addestramenti collettivi' }}</h2>
+<h2 class="puma-h">{{ 'Riepilogo globale degli addestramenti collettivi' if riepilogo else 'Calendario addestramenti' }}</h2>
 <form method="get" class="puma-filtri">{% if riepilogo %}<input type="hidden" name="vista" value="riepilogo">{% endif %}
 {% for k,v in [('oggi','Oggi'),('futuri','Programmati'),('passati','Passati'),('tutti','Tutti')] %}<a class="puma-btn{{ ' puma-on' if quando==k }}" href="?quando={{ k }}{{ '&vista=riepilogo' if riepilogo }}">{{ v }}</a> {% endfor %}
 <input type="hidden" name="quando" value="giorno"><label>Giorno <input type="date" name="data" value="{{ giorno }}"></label><button>Vai</button></form>

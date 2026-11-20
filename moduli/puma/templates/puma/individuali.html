@@ -1,5 +1,5 @@
 {% extends 'base.html' %}{% block main %}{% include "puma/_nav.html" %}
-<h2 class="puma-h">Registrazione attività individuale</h2>
+<h2 class="puma-h">Registrazione attività individuali</h2>
 <p class="muted">Addestramento svolto da solo (o fuori da un collettivo programmato): conta nel tuo libretto per il corso scelto. Puoi scegliere solo i corsi che hai in possesso e le attività generiche, negli ultimi 60 giorni.</p>
 <form method="post" class="puma-form largo" id="indiv"><input type="hidden" name="csrf" value="{{ csrf }}"><h3>Nuova registrazione</h3>
 {% if not aree %}<div class="flash warning">Non risultano corsi in tuo possesso: controlla la <a href="{{ url_for('profilo_view') }}">Profilazione</a>.</div>{% endif %}

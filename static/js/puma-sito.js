@@ -38,6 +38,16 @@
                try { document.execCommand('copy'); b.textContent = 'Copiato ✓'; } catch (e) { b.textContent = 'Premi Ctrl+C'; } }
       });
     });
+    // ricerca nelle liste di persone (persone previste)
+    Array.prototype.forEach.call(document.querySelectorAll('input[data-filtra]'), function (q) {
+      var box = document.getElementById(q.getAttribute('data-filtra')); if (!box) return;
+      q.addEventListener('input', function () {
+        var t = q.value.trim().toLowerCase();
+        Array.prototype.forEach.call(box.querySelectorAll('label'), function (l) {
+          var spunta = l.querySelector('input:checked'); l.hidden = !!t && !spunta && l.textContent.toLowerCase().indexOf(t) < 0;
+        });
+      });
+    });
     // livelli di accesso: la sede dipende dal ruolo (Direzione -> Direzioni regionali, Comando -> Comandi, Generale/Operatore -> nessuna)
     Array.prototype.forEach.call(document.querySelectorAll('select[data-ruolo-sede]'), function (r) {
       var sede = document.getElementById(r.getAttribute('data-ruolo-sede')), riga = sede && sede.closest('label');

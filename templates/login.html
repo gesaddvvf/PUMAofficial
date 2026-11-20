@@ -11,6 +11,7 @@
   <div class="sez-tit">Accesso{{ ' libero' if utenti_prova }}</div>
   <div class="accesso-griglia">
     <form class="box area-com" method="post" action="{{ url_for('login') }}"><h1>🔐 Entra in P.U.M.A.</h1>
+      {% if evento %}<div class="flash success">Sei invitato all'addestramento <b>{{ evento.corso or evento.tipologia }}</b> del <b>{{ evento.data|datait }}</b> ({{ evento.comando }}): entra e ti porto alla scheda.</div>{% endif %}
       {% if invito %}<div class="flash success">Sei stato invitato da <b>{{ invito.creato_da }}</b>{% if invito.comando %} ({{ invito.comando }}){% endif %}: entra con la password della posta e il tuo account sarà subito attivo.</div>{% endif %}
       {% if utenti_prova %}<p class="muted">Qualsiasi <code>nome.cognome</code> con password <b>dev</b> (un nome che non è nel WAUC simulato prova il caso «non trovato»).</p>
       {% else %}<p class="muted">Usa le <b>credenziali dipartimentali</b>, quelle della posta @vigilfuoco.it: scrivi solo <strong>nome.cognome</strong>. La password non viene salvata.</p>{% endif %}

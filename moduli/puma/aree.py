@@ -39,9 +39,14 @@ def personale():
     aree_mie = {(t['settore'] or '').upper() for t, _ in possesso}
     prossimi = [e for e in elenco('puma_eventi', u, "data>=? AND stato!='chiuso'", (oggi,), order='data, ora_inizio')
                 if (e['tipologia'] or '').upper() in aree_mie][:8]
+    previsto = {r[0]: r[1] for r in d.execute('SELECT evento_id, stato FROM puma_previsti WHERE email=?', (u['username'],))}
+    gia = {e['id'] for e in prossimi}
+    extra = [e for e in d.execute("SELECT * FROM puma_eventi WHERE data>=? AND stato!='chiuso' AND id IN (SELECT evento_id FROM puma_previsti WHERE email=?)",
+                                  (oggi, u['username'])) if e['id'] not in gia]
+    prossimi = sorted(list(prossimi) + extra, key=lambda e: (e['data'], e['ora_inizio'] or ''))[:10]
     iscritto = {r[0] for r in d.execute('SELECT evento_id FROM puma_checkin WHERE username=?', (u['username'],))}
     wauc = d.execute('SELECT * FROM anagrafica_wauc WHERE utente_id=?', (g.utente['id'],)).fetchone()
-    return render_template('puma/personale.html', lib=lib, possesso=possesso, prossimi=prossimi, iscritto=iscritto, wauc=wauc,
+    return render_template('puma/personale.html', lib=lib, possesso=possesso, prossimi=prossimi, iscritto=iscritto, wauc=wauc, previsto=previsto,
                            ruoli=_acc().righe, admin=_acc().admin, y=y, oggi=oggi)
 
 

@@ -25,8 +25,102 @@ def add_months(d, m):
     y, mo = divmod(d.month - 1 + m, 12); y += d.year
     return date(y, mo + 1, min(d.day, monthrange(y, mo + 1)[1]))
 def ev_get(i, u):
-    r = db().execute("SELECT * FROM puma_eventi WHERE id=? AND (is_blindato=0 OR comando_id=?)", (i, u["comando_id"])).fetchone()
+    """Addestramento visibile: non riservato, del proprio Comando, aperto dal suo link d'invito o con la persona tra i previsti."""
+    from flask import session
+    invitati = [int(x) for x in (session.get("ev_invitati") or []) if str(x).isdigit()]
+    r = db().execute("""SELECT * FROM puma_eventi WHERE id=? AND (is_blindato=0 OR comando_id=? OR id IN (%s)
+        OR id IN (SELECT evento_id FROM puma_previsti WHERE email=?))""" % (",".join(map(str, invitati)) or "0"),
+        (i, u["comando_id"], u["username"])).fetchone()
     return r or abort(404)
+
+
+# ---------------- PERSONE PREVISTE E LINK D'INVITO ----------------
+def persone_sede(cid):
+    """Personale attivo della sede, per scegliere le persone previste."""
+    return db().execute("""SELECT id, email, nome, cognome, qualifica, distaccamento FROM utenti WHERE stato='attivo' AND comando_id=?
+        ORDER BY cognome, nome""", (cid,)).fetchall()
+
+
+def salva_previsti(eid, cid, emails, testo, chi, origine="responsabile"):
+    """Aggiunge le persone previste: email scelte dall'elenco + «nome.cognome» scritti a mano (anche chi non è ancora in PUMA)."""
+    from auth_imap import norm_email, estrai_nome_cognome
+    tutte, errati = list(emails), []
+    for x in re.split(r"[,;\s]+", testo or ""):
+        if not x: continue
+        e, err = norm_email(x)
+        if err: errati.append(x)
+        else: tutte.append(e)
+    adesso = datetime.now().isoformat(timespec="seconds"); n = 0
+    for e in dict.fromkeys(tutte):
+        p = db().execute("SELECT nome, cognome, comando_id FROM utenti WHERE email=?", (e,)).fetchone()
+        nome = f"{p['cognome']} {p['nome']}".strip() if p else " ".join(reversed(estrai_nome_cognome(e)))
+        cur = db().execute("""INSERT OR IGNORE INTO puma_previsti(evento_id,email,nome,comando_id,origine,aggiunto_da,aggiunto_il) VALUES(?,?,?,?,?,?,?)""",
+                           (eid, e, nome, p["comando_id"] if p else cid, origine, chi, adesso))
+        n += cur.rowcount
+    return n, errati
+
+
+def link_invito(e):
+    tok = e["invito_token"]
+    if not tok:
+        import secrets
+        tok = secrets.token_hex(12)
+        db().execute("UPDATE puma_eventi SET invito_token=? WHERE id=?", (tok, e["id"])); db().commit()
+    from .aree import indirizzo_pubblico
+    return indirizzo_pubblico() + url_for("puma.invito_addestramento", token=tok)
+
+
+@puma_bp.route("/i/<token>")
+def invito_addestramento(token):
+    """Link d'invito di un addestramento: apre la scheda (anche se riservato) per segnarsi tra i previsti o registrarsi il giorno stesso."""
+    from flask import session
+    u = current_user()
+    e = db().execute("SELECT * FROM puma_eventi WHERE invito_token=?", (token,)).fetchone()
+    if not e: flash("Link d'invito non valido.", "danger"); return redirect(url_for("puma.attivita_oggi"))
+    session["ev_invitati"] = list(dict.fromkeys((session.get("ev_invitati") or []) + [e["id"]]))[-50:]
+    flash("Sei stato invitato a questo addestramento: segnati tra i previsti oppure, il giorno stesso, registrati.", "success")
+    return redirect(url_for("puma.collettivo", i=e["id"]))
+
+
+@puma_bp.post("/collettivi/<int:i>/previsto")
+def previsto_io(i):
+    """Mi segno (o mi tolgo) tra le persone previste."""
+    u = current_user(); e = ev_get(i, u)
+    if e["data"] < date.today().isoformat() or e["stato"] == "chiuso": abort(400)
+    if request.form.get("azione") == "togli":
+        db().execute("DELETE FROM puma_previsti WHERE evento_id=? AND email=? AND stato='previsto'", (i, u["username"]))
+        flash("Non sei più tra i previsti.", "success")
+    else:
+        salva_previsti(i, u["comando_id"], [u["username"]], "", u["username"], "invito")
+        flash("Sei tra i previsti: il giorno dell'addestramento conferma la presenza.", "success")
+    db().commit(); return redirect(url_for("puma.collettivo", i=i))
+
+
+@puma_bp.post("/collettivi/<int:i>/previsti")
+def previsti(i):
+    """Il responsabile aggiunge o toglie persone previste e, il giorno dell'addestramento, conferma presenti e assenti."""
+    u, e = _resp(i); f = request.form; a = f.get("azione")
+    if a == "aggiungi":
+        n, errati = salva_previsti(i, e["comando_id"], f.getlist("previsti"), f.get("altri"), u["username"])
+        flash(f"{n} persone aggiunte ai previsti." + (f" Non riconosciuti: {', '.join(errati)} (scrivi nome.cognome)." if errati else ""), "success" if not errati else "warning")
+    elif a == "togli":
+        db().execute("DELETE FROM puma_previsti WHERE evento_id=? AND email=? AND stato!='confermato'", (i, f.get("email")))
+    elif a == "conferma":
+        if e["data"] != date.today().isoformat(): flash("Le presenze si confermano il giorno dell'addestramento.", "danger"); return redirect(url_for("puma.collettivo", i=i))
+        ruoli = {r["codice"] for r in ics_ruoli()}; ora = datetime.now().strftime("%H:%M"); n = 0
+        for p in db().execute("SELECT * FROM puma_previsti WHERE evento_id=?", (i,)).fetchall():
+            v = f.get("esito_" + p["email"])
+            if v == "presente":
+                r = f.get("ruolo_" + p["email"]); r = r if r in ruoli else "OPER"
+                db().execute("""INSERT INTO puma_checkin(evento_id,username,nome,comando_origine,ora,ruolo_ics,convalidato) VALUES(?,?,?,?,?,?,1)
+                    ON CONFLICT(evento_id,username) DO UPDATE SET ruolo_ics=excluded.ruolo_ics, convalidato=1""", (i, p["email"], p["nome"], p["comando_id"], ora, r))
+                db().execute("UPDATE puma_previsti SET stato='confermato' WHERE evento_id=? AND email=?", (i, p["email"])); n += 1
+            elif v == "assente":
+                db().execute("DELETE FROM puma_checkin WHERE evento_id=? AND username=?", (i, p["email"]))
+                db().execute("UPDATE puma_previsti SET stato='assente' WHERE evento_id=? AND email=?", (i, p["email"]))
+        db().execute("UPDATE puma_eventi SET stato='attivo' WHERE id=? AND stato='programmato'", (i,))
+        flash(f"Presenze confermate: {n}. Le trovi già convalidate tra le presenze.", "success")
+    db().commit(); return redirect(url_for("puma.collettivo", i=i) + "#previsti")
 def cod_add(d, tipologia, team, comando_id, org_dr, data):
     """COD_ADD = TIPOLOGIA-SQUADRA-<SIGLA DIREZIONE><SIGLA COMANDO | DR>-AAAAMMGG  (es. SAF-ALFA-VENBL-20261006; se organizza la Direzione: SAF-ALFA-VENDR-...)."""
     r = d.execute("""SELECT k.sigla cmd, k.tipo, COALESCE(dz.sigla,'NAZ') dir FROM comandi k LEFT JOIN puma_comando_dir cd ON cd.comando_id=k.id
@@ -151,8 +245,14 @@ def collettivo_nuovo():
                u["username"], *tenant_vals(u)))
         except sqlite3.IntegrityError:
             return errore("Esiste già un addestramento %s – squadra %s in quella data per il tuo Comando: scegli un'altra squadra." % (area, f["team"]))
-        db().commit(); flash("Addestramento programmato: il giorno stabilito comparirà in «Addestramenti di oggi» e il personale potrà aggiungersi.", "success")
-        return redirect(url_for("puma.collettivo", i=c.lastrowid))
+        import secrets
+        eid = c.lastrowid
+        db().execute("UPDATE puma_eventi SET invito_token=? WHERE id=?", (secrets.token_hex(12), eid))
+        n, errati = salva_previsti(eid, u["comando_id"], f.getlist("previsti"), f.get("altri"), u["username"])
+        db().commit()
+        flash("Addestramento pianificato" + (f" con {n} persone previste" if n else "") + ": il giorno stabilito compare in «Partecipa ad addestramento». "
+              "Dalla scheda copi il link d'invito." + (f" Nominativi non riconosciuti: {', '.join(errati)}." if errati else ""), "success")
+        return redirect(url_for("puma.collettivo", i=eid))
     from .localita import TIPI as TIPI_LOC
     centro = centro_sede(db(), u["comando_id"])
     return render_template("puma/collettivo_nuovo.html", team=TEAM, tipologie=tipologie(db(), solo_corsi=False, attive=True, aree=aree_ok),
@@ -161,15 +261,21 @@ def collettivo_nuovo():
                            orari=ORARI, finalita=FINALITA, rv_eli=RV_ELI, rv_amb=RV_AMB, localita=gruppi(visibili(db(), u)), tipi_loc=TIPI_LOC,
                            centro=centro, centro_dr=centro_sede(db(), dr) if dr else None, dr=dr,
                            nome_dr=db().execute("SELECT nome FROM comandi WHERE id=?", (dr,)).fetchone()[0] if dr else None,
-                           mio_comando=db().execute("SELECT nome FROM comandi WHERE id=?", (u["comando_id"],)).fetchone()[0])
+                           mio_comando=db().execute("SELECT nome FROM comandi WHERE id=?", (u["comando_id"],)).fetchone()[0],
+                           persone=persone_sede(u["comando_id"]))
 
 @puma_bp.route("/collettivi/<int:i>")
 def collettivo(i):
     u = current_user(); e = ev_get(i, u)
     chk = db().execute("SELECT * FROM puma_checkin WHERE evento_id=? ORDER BY ora", (i,)).fetchall()
     mio = any(c["username"] == u["username"] for c in chk)
-    return render_template("puma/collettivo.html", e=e, chk=chk, mio=mio, resp=responsabile(u, e),
-                           abilitato=settore_ok(u, e["tipologia"]), ruoli=ics_ruoli(), oggi=date.today().isoformat())
+    prev = db().execute("SELECT * FROM puma_previsti WHERE evento_id=? ORDER BY stato='previsto' DESC, nome", (i,)).fetchall()
+    resp = responsabile(u, e)
+    io_previsto = next((p for p in prev if p["email"] == u["username"]), None)
+    return render_template("puma/collettivo.html", e=e, chk=chk, mio=mio, resp=resp, previsti=prev, io_previsto=io_previsto,
+                           abilitato=settore_ok(u, e["tipologia"]), ruoli=ics_ruoli(), oggi=date.today().isoformat(),
+                           link=link_invito(e) if resp else None, persone=persone_sede(e["comando_id"]) if resp else [],
+                           gia={p["email"] for p in prev} | {c["username"] for c in chk})
 
 def ics_ruoli(): return db().execute("SELECT * FROM puma_ics_ruoli ORDER BY ordine").fetchall()
 
@@ -191,8 +297,9 @@ def partecipa(i):
         db().execute("INSERT INTO puma_persone(utente_id,codice_fiscale) VALUES(?,?) ON CONFLICT(utente_id) DO UPDATE SET codice_fiscale=excluded.codice_fiscale", (uid, cf))
         db().execute("""INSERT INTO puma_checkin(evento_id,username,nome,comando_origine,ora,ruolo_ics) VALUES(?,?,?,?,?,?)
             ON CONFLICT(evento_id,username) DO UPDATE SET ruolo_ics=excluded.ruolo_ics""", (i, u["username"], u.get("nome", u["username"]), u["comando_id"], datetime.now().strftime("%H:%M"), r))
-        db().execute("UPDATE puma_eventi SET stato='attivo' WHERE id=? AND stato='programmato'", (i,)); db().commit()
-        flash("Registrazione effettuata."); return redirect(url_for("puma.collettivo", i=i))
+        db().execute("UPDATE puma_eventi SET stato='attivo' WHERE id=? AND stato='programmato'", (i,))
+        db().execute("UPDATE puma_previsti SET stato='confermato' WHERE evento_id=? AND email=?", (i, u["username"])); db().commit()
+        flash("Registrazione effettuata.", "success"); return redirect(url_for("puma.collettivo", i=i))
     mio = db().execute("SELECT ruolo_ics FROM puma_checkin WHERE evento_id=? AND username=?", (i, u["username"])).fetchone()
     p = db().execute("SELECT codice_fiscale FROM puma_persone WHERE utente_id=?", (g.utente["id"],)).fetchone()
     return render_template("puma/partecipa.html", e=e, ruoli=ruoli, mio=mio["ruolo_ics"] if mio else None, cf=p["codice_fiscale"] if p else "")

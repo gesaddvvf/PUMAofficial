@@ -1,5 +1,5 @@
 {% extends 'base.html' %}{% block main %}{% include "puma/_nav.html" %}
-<div class="libretto-testa"><h2 class="puma-h">Piani di sicurezza del mio Comando</h2><a class="puma-btn puma-on" href="{{ url_for('puma.collettivo_nuovo') }}">📅 Programma un addestramento</a></div>
+<div class="libretto-testa"><h2 class="puma-h">Redazione piano di sicurezza addestramento</h2><a class="puma-btn puma-on" href="{{ url_for('puma.collettivo_nuovo') }}">📅 Pianifica addestramento</a></div>
 <p class="muted">Per ogni addestramento programmato: meteo, matrice di rischio, PDF e invio alle Sale Operative. Sono elencati anche quelli degli ultimi 30 giorni.</p>
 <table><tr><th>Data</th><th>Addestramento</th><th>Presenti</th><th>Meteo</th><th>Rischio</th><th>Inviato</th><th></th></tr>
 {% for e in righe %}<tr class="{{ 'passato' if e.data < oggi }}">

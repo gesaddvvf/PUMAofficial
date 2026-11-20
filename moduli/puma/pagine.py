@@ -146,7 +146,7 @@ def area_comando():
 
 @bp.route('/oggi-addestramenti')
 def attivita_oggi():
-    """Attività · Addestramenti di oggi: quelli programmati per oggi (miei e, se aperti, degli altri Comandi) con «Mi aggiungo»;
+    """Attività · Partecipa ad addestramento: quelli programmati per oggi (miei e, se aperti, degli altri Comandi) con «Mi aggiungo»;
     sotto, i prossimi programmati (ci si aggiunge il giorno stesso)."""
     from datetime import timedelta
     from .addestramenti import can_write
@@ -157,11 +157,13 @@ def attivita_oggi():
     def carica(filtro, par):
         return d.execute(f"""SELECT e.*, k.nome AS comando, l.nome AS tipologia_nome, l.chiave,
                 (SELECT COUNT(*) FROM puma_checkin c WHERE c.evento_id=e.id) AS presenti,
-                (SELECT 1 FROM puma_checkin c WHERE c.evento_id=e.id AND c.username=?) AS io
+                (SELECT 1 FROM puma_checkin c WHERE c.evento_id=e.id AND c.username=?) AS io,
+                (SELECT stato FROM puma_previsti pr WHERE pr.evento_id=e.id AND pr.email=?) AS previsto,
+                (SELECT COUNT(*) FROM puma_previsti pr WHERE pr.evento_id=e.id) AS n_previsti
             FROM puma_eventi e LEFT JOIN comandi k ON k.id=e.comando_id LEFT JOIN puma_livelli l ON l.id=e.livello_id
-            WHERE {filtro} AND (({w}) OR (e.is_blindato=0))
+            WHERE {filtro} AND (({w}) OR (e.is_blindato=0) OR e.id IN (SELECT evento_id FROM puma_previsti WHERE email=?))
             ORDER BY e.data, (e.comando_id<>?), (COALESCE(e.direzione_id, -1)<>COALESCE(?, -2)), k.nome, e.ora_inizio, e.team""",
-            [u['username'], *par, *p, u['comando_id'], u.get('direzione_id')]).fetchall()
+            [u['username'], u['username'], *par, *p, u['username'], u['comando_id'], u.get('direzione_id')]).fetchall()
     di_oggi = carica("e.data=? AND e.stato<>'chiuso'", (oggi,))
     prossimi = carica("e.data>? AND e.data<=?", (oggi, fra7))
     return render_template('puma/attivita_oggi.html', di_oggi=di_oggi, prossimi=prossimi, oggi=oggi, scrivi=can_write(u), mio_comando=u['comando_id'])
@@ -169,7 +171,7 @@ def attivita_oggi():
 
 @bp.route('/piani-sicurezza')
 def piani():
-    """Attività · Piani di sicurezza: gli addestramenti del mio Comando da oggi in avanti (e degli ultimi 30 giorni) con lo stato del piano."""
+    """Attività · Redazione piano di sicurezza: gli addestramenti del mio Comando da oggi in avanti (e degli ultimi 30 giorni) con lo stato del piano."""
     from datetime import timedelta
     from . import responsabile
     from .ruoli import accessi

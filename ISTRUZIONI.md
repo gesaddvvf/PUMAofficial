@@ -35,10 +35,10 @@ PUMA ha la stessa grafica del sito <https://gesaddvvf.github.io/PUMA/>. In alto 
 | Area | Cosa contiene |
 |---|---|
 | **Home Page** | presentazione, aree, addestramenti di oggi, settori abilitati |
-| **Attività** (rosso) | **Addestramenti di oggi** (con «➕ Mi aggiungo»), **Programma un addestramento** (guidato: data, orari, area corsi, corso, finalità, squadra, località e RV da elenchi), Calendario, **Piani di sicurezza**, Registrazione individuale (solo corsi in possesso), Interventi reali |
+| **Attività** (rosso) | **Pianifica addestramento** (guidato: data, orari, area corsi, corso, finalità, squadra, località e RV da elenchi, persone previste), **Calendario addestramenti**, **Partecipa ad addestramento** (conferma presenza / «➕ Mi aggiungo»), **Redazione piano di sicurezza addestramento**, **Registrazione attività individuali** (solo corsi in possesso) |
 | **Real Time** (verde) | Presenze Odierne, Mappa Real Time, Riepilogo Globale, Registro odierno |
 | **Didattica e documentazione** (blu) | Manuali P.U.M.A., Manuali di settore, Circolari di settore, Archivio; qui arriveranno i moduli didattici (lezioni, video, quiz, schede tecniche) |
-| **Area personale** (viola) | i tuoi dati, i tuoi livelli di accesso, corsi in possesso, situazione dell'anno, **Report individuale** (libretto), le tue attività, Profilazione |
+| **Area personale** (viola) | i tuoi dati, i tuoi livelli di accesso, corsi in possesso, situazione dell'anno, **Report individuale** (libretto), le tue attività, Interventi reali, Profilazione |
 | **Reportistica** (giallo) | Report collettivo e Cruscotto corsi, per chi ha la capacità «report» (solo nelle sue aree corsi) |
 | **Area Comando** (bianco) | Località, **Livelli di accesso**, **Inviti**, Aree corsi, Impostazioni, Corsi e foglio PUMA e — per l'Amministratore Generale — Utenti, Organico, Configurazione e WAUC, Comandi e Direzioni, Registro |
 
@@ -55,7 +55,7 @@ Si assegnano da **Area Comando → Livelli di accesso** (l'Amministratore di Com
 ### Mappe
 In tutte le mappe: **📍 Centra la mappa su un Comando** (poi sposti la mappa e scegli il luogo), **🎯 Localizzami** (funziona aprendo PUMA dal PC stesso o in https), **✛ croce** al centro con il pulsante **Usa la croce**, e una casella dove incollare le coordinate in qualunque formato: gradi decimali (`44.2225, 12.0408`), gradi-primi-secondi (`44°13'21"N 12°02'27"E`), gradi e primi, **UTM** (`33T 263634 4900845`), **MGRS**, link di Google Maps o OpenStreetMap. Sotto la mappa il punto è riportato in tutti i formati. Chi programma un addestramento parte dalla mappa centrata sul proprio Comando; le località salvate (Area Comando → Località) riempiono da sole area, RV elicottero e RV ambulanza.
 
-**Come si usa un addestramento collettivo:** il responsabile lo *programma* per un giorno (tipologia e manovre previste) → quel giorno compare in *Addestramenti di oggi* e ognuno preme **Mi aggiungo** → il responsabile prepara il *piano di sicurezza* e a fine giornata convalida le presenze → ore e manovre finiscono nel libretto di ognuno.
+**Come si usa un addestramento collettivo:** il responsabile lo *pianifica* per un giorno (corso, manovre previste, località) e indica le **persone previste** → dalla scheda copia il **link d'invito** e lo manda (e-mail o WhatsApp): chi lo apre entra con le credenziali dipartimentali e si segna tra i previsti → il giorno stabilito l'addestramento compare in *Partecipa ad addestramento*: i previsti premono **Confermo la presenza** (o li conferma il responsabile, presente/assente con il ruolo ICS), gli altri **Mi aggiungo** → il responsabile redige il *piano di sicurezza* e convalida le presenze → ore e manovre finiscono nel libretto di ognuno.
 
 Il riquadro **Turno / Salto** mostra chi è in servizio adesso, come nel sito e in FireOps. Il menu **☰** contiene tutte le pagine, i tuoi dati e il pulsante **Esci**.
 

@@ -110,7 +110,9 @@ def prima():
                     g.perm[config.MODULO_PRINCIPALE] = 'lettura'
         if not g.utente: session.clear()
     if not g.utente:
-        return None if request.endpoint in ('login', 'stato_rete', 'invito') else redirect(url_for('login'))
+        if request.endpoint in ('login', 'stato_rete', 'invito'): return None
+        if request.endpoint == 'puma.invito_addestramento': session['dopo'] = request.path   # dopo l'accesso torna all'addestramento
+        return redirect(url_for('login'))
     if not g.utente['profilo_confermato'] and request.endpoint not in ('profilo_view', 'profilo_spec_aggiungi', 'logout'):
         return redirect(url_for('profilo_view'))
     if g.utente['stato'] == 'in_attesa' and request.endpoint not in ('attesa', 'logout', 'profilo_view', 'profilo_spec_aggiungi'):
@@ -141,7 +143,13 @@ def bloccato(k):
     return len(TENTATIVI[k]) >= 5
 
 def pagina_login(invito=None):
-    return render_template('login.html', utenti_prova=prova.UTENTI if config.PROVA and not invito else [], invito=invito)
+    evento = None
+    m = re.fullmatch(r'/puma/i/([A-Za-z0-9]+)', session.get('dopo') or '')
+    if m:
+        with db.connect() as c:
+            evento = c.execute('''SELECT e.*, k.nome AS comando, l.nome AS corso FROM puma_eventi e LEFT JOIN comandi k ON k.id=e.comando_id
+                LEFT JOIN puma_livelli l ON l.id=e.livello_id WHERE e.invito_token=?''', (m.group(1),)).fetchone()
+    return render_template('login.html', utenti_prova=prova.UTENTI if config.PROVA and not invito else [], invito=invito, evento=evento)
 
 @app.route('/invito/<token>')
 def invito(token):
@@ -185,6 +193,10 @@ def login():
                 flash('Account disabilitato. Contatta un amministratore di P.U.M.A.', 'danger')
                 return pagina_login()
             from moduli.puma import ruoli as _ruoli
+            dopo = session.get('dopo') if (session.get('dopo') or '').startswith('/') else None
+            if dopo and _ruoli.applica_invito_evento(c, u, dopo):   # link d'invito di un addestramento: almeno Operatore
+                db.audit(c, email, 'invito_addestramento', dopo)
+                u = c.execute('SELECT * FROM utenti WHERE id=?', (u['id'],)).fetchone()
             if _ruoli.applica_inviti(c, u):   # invitato da un collega: account subito attivo con il livello indicato
                 db.audit(c, email, 'invito_usato', 'account abilitato dal link di invito')
                 u = c.execute('SELECT * FROM utenti WHERE id=?', (u['id'],)).fetchone()
@@ -198,6 +210,8 @@ def login():
             c.execute('UPDATE utenti SET ultimo_accesso=? WHERE id=?', (now, u['id']))
         session.clear(); session.permanent = True
         session['uid'] = u['id']; session['csrf'] = secrets.token_hex(16)
+        if dopo: session['dopo'] = dopo
+        if dopo and u['profilo_confermato'] and u['stato'] == 'attivo': return redirect(session.pop('dopo'))
         return redirect(url_for('home'))
     return pagina_login()
 
@@ -270,6 +284,7 @@ def profilo_view():
                     c.execute("INSERT INTO specializzazioni_utente(utente_id,codice,descrizione,origine,inizio) VALUES(?,?,?, 'manuale', ?)", (u['id'], r['codice'], r['descrizione'], data_iso(f.get('data_' + r['codice'], ''))))
             profilo.salva_in_organico(c, u['email'], v, com['nome'])
             db.audit(c, u['email'], 'profilo_confermato', f'origine={orig}')
+            if u['stato'] != 'in_attesa' and (session.get('dopo') or '').startswith('/'): return redirect(session.pop('dopo'))
             return redirect(url_for('attesa' if u['stato'] == 'in_attesa' else 'home'))
         comandi = c.execute(ORDINE_SEDI).fetchall()
         dist = c.execute('SELECT * FROM distaccamenti_wauc ORDER BY cod_sede, descrizione').fetchall()

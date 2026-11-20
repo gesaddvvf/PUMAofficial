@@ -12,12 +12,11 @@ import db as portale_db
 # localita, ruoli, aree, impostazioni, sistema…) oppure 'comando' (= area_comando), 'scrittura' (= programma), 'admin' (= sistema).
 GRUPPI = {
     'attivita': dict(nome='Attività', area='att', ic='📝', schede=[
-        ('puma.attivita_oggi', {}, 'Addestramenti di oggi', None),
-        ('puma.collettivo_nuovo', {}, 'Programma un addestramento', 'programma'),
-        ('puma.collettivi', {}, 'Calendario', None),
-        ('puma.piani', {}, 'Piani di sicurezza', 'piano'),
-        ('puma.individuali', {}, 'Registrazione individuale', None),
-        ('puma.interventi', {}, 'Interventi reali', None)]),
+        ('puma.collettivo_nuovo', {}, 'Pianifica addestramento', 'programma'),
+        ('puma.collettivi', {}, 'Calendario addestramenti', None),
+        ('puma.attivita_oggi', {}, 'Partecipa ad addestramento', None),
+        ('puma.piani', {}, 'Redazione piano di sicurezza addestramento', 'piano'),
+        ('puma.individuali', {}, 'Registrazione attività individuali', None)]),
     'realtime': dict(nome='Real Time', area='rt', ic='⏱️', schede=[
         ('puma.presenze', {}, 'Presenze Odierne', None),
         ('puma.mappa', {}, 'Mappa Real Time', None),
@@ -33,6 +32,7 @@ GRUPPI = {
         ('puma.personale', {}, 'Riepilogo', None),
         ('puma.profilo', {}, 'Report individuale', None),
         ('puma.mie_attivita', {}, 'Le mie attività', None),
+        ('puma.interventi', {}, 'Interventi reali', None),
         ('profilo_view', {}, 'Profilazione', None)]),
     'collettivo': dict(nome='Reportistica', area='rep', ic='📊', schede=[
         ('puma.report_collettivo', {}, 'Report collettivo', 'report'),
@@ -69,11 +69,11 @@ def registra(gruppo, endpoint, etichetta, permesso=None, argomenti=None):
 # endpoint -> (gruppo o area, titolo della pagina). Il gruppo decide pulsante acceso, schede e colore.
 PAGINE = {
     'puma.index': ('home', 'Home Page'),
-    'puma.attivita_oggi': ('attivita', 'Addestramenti di oggi'), 'puma.piani': ('attivita', 'Piani di sicurezza'),
-    'puma.individuali': ('attivita', 'Registrazione individuale'), 'puma.interventi': ('attivita', 'Interventi reali'),
+    'puma.attivita_oggi': ('attivita', 'Partecipa ad addestramento'), 'puma.piani': ('attivita', 'Redazione piano di sicurezza'),
+    'puma.individuali': ('attivita', 'Registrazione attività individuali'), 'puma.interventi': ('personale', 'Interventi reali'),
     'puma.collettivi': ('attivita', 'Calendario addestramenti'),
-    'puma.collettivo_nuovo': ('attivita', 'Programma un addestramento'), 'puma.collettivo': ('attivita', 'Scheda addestramento'),
-    'puma.partecipa': ('attivita', 'Registrazione all\'addestramento'), 'puma.piano': ('attivita', 'Piano di sicurezza'),
+    'puma.collettivo_nuovo': ('attivita', 'Pianifica addestramento'), 'puma.collettivo': ('attivita', 'Scheda addestramento'),
+    'puma.partecipa': ('attivita', 'Partecipa ad addestramento'), 'puma.piano': ('attivita', 'Redazione piano di sicurezza'),
     'puma.attivita': ('attivita', 'Attività formative'),
     'puma.presenze': ('realtime', 'Presenze Odierne'), 'puma.mappa': ('realtime', 'Mappa Real Time'), 'puma.oggi': ('realtime', 'Registro odierno'),
     'puma.didattica': ('didattica', 'Didattica e documentazione'),
@@ -142,7 +142,8 @@ def contesto(utente, puo):
             if not _ok(perm, p): continue
             attiva = e == ep and all(str(args.get(k)) == str(v) for k, v in a.items())
             if ep == 'puma.collettivi' and e == 'puma.collettivi': attiva = (args.get('vista') == 'riepilogo') == ('vista' in a)
-            if e == 'puma.collettivi' and ep in ('puma.collettivo', 'puma.partecipa') and 'vista' not in a: attiva = True
+            if e == 'puma.collettivi' and ep == 'puma.collettivo' and 'vista' not in a: attiva = True
+            if e == 'puma.attivita_oggi' and ep == 'puma.partecipa': attiva = True
             if e == 'puma.piani' and ep == 'puma.piano': attiva = True
             if e == 'admin_utenti' and ep == 'admin_utente': attiva = True
             if e == 'puma.localita' and ep == 'puma.localita_scheda': attiva = True
