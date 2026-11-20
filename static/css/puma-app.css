@@ -289,7 +289,7 @@ a.card:hover { background: #2e2e2e; transform: translateY(-2px); } .card .ico { 
 .hero-compatto h2 { font-size: clamp(18px, 2.6vw, 28px); }
 .hero-compatto .motto { margin: 4px 0 6px; font-size: 14px; }
 .hero-compatto .strisce { margin: 0; }
-p.intro.centro { text-align: center; margin: 18px auto 0; }
+p.intro.centro { text-align: center; margin: 18px auto 0; max-width: 760px; }
 .area-per  { --ac: #8e24aa; --acl: #ce93d8; --acf: #fff; }      /* Area personale: viola */
 @media (max-width: 560px) { .hero.hero-compatto { gap: 10px; } .hero-compatto .hero-logo img { width: 56px; } }
 [hidden] { display: none !important; }
