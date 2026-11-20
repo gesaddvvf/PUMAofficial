@@ -1,0 +1,120 @@
+# Matrici di rischio P.U.M.A. (importate da tabella fornita). M=matrice, F=fattore (codice|descrizione|punteggio massimo), O=opzione (testo|punteggio)
+M|A|Matrice A
+F|A01|Programmazione attività|9
+O|Effettuata prima delle 24 h dall'addestramento|3
+O|Effettuata entro le 24 h dall'addestramento|9
+F|A02|Pianificazione e analisi ambientale|9
+O|Effettuata prima delle 24 h dall'addestramento|9
+O|Effettuata entro le 24 h dall'addestramento|3
+F|A03|Operatori|6
+O|Della stessa sede di servizio|3
+O|Da sedi di servizio diverse|6
+F|A04|Omogeneità delle competenze|6
+O|Operatori con stesso livello operativo|1
+O|Operatori con diversi livelli operativi|6
+F|A05|Allenamento leader: ultima operazione effettuata dal leader|9
+O|< 3 mesi|3
+O|<6 mesi|6
+O|>6 mesi|9
+F|A06|Allenamento squadra: ultima operazione effettuata dal componente che si è addestrato meno recentemente|9
+O|< 3 mesi|3
+O|<6 mesi|6
+O|>6 mesi|9
+F|A07|Meteo|9
+O|sole/sereno|1
+O|coperto/pioggia/vento|3
+O|neve|6
+O|adozione allerta meteo|9
+F|A08|Temperatura dell'aria|6
+O|> 20 °C|3
+O|tra 5 °C e 20 °C|1
+O|< 5 °C|6
+F|A09|Attrezzature|6
+O|Già impiegate dagli operatori|1
+O|Di nuova assegnazione/primo utilizzo|6
+F|A10|Conoscenza del sito|9
+O|Conosciuto solo dal leader|6
+O|Conosciuto da tutti gli operatori|1
+O|Sconosciuto|9
+F|A11|Sicurezza|6
+O|Comunicazioni efficienti lungo tutto il percorso|1
+O|Comunicazioni difficoltose|6
+F|A12|Soccorso alla squadra|6
+O|Autosoccorso|6
+O|Struttura dedicata|1
+M|B|Matrice B (ambiente fluviale)
+F|B01|Programmazione attività|9
+O|Effettuata prima delle 24 h dall'addestramento|3
+O|Effettuata entro le 24 h dall'addestramento|9
+F|B02|Pianificazione e analisi ambientale|9
+O|Effettuata prima delle 12 h dall'addestramento|9
+O|Effettuata entro le 12 h dall'addestramento|3
+F|B03|Operatori|6
+O|Equipaggio affiatato, concorde|3
+O|Equipaggio non affiatato, disomogeneo|6
+F|B04|Ultima operazione effettuata dal componente che si è addestrato meno recentemente|9
+O|< 3 mesi|3
+O|< 6 mesi|6
+O|> 6 mesi|9
+F|B05|Meteo|9
+O|Sole/sereno|1
+O|Coperto/pioggia/vento|3
+O|Neve|6
+O|Adozione allerta meteo|9
+F|B06|Temperatura dell'aria|6
+O|> 20 °C|3
+O|tra 10 °C e 20 °C|1
+O|< 10 °C|6
+F|B07|Conoscenza del sito|9
+O|Conosciuto solo dal leader|6
+O|Conosciuto da tutti gli operatori|1
+O|Sconosciuto|9
+F|B08|Classificazione del corso d'acqua|9
+O|I - II grado|1
+O|III - IV grado|5
+O|V - VI grado|9
+F|B09|Regime idrico|9
+O|Magra|4
+O|Morbida, ordinario|2
+O|Piena|9
+F|B10|Nicchie, rulli, sifoni, colini|6
+O|Assenti|1
+O|Facilmente evitabili|3
+O|Evitabili con manovre tempestive|6
+O|Inevitabili|100
+F|B11|Curve ed ostacoli|6
+O|Navigazione facile|3
+O|Richiedono manovre impegnative|6
+F|B12|Materiali trasportati|6
+O|Occasionali|1
+O|Frequenti|6
+F|B13|Opere artificiali|6
+O|Briglie|4
+O|Griglie, prese di captazione|6
+O|Intubazioni del corso d'acqua|100
+F|B14|Frequenza degli ostacoli|4
+O|Distanziati, è possibile evitare gli ostacoli con semplici manovre|2
+O|Il superamento degli ostacoli necessita di azioni rapide, coordinate e precise. In caso di errore è possibile recuperare il controllo dell'imbarcazione|4
+O|Passaggi obbligati. Le azioni del conduttore e dell'equipaggio devono essere rapide, coordinate e precise. In caso di errore è probabile la perdita del controllo dell'imbarcazione ed il suo ribaltamento|100
+F|B15|Presenza di zone con acqua calma a valle di zone impegnative dove effettuare eventuali recuperi|5
+O|Frequenti|1
+O|Assenti|5
+F|B16|Possibilità di attracco|7
+O|Facile, continuo|1
+O|Discontinuo, zone di morta distanziate|4
+O|Difficile, sponde lisce e scoscese|7
+F|B17|Collegamenti stradali|5
+O|Frequenti, agevoli|1
+O|Rari, impervi|3
+O|Assenti|5
+F|B18|Sicurezza|6
+O|Comunicazioni efficienti lungo tutto il percorso|1
+O|Comunicazioni difficoltose|6
+F|B19|Soccorso alla squadra|6
+O|Autosoccorso|6
+O|Struttura dedicata|1
+M|C|Matrice C (corso di formazione)
+F|C01|Corso di Formazione|1
+O|Per presa visione.|1
+F|C02|Corso di Formazione (completamento matrice)|1
+O|Completamento matrice|1

@@ -1,0 +1,15 @@
+<link rel="stylesheet" href="{{ url_for('puma.static', filename='vendor/leaflet.css') }}">
+<link rel="stylesheet" href="{{ url_for('puma.static', filename='css/puma.css') }}">
+<div class="puma-nav" role="navigation" aria-label="P.U.M.A.">
+  <a href="{{ url_for('puma.index') }}">Home page</a>
+  <a href="{{ url_for('puma.collettivi') }}">Addestramenti collettivi</a>
+  <a href="{{ url_for('puma.individuali') }}">Individuali</a>
+  <a href="{{ url_for('puma.interventi') }}">Interventi reali</a>
+  <a href="{{ url_for('puma.mappa') }}">Mappa live</a>
+  <a href="{{ url_for('puma.profilo') }}">Il mio profilo</a>
+  <a href="{{ url_for('puma.attivita') }}">Attività</a>
+  <span class="puma-dd"><a href="#" aria-haspopup="true">Documentazione ▾</a>
+    <span class="puma-menu">{% for k,v in categorie.items() %}<a href="{{ url_for('puma.documentazione', cat=k) }}">{{ v }}</a>{% endfor %}</span></span>
+  <a href="{{ url_for('puma.archivio') }}">Archivio</a>
+  <a href="{{ url_for('puma.impostazioni') }}">Impostazioni</a>{% if utente and utente['is_admin'] %}<a href="{{ url_for('puma.livelli_utente') }}">Livelli utenti</a>{% endif %}
+</div>

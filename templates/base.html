@@ -1,0 +1,21 @@
+<!doctype html><html lang="it"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>{% block titolo %}P.U.M.A.{% endblock %} · P.U.M.A. VVF</title>
+<link rel="icon" href="{{ url_for('static', filename='img/puma-logo.jpg') }}">
+<script src="{{ url_for('static', filename='js/tema-init.js') }}"></script>
+<link rel="stylesheet" href="{{ url_for('static', filename='css/puma-app.css') }}">
+<script src="{{ url_for('static', filename='js/tema.js') }}" defer></script></head><body>
+<header class="testata">
+<a class="marchio" href="{{ url_for('home') if utente else url_for('login') }}"><img src="{{ url_for('static', filename='img/puma-logo.jpg') }}" alt="Logo P.U.M.A.">
+<span class="titolo">P.U.M.A.<small>{{ nome_esteso }}</small></span></a>
+{% if prova %}<span class="badge-prova" title="Utenti fittizi e dati WAUC simulati: nessun dato reale">MODALITÀ PROVA</span>{% endif %}
+<nav>{% if utente and utente['stato']=='attivo' %}
+{% if app_utente|length > 1 %}<span class="menu"><a href="{{ url_for('elenco_app') }}" aria-haspopup="true">App ▾</a><span class="tendina">{% for m in app_utente %}<a href="{{ url_for(m['codice'] ~ '.index') }}">{{ m['nome'] }}</a>{% endfor %}</span></span>{% endif %}
+{% if utente['is_admin'] %}<span class="menu"><a href="{{ url_for('admin_utenti') }}" aria-haspopup="true">Amministrazione ▾</a><span class="tendina">
+<a href="{{ url_for('admin_utenti') }}">Utenti e permessi</a><a href="{{ url_for('admin_organico') }}">Organico</a><a href="{{ url_for('admin_config') }}">Configurazione e WAUC</a><a href="{{ url_for('admin_comandi') }}">Schede dei comandi</a><a href="{{ url_for('admin_audit') }}">Registro attività</a></span></span>{% endif %}{% endif %}
+<button id="tema-toggle" type="button" aria-label="Cambia tema">🌙</button>
+{% if utente %}<a href="{{ url_for('profilo_view') }}" title="I miei dati (da WAUC) e specializzazioni">👤 {{ utente['nome'] }} {{ utente['cognome'] }}</a>
+<form class="inline" method="post" action="{{ url_for('logout') }}"><input type="hidden" name="csrf" value="{{ csrf }}"><button type="submit">Esci</button></form>{% endif %}</nav></header>
+<div class="striscia" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></div>
+<main>{% with m = get_flashed_messages(with_categories=true) %}{% for c,t in m %}<div class="flash {{ c }}">{{ t }}</div>{% endfor %}{% endwith %}
+{% block main %}{% endblock %}</main>
+<footer>P.U.M.A. v{{ versione }} · Forma. Qualifica. Avanza. · Corpo Nazionale dei Vigili del Fuoco{% if prova %} · <b>modalità prova: dati fittizi</b>{% endif %}</footer></body></html>

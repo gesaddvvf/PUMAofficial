@@ -1,0 +1,8 @@
+{% extends 'base.html' %}{% block titolo %}P.U.M.A.{% endblock %}{% block main %}{% include "puma/_nav.html" %}
+<h2 class="puma-h">{{ categorie[cat] }}</h2>
+<ul class="puma-list">{% for r in righe %}<li><div><a href="{{ url_for('puma.scarica', i=r.id) }}">{{ r.titolo }}</a> <small>{{ r.settore or '' }}</small></div>
+<div>{{ r.creato_il[:10] }}{% if r.is_blindato %} <span class="puma-tag">Riservato</span>{% endif %}</div></li>
+{% else %}<li class="puma-empty">Nessun documento caricato.</li>{% endfor %}</ul>
+{% if scrivi %}<form method="post" enctype="multipart/form-data" class="puma-form"><input type="hidden" name="csrf" value="{{ csrf }}"><h3>Carica documento</h3>
+<input name="titolo" placeholder="Titolo" required><input name="settore" placeholder="Settore (facoltativo)">
+<input type="file" name="file" required>{% include "puma/_tenant.html" %}<button>Carica</button></form>{% endif %}{% endblock %}

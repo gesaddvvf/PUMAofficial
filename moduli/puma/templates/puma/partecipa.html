@@ -1,0 +1,9 @@
+{% extends 'base.html' %}{% block titolo %}P.U.M.A.{% endblock %}{% block main %}{% include "puma/_nav.html" %}
+<h2 class="puma-h">Registrazione all'addestramento</h2>
+<div class="puma-conferma"><p class="puma-cod">{{ e.cod_add }}</p>
+<p><b>{{ e.tipologia }}</b> – squadra <b>{{ e.team }}</b><br>{{ e.data }} · {{ e.ora_inizio }}–{{ e.ora_fine }}<br>Organizzatore: {{ 'Direzione Regionale' if e.org_dr else nomi.get(e.comando_id,'') }}<br>{{ e.titolo or '' }}</p></div>
+<form method="post" class="puma-form"><input type="hidden" name="csrf" value="{{ csrf }}">
+<label>Il tuo ruolo nell'ICS <select name="ruolo" required><option value="">Scegli…</option>{% for r in ruoli %}<option value="{{ r.codice }}" {{ 'selected' if mio==r.codice }}>{{ r.nome }}</option>{% endfor %}</select></label>
+<label>Codice fiscale <input name="cf" value="{{ cf }}" maxlength="16" minlength="16" pattern="[A-Za-z0-9]{16}" autocapitalize="characters" autocomplete="off" required class="puma-cf"></label>
+<label class="puma-chk"><input type="checkbox" name="conferma" value="1" required> Confermo: è l'addestramento giusto ({{ e.cod_add }})</label>
+<p><small>Il codice fiscale viene salvato una volta sola e compare soltanto nei PDF del piano (organizzazione e fogli firme).</small></p><button>Mi registro</button></form>{% endblock %}

@@ -1,0 +1,38 @@
+# Manovre per corso/specializzazione: corso|ciclo|numero|manovra   (corso: AVA=SAF Avanzato, BAS=SAF Basico, TPS=TPSS; per TPS il "ciclo" è la Parte)
+AVA|III|26|Recupero con la tecnica del contrappeso
+AVA|II|27|Autosoccorso nella progressione in verticale al 1° e al 2° operatore
+AVA|II|28|Discesa e accompagnamento della vittima in corda doppia
+AVA|III|29|Soccorso uomo a uomo con approccio dal basso
+AVA|IV|30|Sistema di calata/recupero con corde accoppiate
+AVA|I|31|Teleferica a punti fissi - Generalità - Traslazione operatori
+AVA|I|32|Teleferica a punti fissi - Traslazione della barella
+AVA|I|33|Teleferica a punti fissi - Sistemi pescanti
+AVA|I|34|Teleferica a punti fissi - Tiro guidato
+AVA|I|35|Teleferica a punti fissi - Progressione autonoma sulle portanti
+AVA|IV|36|Passaggio dei nodi nei sistemi regolatori di calata/recupero
+AVA|III|37|Calata/recupero con ripresa degli ancoraggi
+AVA|I|38|Calata/recupero con verricello "Winch"
+AVA|I|39|Manovre di utilizzo attrezzature complesse di sollevamento e calata (palo pescante)
+AVA|II|39|Manovre di utilizzo attrezzature complesse di sollevamento e calata (palo pescante)
+AVA|III|39|Manovre di utilizzo attrezzature complesse di sollevamento e calata (palo pescante)
+AVA|IV|39|Manovre di utilizzo attrezzature complesse di sollevamento e calata (palo pescante)
+AVA|IV|40|Manovre di utilizzo attrezzature complesse di sollevamento e calata - Sistema bipode
+AVA|II|41|Manovre di utilizzo attrezzature complesse di sollevamento e calata - Sistema tripode
+AVA|III|42|Variazione assetto barella tramite corde
+AVA|IV|43|Imbarellamento con cambio d‘assetto variazione tramite paranco
+AVA|III|44|Movimentazione di barella sostenuta da due operatori - Portantina (in salita, discesa, traverso)
+AVA|IV|45|Movimentazione barella tramite pendoli di corda
+AVA|II|46|Calata/recupero di operatore con imbraco ad assetto capovolto
+AVA|II|47|Autosoccorso - Risalita e discesa d‘emergenza su corda singola e doppia
+AVA|I|48|Movimentazione barella in assetto orizzontale con impiego di deviatori di tiro
+AVA|IV|49|Movimentazione di barelle su spigolo
+AVA|III|50|Passaggio dei nodi nei deviatori
+BAS|I|1|Calata e recupero (A)
+BAS|I|2|Esecuzione di nodi e ancoraggi (A)
+BAS|I|3|Movimentazione autonoma su corda singola e frazionamenti (A)
+BAS|I|4|Progressione dal basso (B)
+BAS|I|5|Svincolo e accompagnamento con l'impiego di paranco (B)
+TPS|I|1|BLS-D - Basic Life Support and Defibillation
+TPS|I|2|SVT - Supporto Vitale al Traumatizzato
+TPS|II|3|PBLS-D - Pediatric Basic Life Support and Defibillation
+TPS|II|4|Manovre all'aperto

@@ -1,0 +1,19 @@
+{% extends 'base.html' %}{% block titolo %}Gestisci utente{% endblock %}
+{% block main %}<h1>{{ u['nome'] }} {{ u['cognome'] }}</h1><p class="muted">{{ u['email'] }}</p>
+<form method="post" class="box box-largo"><input type="hidden" name="csrf" value="{{ csrf }}">
+<label for="st">Stato</label><select id="st" name="stato">{% for s in ['in_attesa','attivo','disabilitato'] %}<option value="{{ s }}" {{ 'selected' if u['stato']==s }}>{{ s.replace('_',' ') }}</option>{% endfor %}</select>
+<label for="co">Comando</label><select id="co" name="comando_id"><option value="">—</option>{% for k in comandi %}<option value="{{ k['id'] }}" {{ 'selected' if u['comando_id']==k['id'] }}>{{ k['nome'] }}</option>{% endfor %}</select>
+<label><input type="checkbox" name="is_admin" {{ 'checked' if u['is_admin'] }}> Amministratore di P.U.M.A. (accesso a tutti i settori e all'amministrazione)</label>
+{% if wauc %}<h2>Dati WAUC</h2><table>
+<tr><th>Qualifica</th><td>{{ wauc['desc_qualifica'] or wauc['nome_qualifica'] or '—' }} <span class="muted">{{ wauc['cod_qualifica'] }}</span></td></tr>
+<tr><th>Gruppo</th><td>{{ wauc['desc_gruppo'] or '—' }} <span class="muted">{{ wauc['ambito'] }}</span></td></tr>
+<tr><th>Sede</th><td>{{ wauc['desc_sede'] or '—' }} <span class="muted">{{ wauc['cod_sede'] }} {{ wauc['cod_distaccamento'] }}</span></td></tr>
+<tr><th>Sede padre</th><td>{{ wauc['desc_sede_padre'] or '—' }}</td></tr>
+<tr><th>Tipo personale</th><td>{{ wauc['desc_tipo_personale'] or '—' }}</td></tr>
+<tr><th>Turno</th><td>{{ wauc['turno'] or '—' }} {{ ('(salto ' ~ wauc['salto_turno'] ~ ')') if wauc['salto_turno'] else '' }}</td></tr>
+<tr><th>Account</th><td>{{ wauc['account_dipvvf'] or '—' }}</td></tr>
+<tr><th>Ultimo aggiornamento</th><td>{{ wauc['ultima_sync'] }}</td></tr></table>{% endif %}
+<h2>Specializzazioni</h2>{% if specs %}<table><tr><th>Codice</th><th>Descrizione</th><th>Validità</th></tr>{% for s in specs %}<tr><td>{{ s['codice'] }}</td><td>{{ s['descrizione'] or '—' }}</td><td>{{ ('fino al ' ~ s['fine']) if s['fine'] else 'senza scadenza' }}{{ ' · aggiunta dall\'utente' if s['origine']=='manuale' }}</td></tr>{% endfor %}</table>{% else %}<p class="muted">Nessuna specializzazione rilevata.</p>{% endif %}
+<h2>Settori e livelli</h2>
+{% for s in settori %}<div class="riga"><span>{{ s['nome'] }}</span><select name="liv_{{ s['id'] }}"><option value="">nessun accesso</option>{% for l in livelli %}<option value="{{ l }}" {{ 'selected' if perm.get(s['id'])==l }}>{{ l }}</option>{% endfor %}</select></div>{% endfor %}
+<button class="btn btn-primary" type="submit">Salva</button></form>{% endblock %}

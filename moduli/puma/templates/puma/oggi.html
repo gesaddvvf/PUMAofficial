@@ -1,0 +1,12 @@
+{% extends 'base.html' %}{% block titolo %}P.U.M.A.{% endblock %}{% block main %}{% include "puma/_nav.html" %}
+<h2 class="puma-h">Addestramenti odierni <small>{{ oggi }}</small></h2>
+<ul class="puma-list">{% for r in righe %}<li><div><b>{{ r.tema }}</b><br>{{ r.luogo or '' }} {{ '· istruttore ' ~ r.istruttore if r.istruttore }}<br><small>{{ r.partecipanti or '' }}</small></div>
+<div>{{ r.ora or '' }}{% if r.is_blindato %} <span class="puma-tag">Riservato</span>{% endif %}</div></li>
+{% else %}<li class="puma-empty">Nessun addestramento programmato oggi.</li>{% endfor %}</ul>
+{% if scrivi %}<form method="post" class="puma-form"><input type="hidden" name="csrf" value="{{ csrf }}"><h3>Registra addestramento</h3>
+<input name="tema" placeholder="Tema" required>
+<label>Data <input type="date" name="data" value="{{ oggi }}"></label><label>Ora <input type="time" name="ora"></label>
+<input name="luogo" placeholder="Luogo"><input name="istruttore" placeholder="Istruttore">
+<select name="attivita_id"><option value="">Nessuna attività collegata</option>{% for a in attivita %}<option value="{{ a.id }}">{{ a.titolo }}</option>{% endfor %}</select>
+<textarea name="partecipanti" placeholder="Partecipanti (uno per riga)"></textarea>
+{% include "puma/_tenant.html" %}<button>Registra</button></form>{% endif %}{% endblock %}

@@ -1,0 +1,4 @@
+{% extends 'base.html' %}{% block titolo %}In attesa{% endblock %}
+{% block main %}<div class="box"><h1>Account in attesa di abilitazione</h1>
+<p>Accesso eseguito come <strong>{{ utente['email'] }}</strong>{% if utente['comando'] %} · {{ utente['comando'] }}{% endif %}. Un amministratore deve abilitarti e assegnarti i settori di competenza.</p>
+<a class="btn" href="{{ url_for('profilo_view') }}">Rivedi i tuoi dati</a></div>{% endblock %}

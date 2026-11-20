@@ -1,0 +1,13 @@
+{% extends 'base.html' %}{% block titolo %}P.U.M.A.{% endblock %}{% block main %}{% include "puma/_nav.html" %}
+<section class="puma-hero">
+  <img src="{{ url_for('puma.static', filename='img/puma-logo.jpg') }}" alt="Logo P.U.M.A." class="puma-logo">
+  <div><h1>Piattaforma <b>Unificata Monitoraggio Addestramenti</b></h1>
+  <h2>Forma. Qualifica. Avanza.</h2>
+  <p>PUMA è una piattaforma unificata per la gestione completa degli addestramenti del personale. Centralizza il monitoraggio delle competenze, il tracciamento delle attività formative e la pianificazione degli aggiornamenti, garantendo visibilità, qualità e continuità al percorso di crescita professionale.</p></div>
+</section>
+<h2 class="puma-h">Settori</h2>
+<div class="puma-kpi">{% for s in settori %}<a href="{{ url_for('puma.settore', cod=s.codice) }}"><b>{{ s.codice }}</b>{{ s.nome }}</a>
+{% else %}<p class="puma-empty">Nessun settore abilitato per il tuo profilo.</p>{% endfor %}</div>
+<div class="puma-kpi"><a href="{{ url_for('puma.mappa') }}"><b>{{ n_oggi }}</b> addestramenti collettivi attivi oggi</a>
+<a href="{{ url_for('puma.attivita') }}"><b>{{ n_att }}</b> attività attive</a></div>
+{% endblock %}

@@ -1,0 +1,5 @@
+{% extends 'base.html' %}{% block titolo %}P.U.M.A.{% endblock %}{% block main %}{% include "puma/_nav.html" %}
+<h2 class="puma-h">Interventi reali</h2>
+<form method="post" class="puma-form"><input type="hidden" name="csrf" value="{{ csrf }}"><label>Macro-categoria <select name="macro">{% for s in mie %}<option value="{{ s.codice }}">{{ s.codice }}</option>{% endfor %}</select></label>
+<label>Data <input type="date" name="data" value="{{ oggi }}" required></label><textarea name="descrizione" placeholder="Descrizione sintetica"></textarea><button>Registra intervento</button></form>
+<ul class="puma-list">{% for r in righe %}<li><div><b>{{ r.macro }}</b> {{ r.descrizione or '' }}</div><div>{{ r.data }}</div></li>{% else %}<li class="puma-empty">Nessun intervento registrato.</li>{% endfor %}</ul>{% endblock %}

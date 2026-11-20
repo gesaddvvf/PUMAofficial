@@ -1,0 +1,11 @@
+{% extends 'base.html' %}{% block titolo %}P.U.M.A.{% endblock %}{% block main %}{% include "puma/_nav.html" %}
+<h2 class="puma-h">Addestramenti individuali</h2>
+<form method="post" class="puma-form"><input type="hidden" name="csrf" value="{{ csrf }}"><h3>Registrazione rapida</h3>
+<label>Livello <select name="livello_id" id="liv" required data-url="{{ url_for('puma.api_manovre', lid=0) }}"><option value="">Scegli…</option>{% for l in livelli %}<option value="{{ l.id }}" data-s="{{ l.settore }}">{{ l.nome }}</option>{% endfor %}</select></label>
+<input type="hidden" name="tipologia" id="tipo">
+<label>Ora inizio <input type="datetime-local" name="inizio" value="{{ adesso }}" required></label>
+<label>Ora fine <input type="datetime-local" name="fine" value="{{ adesso }}" required></label>
+<fieldset id="man"><legend>Manovre</legend><small>Seleziona un livello.</small></fieldset><button>Registra</button></form>
+<ul class="puma-list">{% for r in righe %}<li><div><b>{{ r.livello or r.tipologia }}</b><br><small>{{ (r.manovre|from_json)|join(', ') if r.manovre }}</small></div><div>{{ r.inizio.replace('T',' ') }} → {{ r.fine[11:] }}</div></li>
+{% else %}<li class="puma-empty">Nessun addestramento individuale registrato.</li>{% endfor %}</ul>
+<script src="{{ url_for('puma.static', filename='js/individuali.js') }}"></script>{% endblock %}
