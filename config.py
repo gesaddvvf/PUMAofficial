@@ -46,7 +46,7 @@ def env(nome, default=None):
 
 NOME_APP = 'P.U.M.A.'
 NOME_ESTESO = 'Piattaforma Unificata Monitoraggio Addestramenti'
-VERSIONE = '1.0.0'
+VERSIONE = '1.1.0'
 
 MODALITA = 'prova' if env('MODALITA', 'reale').strip().lower() == 'prova' else 'reale'
 PROVA = MODALITA == 'prova'
@@ -64,6 +64,8 @@ HOST, PORT = env('HOST', '127.0.0.1'), int(env('PORT', 8080))
 # Login con le credenziali dipartimentali (server di posta raggiungibile solo in rete VVF / VPN)
 IMAP_HOST, IMAP_PORT, IMAP_TIMEOUT = env('IMAP_HOST', 'imap-s.vigilfuoco.it'), int(env('IMAP_PORT', 993)), int(env('IMAP_TIMEOUT', 10))
 DOMINIO = 'vigilfuoco.it'
+# Come presentarsi al server di posta: 'email' (nome.cognome@vigilfuoco.it, default) oppure 'nome' (solo nome.cognome)
+IMAP_UTENTE = 'nome' if env('IMAP_UTENTE', 'email').strip().lower() == 'nome' else 'email'
 # Password «dev» per qualsiasi utente: sempre attiva in modalità prova, MAI in uso reale.
 DEV_AUTH = PROVA or env('DEV_AUTH') == '1'
 
@@ -78,6 +80,18 @@ WAUC_TIMEOUT = int(env('WAUC_TIMEOUT', 8))
 WAUC_VERIFY_SSL = env('WAUC_VERIFY_SSL', '1') == '1'
 
 os.makedirs(BACKUP_DIR, exist_ok=True)
+LOG_PATH = os.path.join(DATA_DIR, 'puma.log')
+
+
+def avvia_log():
+    """Messaggi di PUMA (accessi riusciti e negati con il motivo, errori WAUC...) nella finestra e in <dati>/puma.log."""
+    import logging, logging.handlers
+    radice = logging.getLogger()
+    if any(getattr(h, '_puma', False) for h in radice.handlers): return
+    fmt = logging.Formatter('%(asctime)s %(levelname)s [%(name)s] %(message)s', '%Y-%m-%d %H:%M:%S')
+    for h in (logging.StreamHandler(), logging.handlers.RotatingFileHandler(LOG_PATH, maxBytes=1_000_000, backupCount=3, encoding='utf-8')):
+        h.setFormatter(fmt); h._puma = True; radice.addHandler(h)
+    radice.setLevel(logging.INFO)
 
 
 def secret_key():

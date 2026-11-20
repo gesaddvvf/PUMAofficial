@@ -41,7 +41,11 @@ def sedi_wauc(c):
     """Sedi (codici) in cui cercare: quelle impostate in config, altrimenti quelle scoperte con personale, altrimenti tutte le sigle provinciali."""
     if config.WAUC_SEDI: return list(config.WAUC_SEDI)
     note = [r[0] for r in c.execute('SELECT codice FROM wauc_sedi WHERE n_persone>0 ORDER BY n_persone DESC')]
-    return note or [r[0] for r in c.execute('SELECT sigla FROM comandi WHERE sigla IS NOT NULL ORDER BY sigla')]
+    if note: return note
+    sigle = [r[0] for r in c.execute('SELECT sigla FROM comandi WHERE sigla IS NOT NULL ORDER BY sigla')]
+    # codici dei comandi letti da /api/Sedi (se diversi dalle sigle provinciali, es. sigle storiche)
+    extra = [r[0] for r in c.execute("SELECT DISTINCT upper(codice) FROM sedi_wauc WHERE cod_tipo_dipartimento='CMD' AND codice<>''")]
+    return sigle + sorted(set(extra) - set(sigle))
 
 def registra_osservati(c):
     """Travasa nel db i valori incontrati nei record WAUC scaricati (qualifiche, tipi personale, turni, salti turno, distaccamenti)."""

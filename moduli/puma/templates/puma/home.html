@@ -1,13 +1,43 @@
-{% extends 'base.html' %}{% block titolo %}P.U.M.A.{% endblock %}{% block main %}{% include "puma/_nav.html" %}
-<section class="puma-hero">
-  <img src="{{ url_for('puma.static', filename='img/puma-logo.jpg') }}" alt="Logo P.U.M.A." class="puma-logo">
-  <div><h1>Piattaforma <b>Unificata Monitoraggio Addestramenti</b></h1>
-  <h2>Forma. Qualifica. Avanza.</h2>
-  <p>PUMA è una piattaforma unificata per la gestione completa degli addestramenti del personale. Centralizza il monitoraggio delle competenze, il tracciamento delle attività formative e la pianificazione degli aggiornamenti, garantendo visibilità, qualità e continuità al percorso di crescita professionale.</p></div>
-</section>
-<h2 class="puma-h">Settori</h2>
-<div class="puma-kpi">{% for s in settori %}<a href="{{ url_for('puma.settore', cod=s.codice) }}"><b>{{ s.codice }}</b>{{ s.nome }}</a>
-{% else %}<p class="puma-empty">Nessun settore abilitato per il tuo profilo.</p>{% endfor %}</div>
-<div class="puma-kpi"><a href="{{ url_for('puma.mappa') }}"><b>{{ n_oggi }}</b> addestramenti collettivi attivi oggi</a>
-<a href="{{ url_for('puma.attivita') }}"><b>{{ n_att }}</b> attività attive</a></div>
+{% extends 'base.html' %}{% block main %}{% include "puma/_nav.html" %}
+{% set icone = {'SAF': 'saf.svg', 'TPSS': 'tpss.svg'} %}
+<div class="home-wrap">
+  <div class="hero">
+    <div class="hero-testo">
+      <h2><span><b>P</b>iattaforma</span><span><b>U</b>nificata</span><span><b>M</b>onitoraggio</span><span><b>A</b>ddestramenti</span></h2>
+      <p class="motto">Forma. Qualifica. Avanza.</p>
+      <div class="strisce" aria-hidden="true"><i class="area-att"></i><i class="area-rt"></i><i class="area-doc"></i><i class="area-rep"></i><i class="area-com"></i></div>
+      <p class="intro">PUMA è una piattaforma unificata per la gestione completa degli addestramenti del personale.</p>
+      <p class="intro">Centralizza il monitoraggio delle competenze, il tracciamento delle attività formative e la pianificazione degli aggiornamenti, garantendo visibilità, qualità e continuità al percorso di crescita professionale.</p>
+    </div>
+    <div class="hero-logo"><img src="{{ url_for('static', filename='img/puma-logo.jpg') }}" alt="Logo P.U.M.A."></div>
+  </div>
+
+  <div class="sez-tit">Aree</div>
+  <div class="tessere">
+    <a class="tessera area-att" href="{{ url_for('puma.individuali') }}"><div class="ic">📝</div><h4>Attività</h4>
+      <p>Profilazione individuale, registrazione attività e pianificazione degli addestramenti collettivi.</p></a>
+    <a class="tessera area-rt" href="{{ url_for('puma.presenze') }}"><div class="ic">🗺️</div><h4>Real Time</h4>
+      <p>Presenze odierne, mappa degli addestramenti in corso e riepilogo globale degli addestramenti collettivi.</p></a>
+    <a class="tessera area-doc" href="{{ url_for('puma.documentazione', cat='manuali-puma') }}"><div class="ic">📚</div><h4>Documentazione</h4>
+      <p>Manuali P.U.M.A., manuali e circolari di settore (SAF, CRA, USAR, TPSS, TAS, CFBT…) e archivio.</p></a>
+    <a class="tessera area-rep" href="{{ url_for('puma.profilo') }}"><div class="ic">👤</div><h4>Report Individuale</h4>
+      <p>Libretto di formazione del singolo: addestramenti, scadenze e storico.</p></a>
+    {% if nav_perm and nav_perm.comando %}<a class="tessera area-rep" href="{{ url_for('puma.report_collettivo') }}"><div class="ic">👥</div><h4>Report Collettivo</h4>
+      <p>Situazione per settore, Comando per Comando o per Direzione: scadenze del personale per ROP e ROR.</p></a>{% endif %}
+    <a class="tessera area-com" href="{{ url_for('puma.area_comando') }}"><div class="ic">{{ '🔓' if nav_perm and nav_perm.comando else '🔒' }}</div><h4>Area Comando</h4>
+      <p>Reportistica e gestione per ROP, ROR, Funzionario di settore e amministratori.</p></a>
+  </div>
+
+  <div class="sez-tit">Oggi</div>
+  <div class="tessere">
+    <a class="tessera area-rt" href="{{ url_for('puma.mappa') }}"><div class="num">{{ n_oggi }}</div><h4>Addestramenti collettivi in corso</h4><p>Apri la mappa real time</p></a>
+    <a class="tessera area-att" href="{{ url_for('puma.attivita') }}"><div class="num">{{ n_att }}</div><h4>Attività formative attive</h4><p>Corsi, mantenimenti, retraining</p></a>
+    {% if scrivi %}<a class="tessera area-att" href="{{ url_for('puma.collettivo_nuovo') }}"><div class="ic">➕</div><h4>Nuovo addestramento collettivo</h4><p>Pianificazione e piano di sicurezza</p></a>{% endif %}
+  </div>
+
+  <div class="sez-tit">Settori abilitati</div>
+  <div class="tessere">{% for s in settori %}
+    <a class="tessera area-neu" href="{{ url_for('puma.settore', cod=s.codice) }}"><div class="ic">{% if icone.get(s.codice) %}<img src="{{ url_for('puma.static', filename='img/settori/' ~ icone[s.codice]) }}" alt="">{% else %}🎯{% endif %}</div><h4>{{ s.codice }}</h4><p>{{ s.nome }}</p></a>
+  {% else %}<p class="muted">Nessun settore abilitato per il tuo profilo: chiedi l'abilitazione a un amministratore.</p>{% endfor %}</div>
+</div>
 {% endblock %}

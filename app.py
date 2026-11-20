@@ -7,7 +7,10 @@ import config  # deve essere il primo import: aggiunge libs/ al percorso
 import os, re, time, hmac, secrets, datetime, importlib, pkgutil, threading
 from flask import Flask, g, render_template, request, redirect, url_for, session, flash, abort
 import config, db, profilo
-from auth_imap import autentica, estrai_nome_cognome, norm_email, EMAIL_RE
+from auth_imap import verifica, estrai_nome_cognome, norm_email, EMAIL_RE
+import logging
+config.avvia_log()
+log_accesso = logging.getLogger('accesso')
 
 LIVELLI = ['lettura', 'scrittura', 'gestore']
 app = Flask(__name__)
@@ -19,6 +22,7 @@ db.migra()
 
 
 MODULI = {}
+NAVIGAZIONE = None
 from urllib.parse import urlparse as _up
 _t = _up(os.environ.get('PUMA_TILE_URL', 'https://tile.openstreetmap.org/{z}/{x}/{y}.png'))
 TILE_HOST = f'{_t.scheme}://{_t.netloc}'   # server delle mappe (P.U.M.A.): unica origine esterna ammessa per le immagini
@@ -26,12 +30,16 @@ TILE_HOST = f'{_t.scheme}://{_t.netloc}'   # server delle mappe (P.U.M.A.): unic
 def carica_moduli():
     """Ogni cartella in moduli/ con MODULO (dict) e bp (Blueprint) diventa un'applicazione, raggiungibile su /<codice>/
     (PUMA: /puma/). Le cartelle che iniziano con «_» (es. _esempio) sono modelli e non vengono caricate."""
+    global NAVIGAZIONE
     for m in sorted(pkgutil.iter_modules([os.path.join(config.BASE_DIR, 'moduli')]), key=lambda x: (x.name != config.MODULO_PRINCIPALE, x.name)):
         if m.name.startswith('_'): continue
         mod = importlib.import_module(f'moduli.{m.name}')
         info = mod.MODULO
         MODULI[info['codice']] = info
         app.register_blueprint(mod.bp, url_prefix=f"/{info['codice']}")
+        if m.name == config.MODULO_PRINCIPALE:   # intestazione e menu del sito (se il modulo principale li definisce)
+            try: NAVIGAZIONE = importlib.import_module(f'moduli.{m.name}.navigazione')
+            except ImportError: NAVIGAZIONE = None
         with db.connect() as c:
             c.execute('INSERT OR IGNORE INTO settori(codice,nome,descrizione) VALUES(?,?,?)',
                       (info['settore'], info.get('settore_nome', info['settore'].capitalize()), info.get('descrizione')))
@@ -63,8 +71,9 @@ def ctx():
     if 'csrf' not in session: session['csrf'] = secrets.token_hex(16)
     u = g.get('utente')
     app_utente = [m for m in MODULI.values() if puo(m['settore'])] if u and u['stato'] == 'attivo' else []
+    nav = NAVIGAZIONE.contesto(u if u and u['stato'] == 'attivo' else None, puo) if NAVIGAZIONE and request.endpoint else {}
     return dict(csrf=session['csrf'], utente=u, puo=puo, versione=config.VERSIONE, dev_auth=config.DEV_AUTH,
-                prova=config.PROVA, nome_app=config.NOME_APP, nome_esteso=config.NOME_ESTESO, app_utente=app_utente)
+                prova=config.PROVA, nome_app=config.NOME_APP, nome_esteso=config.NOME_ESTESO, app_utente=app_utente, **nav)
 
 @app.before_request
 def prima():
@@ -127,11 +136,14 @@ def login():
         if bloccato(chiave):
             flash('Troppi tentativi. Riprova tra qualche minuto.', 'danger')
             return pagina_login()
-        ok, err = autentica(email, request.form.get('password', ''))
+        ok, err, dettaglio = verifica(email, request.form.get('password', ''))
         if not ok:
+            log_accesso.warning('Accesso NEGATO per %s: %s', email, dettaglio)
+            with db.connect() as c: db.audit(c, email, 'accesso_negato', dettaglio)
             TENTATIVI.setdefault(chiave, []).append(time.time())
             flash(f'Accesso negato: {err}', 'danger')
             return pagina_login()
+        log_accesso.info('Accesso riuscito per %s (%s)', email, dettaglio)
         now = datetime.datetime.now().isoformat(timespec='seconds')
         with db.connect() as c:
             u = c.execute('SELECT * FROM utenti WHERE email=?', (email,)).fetchone()
@@ -146,6 +158,9 @@ def login():
             origine, errw = profilo.profila(c, u)   # ricerca con l'email inserita: WAUC, poi organico locale
             if origine and not u['profilo_confermato']: db.audit(c, email, 'profilo_precompilato', origine)
             if errw: db.audit(c, email, 'wauc_errore', errw[:200])
+            elif origine != 'wauc' and config.WAUC_ATTIVO:
+                db.audit(c, email, 'wauc_non_trovato', 'nessun errore di collegamento: la persona non compare nelle sedi interrogate (vedi PROVA_WAUC.bat)')
+                log_accesso.warning('WAUC: %s non trovato nelle sedi interrogate', email)
             profilo.assicura_catalogo(c)   # elenchi completi di specializzazioni e qualifiche (al primo accesso e poi ogni 24 ore)
             c.execute('UPDATE utenti SET ultimo_accesso=? WHERE id=?', (now, u['id']))
         session.clear(); session.permanent = True

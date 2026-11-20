@@ -24,6 +24,21 @@ def prova_porta(host, porta, timeout=3):
         return False, f'{host}:{porta} non raggiungibile ({e.__class__.__name__})'
 
 
+def saluto_imap(timeout=6):
+    """(ok, dettaglio): apre il collegamento sicuro con il server di posta e legge il suo saluto (senza fare login)."""
+    import imaplib
+    try:
+        m = imaplib.IMAP4_SSL(config.IMAP_HOST, config.IMAP_PORT, timeout=timeout)
+    except Exception as e:
+        return False, f'collegamento sicuro non riuscito ({e.__class__.__name__}: {str(e)[:120]})'
+    try:
+        saluto = m.welcome.decode('utf-8', 'replace') if isinstance(m.welcome, bytes) else str(m.welcome)
+        return True, f'risponde: {saluto[:100]}'
+    finally:
+        try: m.shutdown()
+        except Exception: pass
+
+
 def _host_porta(url):
     u = urllib.parse.urlparse(url)
     return u.hostname, u.port or (443 if u.scheme == 'https' else 80)

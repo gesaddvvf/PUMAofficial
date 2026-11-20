@@ -1,8 +1,19 @@
-{% extends 'base.html' %}{% block titolo %}P.U.M.A.{% endblock %}{% block main %}{% include "puma/_nav.html" %}
-<h2 class="puma-h">{{ categorie[cat] }}</h2>
-<ul class="puma-list">{% for r in righe %}<li><div><a href="{{ url_for('puma.scarica', i=r.id) }}">{{ r.titolo }}</a> <small>{{ r.settore or '' }}</small></div>
-<div>{{ r.creato_il[:10] }}{% if r.is_blindato %} <span class="puma-tag">Riservato</span>{% endif %}</div></li>
-{% else %}<li class="puma-empty">Nessun documento caricato.</li>{% endfor %}</ul>
-{% if scrivi %}<form method="post" enctype="multipart/form-data" class="puma-form"><input type="hidden" name="csrf" value="{{ csrf }}"><h3>Carica documento</h3>
-<input name="titolo" placeholder="Titolo" required><input name="settore" placeholder="Settore (facoltativo)">
-<input type="file" name="file" required>{% include "puma/_tenant.html" %}<button>Carica</button></form>{% endif %}{% endblock %}
+{% extends 'base.html' %}{% block main %}{% include "puma/_nav.html" %}
+{% set n_cat = catalogo.sezioni|map(attribute=1)|map('length')|sum if catalogo else 0 %}
+<div class="docs-testa">
+  <div><h3>📚 {{ categorie[cat] }}</h3><p>{{ n_cat + righe|length }} documenti · si aprono in Google Drive in una nuova scheda{% if catalogo and catalogo.pagina %} · <a href="{{ catalogo.pagina }}" target="_blank" rel="noopener">pagina sul sito Google ↗</a>{% endif %}</p></div>
+  <input type="search" id="docs-cerca" placeholder="Cerca documento o settore…" aria-label="Cerca documento">
+</div>
+<div class="docs-griglia" id="docs-griglia">
+  {% if righe %}<div class="doc-sez caricati" data-sezione="Caricati in PUMA"><h4>Caricati in P.U.M.A.</h4>
+    {% for r in righe %}<div class="doc-v"><a href="{{ url_for('puma.scarica', i=r.id) }}"><span>📎</span><span>{{ r.titolo }}{% if r.settore %} <span class="muted">· {{ r.settore }}</span>{% endif %}</span></a><span class="doc-extra">{{ r.creato_il[:10]|datait }}{% if r.is_blindato %} · riservato{% endif %}</span></div>{% endfor %}
+  </div>{% endif %}
+  {% if catalogo %}{% for sez, voci in catalogo.sezioni %}<div class="doc-sez" data-sezione="{{ sez }}"><h4>{{ sez }}</h4>
+    {% for v in voci %}<div class="doc-v{{ ' sub' if v|length > 2 and v[2] }}"><a href="https://drive.google.com/file/d/{{ v[1] }}/view" target="_blank" rel="noopener"><span>📄</span><span>{{ v[0] }}</span></a><a class="doc-extra" href="https://drive.google.com/file/d/{{ v[1] }}/view" target="_blank" rel="noopener" title="Apri in Google Drive">↗</a></div>{% endfor %}
+  </div>{% endfor %}{% endif %}
+</div>
+<div class="docs-vuoto" id="docs-vuoto" {{ 'hidden' if (righe or catalogo) }}>Nessun documento trovato.</div>
+{% if scrivi %}<form method="post" enctype="multipart/form-data" class="puma-form"><input type="hidden" name="csrf" value="{{ csrf }}"><h3>Carica un documento in «{{ categorie[cat] }}»</h3>
+<input name="titolo" placeholder="Titolo" required><input name="settore" placeholder="Settore (facoltativo, es. SAF)">
+<input type="file" name="file" required>{% include "puma/_tenant.html" %}<button>Carica</button></form>{% endif %}
+{% endblock %}
