@@ -1,7 +1,7 @@
 """Sedi di appartenenza (Comandi, Direzioni regionali, CON, SOCAV) con i dati di FireOps VVF (dati/sedi_fireops.json).
 
-All'avvio i contatti vengono copiati nella tabella comandi SOLO nei campi vuoti: le modifiche fatte a mano da un amministratore
-(Area Comando → Schede dei comandi) restano. La Direzione di ogni Comando invece segue sempre FireOps.
+All'avvio i contatti vengono copiati nella tabella comandi: telefono ed email della sede sono quelli della Sala Operativa.
+Le schede modificate a mano da un amministratore (Area Comando → Comandi e Direzioni) ricevono solo i campi vuoti. La Direzione di ogni Comando invece segue sempre FireOps.
 Per sovrascrivere tutto:  python manage.py aggiorna-sedi --forza"""
 import json, os, datetime
 import config
@@ -16,8 +16,11 @@ def _dati():
 
 
 def _scrivi(c, cid, d, forza):
+    """Le schede mai modificate a mano (contatti_aggiornati_il vuoto) seguono sempre FireOps; quelle modificate da un
+    amministratore ricevono da FireOps solo i campi vuoti (salvo --forza)."""
     riga = c.execute('SELECT * FROM comandi WHERE id=?', (cid,)).fetchone()
-    v = {k: d.get(k) for k in CAMPI if k in d and d.get(k) not in (None, '') and (forza or riga[k] in (None, ''))}
+    segue = forza or not riga['contatti_aggiornati_il']
+    v = {k: d.get(k) for k in CAMPI if k in d and d.get(k) not in (None, '') and (segue or riga[k] in (None, '')) and riga[k] != d.get(k)}
     if v:
         c.execute('UPDATE comandi SET ' + ','.join(f'{k}=?' for k in v) + ", fonte_contatti='fireops' WHERE id=?", (*v.values(), cid))
     return bool(v)
