@@ -67,6 +67,18 @@ def puo(settore, minimo='lettura'):
     if g.utente['is_admin']: return True
     return liv_indice(g.perm.get(settore)) >= liv_indice(minimo)
 
+@app.url_defaults
+def versione_statici(endpoint, values):
+    """Cache del browser: ogni file statico (CSS, JS, immagini) ha nell'indirizzo la sua data di modifica (?v=...).
+    Dopo un aggiornamento di PUMA il browser scarica subito i file nuovi invece di usare quelli vecchi in cache."""
+    if endpoint != 'static' and not endpoint.endswith('.static'): return
+    nome = values.get('filename')
+    if not nome or 'v' in values: return
+    bp = app.blueprints.get(endpoint.rsplit('.', 1)[0]) if '.' in endpoint else None
+    cartella = (bp.static_folder if bp else app.static_folder) or ''
+    try: values['v'] = int(os.path.getmtime(os.path.join(cartella, nome)))
+    except OSError: values['v'] = config.VERSIONE
+
 app.extensions['puo'] = puo   # per i moduli: current_app.extensions['puo']('settore', 'scrittura')
 
 @app.context_processor
