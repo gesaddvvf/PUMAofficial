@@ -9,7 +9,7 @@ PUMAofficial/
 ├── auth_imap.py      verifica delle credenziali dipartimentali sul server di posta (nessuna password salvata)
 ├── wauc.py           lettura dell'anagrafica del personale dall'API WAUC
 ├── profilo.py        ricerca della persona (WAUC → organico locale) e compilazione del profilo
-├── rete.py           verifica dei collegamenti alla rete VVF (VPN)
+├── rete.py           verifica dei collegamenti alla rete VVF (VPN) e del server di posta
 ├── db.py             SQLite + migrazioni automatiche (migrazioni/NNN_nome.sql)
 ├── manage.py         comandi da terminale (verifica-vpn, nomina-admin, backup…)
 ├── moduli/
@@ -24,6 +24,8 @@ PUMAofficial/
 
 **Flusso di una richiesta.** Il nucleo controlla la sessione e il CSRF, carica l'utente con i suoi permessi (`g.utente`, `g.perm`) e verifica che abbia accesso al settore del modulo. Il modulo si occupa solo delle proprie pagine.
 
+**Grafica e navigazione.** Riprendono il sito gesaddvvf.github.io/PUMA: `templates/base.html` (intestazione, schede, menu ☰), `static/css/puma-app.css`, `static/js/puma-sito.js` (menu, turno/salto, ricerca documenti). Aree, schede e titoli delle pagine sono in `moduli/puma/navigazione.py`: per una pagina nuova aggiungi il suo endpoint a `PAGINE` e, se serve, una scheda in `GRUPPI`.
+
 **Accesso diretto.** La pagina `/` porta al modulo indicato da `MODULO_PRINCIPALE` (default `puma`). Se un utente non è abilitato a PUMA ma lo è ad altre applicazioni, vede l'elenco delle app.
 
 ## Aggiungere una nuova applicazione (modulo)
@@ -35,11 +37,11 @@ PUMAofficial/
    bp = Blueprint('lance', __name__, template_folder='templates', static_folder='static', static_url_path='/lance-static')
    ```
    - `codice`: indirizzo dell'app (`/lance/`) e nome del blueprint;
-   - `settore`: permesso richiesto, creato da solo nella tabella `settori` e assegnabile da *Amministrazione → Utenti*.
+   - `settore`: permesso richiesto, creato da solo nella tabella `settori` e assegnabile da *Area Comando → Utenti e permessi*.
 3. Pagine: `@bp.route('/')` con nome `index` (obbligatoria), template che fanno `{% extends 'base.html' %}`.
    Per i permessi di modifica usa `puo('lance', 'scrittura')` nel template e `current_app.extensions['puo']('lance', 'scrittura')` nel codice Python (non fare `import app` da un modulo: ricaricherebbe tutto).
 4. Tabelle nuove: un file `migrazioni/007_lance.sql`. Non modificare mai una migrazione già distribuita: aggiungine una nuova.
-5. Riavvia: il modulo compare nel menu **App ▾** di chi ha il settore.
+5. Riavvia: il modulo compare nel menu **☰ → Applicazioni** di chi ha il settore.
 
 Per fare di un altro modulo la pagina iniziale: `PUMA_MODULO_PRINCIPALE=<codice>` in `puma.env`.
 

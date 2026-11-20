@@ -28,6 +28,24 @@ Le due modalità non si mescolano mai: quello che fai in prova non finisce nei d
 
 ---
 
+## Com'è fatto
+
+PUMA ha la stessa grafica del sito <https://gesaddvvf.github.io/PUMA/>. In alto ci sono i pulsanti delle aree, e le pagine di ogni area compaiono come schede subito sotto:
+
+| Area | Cosa contiene |
+|---|---|
+| **Home Page** | presentazione, aree, addestramenti di oggi, settori abilitati |
+| **Attività** (rosso) | Profilazione individuale (i tuoi dati da WAUC), Registrazione attività, Interventi reali, Pianificazione addestramenti collettivi, Attività formative |
+| **Real Time** (verde) | Presenze Odierne, Mappa Real Time, Riepilogo Globale, Registro odierno |
+| **Documentazione** (blu) | Manuali P.U.M.A., Manuali di settore, Circolari di settore (gli stessi file Drive del sito), Archivio |
+| **Report Individuale** (giallo) | il tuo libretto: scadenze, collettivi e individuali |
+| **Report Collettivo** (giallo) | scadenze del personale per settore; solo per ROP, ROR, Nazionale e amministratori |
+| **Area Comando** (bianco) | Impostazioni del Comando, Livelli utenti, Utenti e permessi, Organico, Configurazione e WAUC, Registro. Al posto della password del sito si entra in base ai propri permessi |
+
+Il riquadro **Turno / Salto** mostra chi è in servizio adesso, come nel sito e in FireOps. Il menu **☰** contiene tutte le pagine, i tuoi dati e il pulsante **Esci**.
+
+---
+
 ## 2. Provarlo subito, senza VPN
 
 1. Doppio clic su **`AVVIA_PROVA.bat`**.
@@ -61,11 +79,11 @@ Per ripartire da zero con i dati di prova: doppio clic su **`AZZERA_PROVA.bat`**
 4. Accedi con **`nome.cognome`** (il dominio `@vigilfuoco.it` si aggiunge da solo) e la **password dipartimentale**.
    Sotto il modulo di accesso un riquadro mostra se la rete VVF è raggiungibile (✔ verde) oppure no (✖ rosso).
 5. **Al primo accesso** PUMA ti cerca in WAUC e precompila i dati (comando, distaccamento, qualifica, turno, specializzazioni). Controllali e premi **Conferma**: entri direttamente in PUMA.
-6. **I colleghi** che accedono restano *in attesa* finché tu, da **Amministrazione → Utenti e permessi**, non li abiliti e assegni i settori:
+6. **I colleghi** che accedono restano *in attesa* finché tu, da **Area Comando → Utenti e permessi**, non li abiliti e assegni i settori:
    - **P.U.M.A.**: `lettura` per entrare, `scrittura` per creare e registrare, `gestore` per le Impostazioni;
    - **SAF / TPSS**: `lettura` = partecipa, `scrittura` = Responsabile, `gestore` = ROP (vede le scadenze).
 
-   Il livello di visibilità (comando / regione / nazionale) si assegna da **P.U.M.A. → Livelli utenti**.
+   Il livello di visibilità (comando / regione / nazionale) si assegna da **Area Comando → Livelli utenti**.
 7. Per fermare PUMA **chiudi la finestra nera**. I dati restano in `data\`.
 
 ### Velocizzare il primo accesso (consigliato)
@@ -86,20 +104,30 @@ Un PC personale con la VPN va bene per provare. Per un uso stabile serve un PC o
 |---|---|
 | `Python non trovato su questo PC` | Installa Python (punto 1) spuntando **Add python.exe to PATH**, poi riprova. |
 | `server di posta dipartimentale non raggiungibile … FortiClient VPN` | La VPN non è collegata o è caduta: ricollegala e riprova. Controlla con `VERIFICA_VPN.bat`. |
-| `Credenziali non valide` | Scrivi solo `nome.cognome` (senza @vigilfuoco.it) e la password della posta dipartimentale. |
-| Profilo non precompilato («Non risulti ancora in anagrafica») | Il login ha funzionato ma WAUC non ha risposto o non ti ha trovato: completa i dati a mano, oppure imposta `PUMA_WAUC_SEDI` e riprova più tardi. |
+| `Credenziali non valide` | Scrivi solo `nome.cognome` (senza @vigilfuoco.it) e la password della posta dipartimentale. Se è giusta, vedi «Il login non funziona» qui sotto. |
+| Profilo non precompilato («Non risulti ancora in anagrafica») | Il login ha funzionato ma WAUC non ha risposto o non ti ha trovato. Fai doppio clic su **`PROVA_WAUC.bat`** (con la VPN): dice quante sedi rispondono e come risulti in WAUC (email, sede). Il risultato resta anche in `data\diagnosi_wauc.txt`. |
 | `Errno 10048` / porta già in uso | PUMA è già aperto in un'altra finestra nera: chiudila. Oppure in `puma.env` imposta `PUMA_PORT=8081`. |
 | La mappa resta grigia | Il PC non raggiunge `tile.openstreetmap.org`: controlla l'accesso a Internet (con alcune VPN Internet passa dalla rete VVF). |
-| Pagina «Account in attesa di abilitazione» | Un amministratore deve abilitarti da *Amministrazione → Utenti e permessi*. |
+| Pagina «Account in attesa di abilitazione» | Un amministratore deve abilitarti da *Area Comando → Utenti e permessi*. |
+
+### Il login non funziona (con la VPN collegata)
+1. Doppio clic su **`PROVA_LOGIN.bat`**: scrivi `nome.cognome` e la password (mentre scrivi non compare nulla). Il programma si collega al server di posta e mostra **la risposta esatta**:
+   - `[!!] collegamento …` → il server di posta non si raggiunge: la VPN non è collegata o non instrada la posta;
+   - `[!!] login: login rifiutato come «nome.cognome@vigilfuoco.it»: …` → il server rifiuta le credenziali. Controlla la password sulla webmail; se lì funziona, in `puma.env` aggiungi la riga `PUMA_IMAP_UTENTE=nome` (prova senza dominio) e ripeti la prova;
+   - `[OK] login …` → le credenziali sono giuste: il login in PUMA funziona.
+2. Ogni accesso negato, con il motivo, è scritto anche in `data\puma.log` e in **Area Comando → Registro attività**. La password non viene mai scritta.
+3. Attenzione: troppi tentativi sbagliati possono bloccare l'account di posta.
 
 Senza file `.bat`, dal Prompt dei comandi aperto nella cartella di PUMA:
 ```
 py manage.py verifica-vpn      (controlla la VPN)
+py manage.py prova-login       (prova le credenziali sul server di posta)
+py manage.py diagnosi-wauc     (perché WAUC non trova una persona)
 py app.py                      (avvio reale)
 set PUMA_MODALITA=prova
 py app.py                      (avvio di prova)
 ```
-Su Linux: `./avvia_prova.sh`, `./verifica_vpn.sh`, `./avvia.sh`.
+Su Linux: `./avvia_prova.sh`, `./verifica_vpn.sh`, `./prova_login.sh`, `./prova_wauc.sh`, `./avvia.sh`.
 
 ---
 

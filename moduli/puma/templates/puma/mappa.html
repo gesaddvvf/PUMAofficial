@@ -1,4 +1,4 @@
-{% extends 'base.html' %}{% block titolo %}P.U.M.A.{% endblock %}{% block main %}{% include "puma/_nav.html" %}
+{% extends 'base.html' %}{% block main %}{% include "puma/_nav.html" %}
 <h2 class="puma-h">Mappa live addestramenti collettivi</h2>
 <div class="puma-split"><div id="map" class="puma-map" data-tiles="{{ tile_url }}" data-live="{{ url_for('puma.api_attivi') }}"></div>
 <table class="puma-tab"><thead><tr><th>ID / Team</th><th>Stato</th><th>Presenti</th><th>Convalidati</th></tr></thead><tbody id="tab"></tbody></table></div>

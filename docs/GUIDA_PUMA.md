@@ -2,6 +2,8 @@
 Slogan: *Forma. Qualifica. Avanza.*
 
 > **Novità di PUMAofficial 1.0**: PUMA è ora un'applicazione a sé: dopo il login si entra direttamente in PUMA (indirizzo `/puma/`). La modalità prova (`AVVIA_PROVA.bat` / `./avvia_prova.sh`) sostituisce `puma_demo.sh` e `avvia_locale.sh`: utenti fittizi, WAUC simulato, db separato in `data_prova/`. L'accesso reale (`AVVIA.bat` / `./avvia.sh`) richiede FortiClient VPN: vedi [ISTRUZIONI.md](../ISTRUZIONI.md). Le sezioni storiche qui sotto citano ancora il «portale»: oggi è il nucleo di PUMA (`app.py`).
+>
+> **Navigazione (dalla versione 1.1, uguale al sito gesaddvvf.github.io/PUMA).** Le voci citate più sotto ora si trovano così: *Utenti → modifica utente*, *P.U.M.A. → Livelli utenti* e *P.U.M.A. → Impostazioni* sono in **Area Comando**; gli addestramenti collettivi sono in **Attività → Pianificazione addestramenti collettivi**; individuali e interventi in **Attività**; la mappa live in **Real Time → Mappa Real Time**; il profilo con le scadenze è il **Report Individuale**; le scadenze del personale sono nel **Report Collettivo**. Configurazione della navigazione: `moduli/puma/navigazione.py`.
 
 ## 1. Primo avvio (Admin)
 1. Sovrascrivi i file del portale con il pacchetto di aggiornamento (la cartella `data/` non si tocca) e riavvia: le migrazioni `002_puma.sql` e `003_puma_livelli.sql` creano da sole le tabelle P.U.M.A. nel db del portale, con un backup automatico.
@@ -81,6 +83,7 @@ Il livello di visibilità (comando / regione / nazionale) si assegna da **P.U.M.
 - **Convenzione**: ogni script consegnato ha anche la versione `.sh` per Linux.
 
 ## 14. Cronologia
+- **PUMAofficial 1.1**: grafica e navigazione uguali al sito gesaddvvf.github.io/PUMA (aree colorate, schede, menu ☰, turno/salto, caratteri Inter e Montserrat inclusi), Presenze Odierne, Report Collettivo, Area Comando in base ai permessi, Documentazione con il catalogo dei file Drive del sito; diagnosi del login (`PROVA_LOGIN.bat`, motivo dei rifiuti nel Registro e in `puma.log`, `PUMA_IMAP_UTENTE`).
 - **PUMAofficial 1.0**: applicazione autonoma con accesso diretto a PUMA, marchio P.U.M.A. su testata e login, modalità prova con utenti fittizi e WAUC simulato, verifica della VPN (`VERIFICA_VPN.bat`, stato del collegamento nella pagina di accesso), librerie incluse in `libs/`.
 - v1: pagine del sito P.U.M.A. ricreate (home, attività, addestramenti odierni, documentazione, archivio).
 - v2: moduli collettivi, individuali, interventi, mappa live, profilo e scadenze, impostazioni.

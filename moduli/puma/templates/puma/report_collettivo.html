@@ -1,0 +1,12 @@
+{% extends 'base.html' %}{% block main %}{% include "puma/_nav.html" %}
+<h2 class="puma-h">Report collettivo <small>scadenze del personale · {{ ambito }}</small></h2>
+{% for x in sezioni %}
+<section class="puma-evento area-rep">
+  <header><h4>{{ x.s.codice }} · {{ x.s.nome }}</h4><span class="muted">{{ x.sc|length }} abilitazioni · <span class="puma-scad">{{ x.scadute }} scadute</span> · <span class="puma-in-scad">{{ x.in_scadenza }} entro 60 giorni</span></span></header>
+  {% if x.sc %}<table><tr><th>Nominativo</th><th>Livello</th><th>Comando</th><th>Ultimo addestramento</th><th>Scadenza</th></tr>
+  {% for r in x.sc|sort(attribute='giorni') %}<tr><td>{{ r.username }}</td><td>{{ r.livello }}</td><td>{{ nomi.get(r.comando_id, '') }}</td><td>{{ r.ultima|datait }}</td>
+    <td class="{{ 'puma-scad' if r.giorni < 0 else 'puma-in-scad' if r.giorni <= 60 else '' }}">{{ r.scadenza|datait }} ({{ r.giorni }} gg)</td></tr>{% endfor %}</table>
+  {% else %}<p class="puma-empty">Nessun addestramento registrato per questo settore.</p>{% endif %}
+</section>
+{% else %}<p class="puma-empty">Non ci sono settori di cui puoi vedere il report collettivo.</p>{% endfor %}
+{% endblock %}

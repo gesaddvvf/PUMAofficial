@@ -1,4 +1,4 @@
-{% extends 'base.html' %}{% block titolo %}P.U.M.A.{% endblock %}{% block main %}{% include "puma/_nav.html" %}
+{% extends 'base.html' %}{% block main %}{% include "puma/_nav.html" %}
 <h2 class="puma-h">Addestramenti odierni <small>{{ oggi }}</small></h2>
 <ul class="puma-list">{% for r in righe %}<li><div><b>{{ r.tema }}</b><br>{{ r.luogo or '' }} {{ '· istruttore ' ~ r.istruttore if r.istruttore }}<br><small>{{ r.partecipanti or '' }}</small></div>
 <div>{{ r.ora or '' }}{% if r.is_blindato %} <span class="puma-tag">Riservato</span>{% endif %}</div></li>

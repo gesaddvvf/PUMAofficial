@@ -1,4 +1,4 @@
-{% extends 'base.html' %}{% block titolo %}P.U.M.A.{% endblock %}{% block main %}{% include "puma/_nav.html" %}
+{% extends 'base.html' %}{% block main %}{% include "puma/_nav.html" %}
 <h2 class="puma-h">Impostazioni P.U.M.A. (per il tuo Comando)</h2>
 <form method="post" class="puma-form"><input type="hidden" name="csrf" value="{{ csrf }}"><input type="hidden" name="azione" value="mail"><h3>Destinatari Piano di Sicurezza e alert</h3>
 {% for r,v in mails.items() %}<label>{{ r }} <input name="{{ r }}" value="{{ v }}" placeholder="indirizzi separati da virgola"></label>{% endfor %}

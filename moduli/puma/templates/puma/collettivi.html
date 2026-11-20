@@ -1,11 +1,12 @@
-{% extends 'base.html' %}{% block titolo %}P.U.M.A.{% endblock %}{% block main %}{% include "puma/_nav.html" %}
-<h2 class="puma-h">Addestramenti collettivi</h2>
-<form method="get" class="puma-filtri">
-{% for k,v in [('oggi','Oggi'),('futuri','Programmati'),('passati','Passati'),('tutti','Tutti')] %}<a class="puma-btn{{ ' puma-on' if quando==k }}" href="?quando={{ k }}">{{ v }}</a> {% endfor %}
+{% extends 'base.html' %}{% block main %}{% include "puma/_nav.html" %}
+{% set riepilogo = request.args.get('vista') == 'riepilogo' %}
+<h2 class="puma-h">{{ 'Riepilogo globale degli addestramenti collettivi' if riepilogo else 'Pianificazione addestramenti collettivi' }}</h2>
+<form method="get" class="puma-filtri">{% if riepilogo %}<input type="hidden" name="vista" value="riepilogo">{% endif %}
+{% for k,v in [('oggi','Oggi'),('futuri','Programmati'),('passati','Passati'),('tutti','Tutti')] %}<a class="puma-btn{{ ' puma-on' if quando==k }}" href="?quando={{ k }}{{ '&vista=riepilogo' if riepilogo }}">{{ v }}</a> {% endfor %}
 <input type="hidden" name="quando" value="giorno"><label>Giorno <input type="date" name="data" value="{{ giorno }}"></label><button>Vai</button></form>
-{% if scrivi %}<p><a class="puma-btn" href="{{ url_for('puma.collettivo_nuovo') }}">+ Nuovo addestramento</a></p>{% endif %}
+{% if scrivi and not riepilogo %}<p><a class="puma-btn puma-on" href="{{ url_for('puma.collettivo_nuovo') }}">+ Nuovo addestramento collettivo</a></p>{% endif %}
 {% if aperti %}<h3>Aperti oggi al check-in (altri Comandi)</h3><ul class="puma-list">{% for r in aperti %}<li><div><a href="{{ url_for('puma.partecipa', i=r.id) }}"><b>{{ r.cod_add or (r.tipologia ~ ' – Team ' ~ r.team) }}</b></a><br>{{ r.titolo or '' }} · {{ r.ora_inizio }}–{{ r.ora_fine }}</div><div>{{ nomi.get(r.comando_id,'') }}</div></li>{% endfor %}</ul>{% endif %}
-<h3>I miei dati{% if livello=='regione' %} (regione){% elif livello=='nazionale' %} (nazionale){% endif %}</h3>
+<h3>{{ "Addestramenti" if riepilogo else "I miei dati" }}{% if livello=='regione' %} (regione){% elif livello=='nazionale' %} (nazionale){% endif %}</h3>
 <ul class="puma-list">{% for r in righe %}<li><div><a href="{{ url_for('puma.collettivo', i=r.id) }}"><b>{{ r.cod_add or (r.tipologia ~ ' – Team ' ~ r.team) }}</b></a><br>{{ r.titolo or '' }}</div>
 <div>{{ r.data }} {{ r.ora_inizio or '' }}–{{ r.ora_fine or '' }} <span class="puma-tag">{{ r.stato }}</span><br><small>{{ nomi.get(r.comando_id,'') }}{% if r.is_blindato %} · riservato{% endif %}</small></div></li>
 {% else %}<li class="puma-empty">Nessun addestramento per il filtro scelto.</li>{% endfor %}</ul>{% endblock %}

@@ -1,21 +1,73 @@
 <!doctype html><html lang="it"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>{% block titolo %}P.U.M.A.{% endblock %} · P.U.M.A. VVF</title>
-<link rel="icon" href="{{ url_for('static', filename='img/puma-logo.jpg') }}">
-<script src="{{ url_for('static', filename='js/tema-init.js') }}"></script>
+<title>P.U.M.A. - {% block titolo %}{{ nav_titolo or 'Piattaforma Unificata Monitoraggio Addestramenti' }}{% endblock %}</title>
+<meta name="description" content="PUMA è una piattaforma unificata per la gestione completa degli addestramenti del personale.">
+<link rel="icon" type="image/jpeg" href="{{ url_for('static', filename='img/puma-logo.jpg') }}">
 <link rel="stylesheet" href="{{ url_for('static', filename='css/puma-app.css') }}">
-<script src="{{ url_for('static', filename='js/tema.js') }}" defer></script></head><body>
-<header class="testata">
-<a class="marchio" href="{{ url_for('home') if utente else url_for('login') }}"><img src="{{ url_for('static', filename='img/puma-logo.jpg') }}" alt="Logo P.U.M.A.">
-<span class="titolo">P.U.M.A.<small>{{ nome_esteso }}</small></span></a>
-{% if prova %}<span class="badge-prova" title="Utenti fittizi e dati WAUC simulati: nessun dato reale">MODALITÀ PROVA</span>{% endif %}
-<nav>{% if utente and utente['stato']=='attivo' %}
-{% if app_utente|length > 1 %}<span class="menu"><a href="{{ url_for('elenco_app') }}" aria-haspopup="true">App ▾</a><span class="tendina">{% for m in app_utente %}<a href="{{ url_for(m['codice'] ~ '.index') }}">{{ m['nome'] }}</a>{% endfor %}</span></span>{% endif %}
-{% if utente['is_admin'] %}<span class="menu"><a href="{{ url_for('admin_utenti') }}" aria-haspopup="true">Amministrazione ▾</a><span class="tendina">
-<a href="{{ url_for('admin_utenti') }}">Utenti e permessi</a><a href="{{ url_for('admin_organico') }}">Organico</a><a href="{{ url_for('admin_config') }}">Configurazione e WAUC</a><a href="{{ url_for('admin_comandi') }}">Schede dei comandi</a><a href="{{ url_for('admin_audit') }}">Registro attività</a></span></span>{% endif %}{% endif %}
-<button id="tema-toggle" type="button" aria-label="Cambia tema">🌙</button>
-{% if utente %}<a href="{{ url_for('profilo_view') }}" title="I miei dati (da WAUC) e specializzazioni">👤 {{ utente['nome'] }} {{ utente['cognome'] }}</a>
-<form class="inline" method="post" action="{{ url_for('logout') }}"><input type="hidden" name="csrf" value="{{ csrf }}"><button type="submit">Esci</button></form>{% endif %}</nav></header>
-<div class="striscia" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></div>
-<main>{% with m = get_flashed_messages(with_categories=true) %}{% for c,t in m %}<div class="flash {{ c }}">{{ t }}</div>{% endfor %}{% endwith %}
+<script src="{{ url_for('static', filename='js/puma-sito.js') }}" defer></script></head>
+<body class="area-{{ nav_area or 'neu' }}">
+<header id="page-header">
+  <div id="titolo">
+    {% if utente and utente['stato']=='attivo' %}<button id="hamburger" type="button" aria-label="Menu" aria-controls="menu" aria-expanded="false">☰</button>{% endif %}
+    <div>
+      <h1><a id="logo" href="{{ url_for('home') }}" title="Torna alla Home Page"><img class="puma-icon" src="{{ url_for('static', filename='img/puma-logo.jpg') }}" alt="PUMA">PUMA</a><span class="subtitle-divider">–</span><span id="sezione" class="area-{{ nav_area or 'neu' }}"><b>{{ nav_titolo or ('Accesso' if not utente else 'Home Page') }}</b></span></h1>
+      <h2>Piattaforma Unificata Monitoraggio Addestramenti{% if prova %} <span class="badge-prova" title="Utenti fittizi e dati WAUC simulati: nessun dato reale">MODALITÀ PROVA</span>{% endif %}</h2>
+    </div>
+  </div>
+  <div id="turno-box" title="">
+    <span class="t-lbl">Turno</span><b id="turno-lettera">–</b><span class="t-lbl">Salto</span><b id="turno-salto">–</b>
+  </div>
+  {% if utente and utente['stato']=='attivo' %}
+  <nav id="nav-buttons">
+    <a class="nav-btn area-neu{{ ' attivo' if nav_chiave=='home' }}" href="{{ url_for('home') }}">Home Page</a>
+    <a class="nav-btn area-att{{ ' attivo' if nav_chiave=='attivita' }}" href="{{ url_for('puma.individuali') }}">Attività</a>
+    <a class="nav-btn area-rt{{ ' attivo' if nav_chiave=='realtime' }}" href="{{ url_for('puma.presenze') }}">Real Time</a>
+    <a class="nav-btn area-doc{{ ' attivo' if nav_chiave=='documentazione' }}" href="{{ url_for('puma.documentazione', cat='manuali-puma') }}">Documentazione</a>
+    <a class="nav-btn area-rep{{ ' attivo' if nav_chiave=='individuale' }}" href="{{ url_for('puma.profilo') }}">Report Individuale</a>
+    {% if nav_perm and nav_perm.comando %}<a class="nav-btn area-rep{{ ' attivo' if nav_chiave=='collettivo' }}" href="{{ url_for('puma.report_collettivo') }}">Report Collettivo</a>{% endif %}
+    <a class="nav-btn area-com{{ ' attivo' if nav_chiave=='comando' }}{{ ' sbloccato' if nav_perm and nav_perm.comando }}" href="{{ url_for('puma.area_comando') }}">{{ '🔓' if nav_perm and nav_perm.comando else '🔒' }} Area Comando</a>
+  </nav>
+  {% endif %}
+</header>
+
+{% if nav_schede %}<div id="schede" class="area-{{ nav_area }}">
+  <span class="lbl">{{ nav_gruppo.nome }}</span>
+  <span class="seg" role="tablist" aria-label="{{ nav_gruppo.nome }}">{% for s in nav_schede %}<a href="{{ s.url }}" role="tab"{% if s.attiva %} class="on" aria-selected="true"{% endif %}>{{ s.etichetta }}</a>{% endfor %}</span>
+</div>{% endif %}
+
+<main id="contenuto">{% with m = get_flashed_messages(with_categories=true) %}{% for c,t in m %}<div class="flash {{ c }}">{{ t }}</div>{% endfor %}{% endwith %}
 {% block main %}{% endblock %}</main>
-<footer>P.U.M.A. v{{ versione }} · Forma. Qualifica. Avanza. · Corpo Nazionale dei Vigili del Fuoco{% if prova %} · <b>modalità prova: dati fittizi</b>{% endif %}</footer></body></html>
+
+{% if utente and utente['stato']=='attivo' %}
+<!-- Menu laterale (come nel sito P.U.M.A.) -->
+<div id="velo"></div>
+<aside id="menu" aria-label="Menu" aria-hidden="true">
+  <div class="menu-testa"><b>☰ Menu P.U.M.A.</b><button id="menu-chiudi" type="button" aria-label="Chiudi menu">✕</button></div>
+  <div class="menu-corpo">
+    <div class="menu-utente"><b>👤 {{ utente['nome'] }} {{ utente['cognome'] }}</b><small>{{ utente['email'] }}{% if utente['comando'] %} · {{ utente['comando'] }}{% endif %}</small></div>
+    <div class="sez-titolo">Navigazione</div>
+    <a class="voce area-neu{{ ' attivo' if nav_chiave=='home' }}" href="{{ url_for('home') }}"><span>🏠 Home Page</span></a>
+    {% for nome, area, ic, voci in nav_voci_menu or [] %}{% if area != 'com' %}
+    <div class="sotto-titolo area-{{ area }}">{{ ic }} {{ nome }}</div>
+    {% for url, etichetta, attiva in voci %}<a class="voce liv2 area-{{ area }}{{ ' attivo' if attiva }}" href="{{ url }}"><span>{{ etichetta }}</span></a>{% endfor %}
+    {% endif %}{% endfor %}
+    <div class="sotto-titolo area-rep">📊 Reportistica</div>
+    <a class="voce liv2 area-rep{{ ' attivo' if nav_chiave=='individuale' }}" href="{{ url_for('puma.profilo') }}"><span>Report Individuale</span></a>
+    {% if nav_perm and nav_perm.comando %}<a class="voce liv2 area-rep{{ ' attivo' if nav_chiave=='collettivo' }}" href="{{ url_for('puma.report_collettivo') }}"><span>Report Collettivo</span></a>{% endif %}
+    <div class="sez-titolo area-com">Area Comando</div>
+    {% if nav_perm and nav_perm.comando %}{% for nome, area, ic, voci in nav_voci_menu or [] %}{% if area == 'com' %}
+    {% for url, etichetta, attiva in voci %}<a class="voce liv2 area-com{{ ' attivo' if attiva }}" href="{{ url }}"><span>{{ etichetta }}</span></a>{% endfor %}
+    {% endif %}{% endfor %}{% else %}
+    <a class="voce area-com" href="{{ url_for('puma.area_comando') }}"><span>🔒 Riservata<small>ROP, ROR, Funzionario di settore e amministratori</small></span></a>{% endif %}
+    {% if app_utente|length > 1 %}<div class="sez-titolo">Applicazioni</div>
+    {% for m in app_utente %}<a class="voce area-neu" href="{{ url_for(m['codice'] ~ '.index') }}"><span>{{ m.get('icona', '🧩') }} {{ m['nome'] }}<small>{{ m.get('descrizione', '') }}</small></span></a>{% endfor %}{% endif %}
+    <div class="sez-titolo">Link</div>
+    <a class="voce area-neu" href="https://gesaddvvf.github.io/PUMA/" target="_blank" rel="noopener"><span>🌐 Sito P.U.M.A. ↗<small>gesaddvvf.github.io/PUMA</small></span></a>
+    <a class="voce area-neu" href="https://sites.google.com/view/pumavvf/home-page" target="_blank" rel="noopener"><span>🌐 Sito Google P.U.M.A. ↗<small>Versione precedente</small></span></a>
+  </div>
+  <div class="menu-piede">
+    <form method="post" action="{{ url_for('logout') }}"><input type="hidden" name="csrf" value="{{ csrf }}"><button type="submit">⏻ Esci da P.U.M.A.</button></form>
+  </div>
+</aside>
+{% endif %}
+<footer>P.U.M.A. v{{ versione }} · Forma. Qualifica. Avanza. · Corpo Nazionale dei Vigili del Fuoco{% if prova %} · <b class="testo-prova">modalità prova: dati fittizi</b>{% endif %}</footer>
+</body></html>

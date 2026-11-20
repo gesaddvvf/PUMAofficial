@@ -1,4 +1,4 @@
-{% extends 'base.html' %}{% block titolo %}P.U.M.A.{% endblock %}{% block main %}{% include "puma/_nav.html" %}
+{% extends 'base.html' %}{% block main %}{% include "puma/_nav.html" %}
 <h2 class="puma-h">Il mio profilo addestrativo</h2><h3>Scadenze</h3>
 <ul class="puma-list">{% for r in sc %}<li><div><b>{{ r.livello }}</b><br><small>ultimo: {{ r.ultima }}</small></div><div class="{{ 'puma-scad' if r.giorni<0 }}">scade {{ r.scadenza }} ({{ r.giorni }} gg)</div></li>{% else %}<li class="puma-empty">Nessuna scadenza calcolata.</li>{% endfor %}</ul>
 <h3>Collettivi</h3><ul class="puma-list">{% for r in col %}<li><div>{{ r.tipologia }} {{ r.team }} {{ r.livello or '' }}</div><div>{{ r.data }} {{ '✓' if r.convalidato else '(non convalidato)' }}</div></li>{% else %}<li class="puma-empty">—</li>{% endfor %}</ul>

@@ -1,0 +1,14 @@
+{% extends 'base.html' %}{% block main %}{% include "puma/_nav.html" %}
+<h2 class="puma-h">Presenze odierne <small>{{ oggi|datait }} · {{ righe|length }} addestramenti · {{ totale }} presenti</small></h2>
+{% for r in righe %}{% set e = r.e %}
+<section class="puma-evento">
+  <header><h4><a href="{{ url_for('puma.collettivo', i=e.id) }}">{{ e.cod_add or (e.tipologia ~ ' – Team ' ~ e.team) }}</a></h4>
+    <span class="muted">{{ nomi.get(e.comando_id, '') }} · {{ e.ora_inizio or '' }}–{{ e.ora_fine or '' }} · <span class="puma-tag">{{ e.stato }}</span> · {{ r.presenti|length }} presenti, {{ r.convalidati }} convalidati</span></header>
+  {% if e.titolo %}<p class="muted">{{ e.titolo }}</p>{% endif %}
+  {% if r.presenti %}<table><tr><th>Ora</th><th>Nominativo</th><th>Comando di provenienza</th><th>Ruolo ICS</th><th>Convalida</th></tr>
+  {% for p in r.presenti %}<tr><td>{{ (p.ora or '')[11:16] or p.ora }}</td><td>{{ p.chi }}</td><td>{{ p.comando or '' }}</td><td>{{ p.ruolo_ics or '—' }}</td><td>{{ '✔' if p.convalidato else 'in attesa' }}</td></tr>{% endfor %}</table>
+  {% else %}<p class="puma-empty">Nessuno si è ancora registrato.</p>{% endif %}
+</section>
+{% else %}<p class="puma-empty">Nessun addestramento collettivo oggi.</p>{% endfor %}
+<p class="muted piccolo">Per registrarti a un addestramento di oggi apri la scheda e premi «Mi registro». La mappa con la posizione degli addestramenti è in <a href="{{ url_for('puma.mappa') }}">Mappa Real Time</a>.</p>
+{% endblock %}
