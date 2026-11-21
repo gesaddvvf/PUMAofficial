@@ -35,7 +35,22 @@ def ev_get(i, u):
 
 
 # ---------------- PRESENZA: IN TURNO / FUORI TURNO, ANTICIPO / POSTICIPO ----------------
-VARIAZIONI_MIN = [15, 30, 45, 60, 90, 120, 180, 240]
+SERVIZI = ("in_turno", "fuori_turno", "anticipo", "posticipo")
+
+
+def turno_coperto(e):
+    """Turno di 12 ore in cui cade l'addestramento: ('diurno'|'notturno', 'gg/mm', codice turno in servizio).
+    Diurno 08-20 del giorno; notturno 20-08 (se inizia prima delle 08 è il notturno iniziato la sera prima)."""
+    import turni
+    from datetime import timedelta
+    try: g = date.fromisoformat(e["data"])
+    except (TypeError, ValueError): return None
+    ora = e["ora_inizio"] or "08:00"
+    n, d, s = turni.del_giorno(g)
+    if "08:00" <= ora < "20:00": return ("diurno", g.strftime("%d/%m"), d)
+    if ora >= "20:00": return ("notturno", g.strftime("%d/%m"), s)
+    ieri = g - timedelta(days=1)
+    return ("notturno", ieri.strftime("%d/%m"), turni.del_giorno(ieri)[2])
 
 
 def servizio_proposto(email, e):
@@ -49,13 +64,15 @@ def servizio_proposto(email, e):
     return None if st is None else ("in_turno" if st == "in_turno" else "fuori_turno")
 
 
-def leggi_servizio(f, suff=""):
-    """(servizio, variazione, minuti) dal modulo, validati."""
-    sv = f.get("servizio" + suff); sv = sv if sv in ("in_turno", "fuori_turno") else None
-    va = f.get("variazione" + suff); va = va if va in ("anticipo", "posticipo") else None
-    mi = f.get("variazione_min" + suff, type=int)
-    mi = mi if va and mi in VARIAZIONI_MIN else None
-    return sv, (va if mi else None), mi
+def leggi_servizio(f, suff="", e=None):
+    """(servizio, turno coperto, ore) dal modulo: in turno, fuori turno, oppure anticipo/posticipo di 12 ore del
+    turno diurno o notturno in cui cade l'addestramento."""
+    sv = f.get("servizio" + suff)
+    if sv not in SERVIZI: return None, None, None
+    if sv in ("anticipo", "posticipo"):
+        tc = turno_coperto(e) if e is not None else None
+        return sv, (f"{tc[0]} {tc[1]} ({tc[2]})" if tc else None), 720
+    return sv, None, None
 
 
 # ---------------- PERSONE PREVISTE E LINK D'INVITO ----------------
@@ -136,7 +153,7 @@ def previsti(i):
             v = f.get("esito_" + p["email"])
             if v == "presente":
                 r = f.get("ruolo_" + p["email"]); r = r if r in ruoli else "OPER"
-                sv, va, mi = leggi_servizio(f, "_" + p["email"])
+                sv, va, mi = leggi_servizio(f, "_" + p["email"], e)
                 db().execute("""INSERT INTO puma_checkin(evento_id,username,nome,comando_origine,ora,ruolo_ics,convalidato,servizio,variazione,variazione_min)
                     VALUES(?,?,?,?,?,?,1,?,?,?) ON CONFLICT(evento_id,username) DO UPDATE SET ruolo_ics=excluded.ruolo_ics, convalidato=1,
                     servizio=excluded.servizio, variazione=excluded.variazione, variazione_min=excluded.variazione_min""",
@@ -303,7 +320,7 @@ def collettivo(i):
                            abilitato=settore_ok(u, e["tipologia"]), ruoli=ics_ruoli(), oggi=date.today().isoformat(),
                            link=link_invito(e) if resp else None, persone=persone_sede(e["comando_id"]) if resp else [],
                            gia={p["email"] for p in prev} | {c["username"] for c in chk},
-                           proposta={p["email"]: servizio_proposto(p["email"], e) for p in prev} if resp else {}, minuti=VARIAZIONI_MIN,
+                           proposta={p["email"]: servizio_proposto(p["email"], e) for p in prev} if resp else {}, tc=turno_coperto(e),
                            impianti=db().execute("SELECT id, titolo, stato FROM puma_impianti WHERE evento_id=?", (i,)).fetchall())
 
 def ics_ruoli(): return db().execute("SELECT * FROM puma_ics_ruoli ORDER BY ordine").fetchall()
@@ -324,7 +341,7 @@ def partecipa(i):
         if not cf_valido(cf): flash("Codice fiscale non valido: controlla i 16 caratteri."); return redirect(request.url)
         uid = g.utente["id"]
         db().execute("INSERT INTO puma_persone(utente_id,codice_fiscale) VALUES(?,?) ON CONFLICT(utente_id) DO UPDATE SET codice_fiscale=excluded.codice_fiscale", (uid, cf))
-        sv, va, mi = leggi_servizio(request.form)
+        sv, va, mi = leggi_servizio(request.form, "", e)
         if not sv and g.utente["tipo_utente"] != "esterno": flash("Indica se partecipi in turno o fuori turno."); return redirect(request.url)
         db().execute("""INSERT INTO puma_checkin(evento_id,username,nome,comando_origine,ora,ruolo_ics,servizio,variazione,variazione_min) VALUES(?,?,?,?,?,?,?,?,?)
             ON CONFLICT(evento_id,username) DO UPDATE SET ruolo_ics=excluded.ruolo_ics, servizio=excluded.servizio, variazione=excluded.variazione,
@@ -336,7 +353,7 @@ def partecipa(i):
     p = db().execute("SELECT codice_fiscale FROM puma_persone WHERE utente_id=?", (g.utente["id"],)).fetchone()
     ck = db().execute("SELECT * FROM puma_checkin WHERE evento_id=? AND username=?", (i, u["username"])).fetchone()
     return render_template("puma/partecipa.html", e=e, ruoli=ruoli, mio=mio["ruolo_ics"] if mio else None, cf=p["codice_fiscale"] if p else "",
-                           servizio=(ck["servizio"] if ck and ck["servizio"] else servizio_proposto(u["username"], e)), ck=ck, minuti=VARIAZIONI_MIN)
+                           servizio=(ck["servizio"] if ck and ck["servizio"] else servizio_proposto(u["username"], e)), ck=ck, tc=turno_coperto(e))
 
 def _resp(i):
     u = current_user(); e = ev_get(i, u)
@@ -350,7 +367,7 @@ def convalida(i):
         v = request.form.get("ruolo_" + r["username"])
         if v: db().execute("UPDATE puma_checkin SET ruolo_ics=? WHERE evento_id=? AND username=?", (v, i, r["username"]))
         if request.form.get("servizio_" + r["username"]):
-            sv, va, mi = leggi_servizio(request.form, "_" + r["username"])
+            sv, va, mi = leggi_servizio(request.form, "_" + r["username"], e)
             db().execute("UPDATE puma_checkin SET servizio=?, variazione=?, variazione_min=? WHERE evento_id=? AND username=?", (sv, va, mi, i, r["username"]))
     db().execute("UPDATE puma_checkin SET convalidato=0 WHERE evento_id=?", (i,))
     for x in ids: db().execute("UPDATE puma_checkin SET convalidato=1 WHERE evento_id=? AND username=?", (i, x))

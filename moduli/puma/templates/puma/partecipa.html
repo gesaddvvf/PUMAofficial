@@ -5,8 +5,9 @@
 <form method="post" class="puma-form"><input type="hidden" name="csrf" value="{{ csrf }}">
 <label>Il tuo ruolo nell'ICS <select name="ruolo" required><option value="">Scegli…</option>{% for r in ruoli %}<option value="{{ r.codice }}" {{ 'selected' if mio==r.codice }}>{{ r.nome }}</option>{% endfor %}</select></label>
 {% if utente['tipo_utente'] != 'esterno' %}<fieldset class="sez"><legend>Servizio</legend>
-<div class="riga-servizio">{% with suff='', val=servizio, va=ck.variazione if ck else None, mi=ck.variazione_min if ck else None, obbl=true %}{% include "puma/_servizio.html" %}{% endwith %}</div>
-<small class="muted">{% if servizio %}Proposto dal tuo turno ({{ utente['turno'] }}{{ ', salto ' ~ utente['salto_turno'] if utente['salto_turno'] }}) all'ora di inizio: correggilo se serve.{% else %}Indica se partecipi in turno o fuori turno; anticipo o posticipo se l'orario di servizio è stato spostato.{% endif %}</small>
+<div class="riga-servizio">{% with suff='', val=servizio, obbl=true %}{% include "puma/_servizio.html" %}{% endwith %}</div>
+<small class="muted">{% if servizio %}Proposto dal tuo turno ({{ utente['turno'] }}{{ ', salto ' ~ utente['salto_turno'] if utente['salto_turno'] }}) all'ora di inizio: correggilo se serve.{% else %}Indica se partecipi in turno o fuori turno.{% endif %}
+Anticipo o posticipo: fai in anticipo (o recuperi dopo) 12 ore del tuo turno, coprendo il {{ tc[0] ~ ' del ' ~ tc[1] if tc else 'turno' }} in cui cade l'addestramento.</small>
 </fieldset>{% endif %}
 <label>Codice fiscale <input name="cf" value="{{ cf }}" maxlength="16" minlength="16" pattern="[A-Za-z0-9]{16}" autocapitalize="characters" autocomplete="off" required class="puma-cf"></label>
 <label class="puma-chk"><input type="checkbox" name="conferma" value="1" required> Confermo: è l'addestramento giusto ({{ e.cod_add }})</label>

@@ -31,7 +31,7 @@
 {% for p in previsti %}<tr><td><b>{{ p.nome }}</b><br><small>{{ p.email }}{{ ' · si è segnato dal link' if p.origine == 'invito' }}</small></td>
 <td><select name="esito_{{ p.email }}"><option value="">{{ {'previsto': 'da confermare', 'confermato': '✔ presente', 'assente': 'assente'}[p.stato] }}</option><option value="presente">Presente</option><option value="assente">Assente</option></select></td>
 <td><select name="ruolo_{{ p.email }}">{% for r in ruoli %}<option value="{{ r.codice }}" {{ 'selected' if r.codice == 'OPER' }}>{{ r.nome }}</option>{% endfor %}</select></td>
-<td class="riga-servizio">{% with suff='_' ~ p.email, val=proposta.get(p.email), va=None, mi=None, obbl=false %}{% include "puma/_servizio.html" %}{% endwith %}</td></tr>{% endfor %}
+<td class="riga-servizio">{% with suff='_' ~ p.email, val=proposta.get(p.email), obbl=false %}{% include "puma/_servizio.html" %}{% endwith %}</td></tr>{% endfor %}
 </tbody></table><button class="puma-btn puma-on">Conferma le presenze</button></form>
 {% else %}
 <ul class="puma-list">{% for p in previsti %}<li><div><b>{{ p.nome }}</b> <small>{{ p.email }}{{ ' · dal link' if p.origine == 'invito' }}</small></div>
@@ -48,8 +48,8 @@
 {% if resp %}<a class="puma-btn" href="{{ url_for('puma.piano', i=e.id) }}">Piano di sicurezza (meteo, organizzazione, matrice, invio)</a>{% endif %}</p>{% endif %}
 <h3>Registrati e presenze ({{ chk|length }})</h3>
 <form method="post" action="{{ url_for('puma.convalida', i=e.id) }}"><input type="hidden" name="csrf" value="{{ csrf }}"><ul class="puma-list">{% for c in chk %}<li><div>{% if resp %}<input type="checkbox" name="ok" value="{{ c.username }}" {{ 'checked' if c.convalidato }}> {% endif %}<b>{{ c.nome }}</b> <small>{{ nomi.get(c.comando_origine,'') }}</small></div>
-<div>{% if c.servizio %}<span class="chip">{{ 'In turno' if c.servizio == 'in_turno' else 'Fuori turno' }}{% if c.variazione %} · {{ c.variazione }} {{ c.variazione_min }}'{% endif %}</span>{% endif %}
-{% if resp %}<span class="riga-servizio">{% with suff='_' ~ c.username, val=c.servizio, va=c.variazione, mi=c.variazione_min, obbl=false %}{% include "puma/_servizio.html" %}{% endwith %}</span>{% endif %}
+<div>{% if c.servizio %}<span class="chip">{{ {'in_turno': 'In turno', 'fuori_turno': 'Fuori turno', 'anticipo': 'Anticipo 12 h', 'posticipo': 'Posticipo 12 h'}.get(c.servizio, c.servizio) }}{% if c.variazione %} · {{ c.variazione }}{% endif %}</span>{% endif %}
+{% if resp %}<span class="riga-servizio">{% with suff='_' ~ c.username, val=c.servizio, obbl=false %}{% include "puma/_servizio.html" %}{% endwith %}</span>{% endif %}
 {% if resp %}<select name="ruolo_{{ c.username }}">{% for r in ruoli %}<option value="{{ r.codice }}" {{ 'selected' if c.ruolo_ics==r.codice }}>{{ r.nome }}</option>{% endfor %}</select>{% else %}{% for r in ruoli if r.codice==c.ruolo_ics %}{{ r.nome }}{% endfor %}{% endif %} {{ c.ora }} {{ '✓' if c.convalidato }}</div></li>
 {% else %}<li class="puma-empty">Nessuna registrazione.</li>{% endfor %}</ul>
 {% if resp %}<label class="puma-chk"><input type="checkbox" name="chiudi"> Chiudi l'addestramento</label><button>Salva ruoli e convalida presenze</button>{% endif %}</form>

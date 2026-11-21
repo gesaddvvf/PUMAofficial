@@ -1,10 +1,10 @@
 -- v1.5: documento d'impianto, presenza in turno/fuori turno, mail TEP e Formazione dei Comandi,
 -- campi personalizzabili per sede (Trento, Bolzano, Aosta…), utenti non VVF (accesso con codice fiscale).
 
--- Presenza: in turno / fuori turno e anticipo / posticipo dell'orario
-ALTER TABLE puma_checkin ADD COLUMN servizio TEXT;            -- in_turno | fuori_turno
-ALTER TABLE puma_checkin ADD COLUMN variazione TEXT;          -- anticipo | posticipo
-ALTER TABLE puma_checkin ADD COLUMN variazione_min INTEGER;   -- minuti di anticipo o posticipo
+-- Presenza: in turno / fuori turno / anticipo / posticipo (12 ore del turno diurno o notturno in cui cade l'addestramento)
+ALTER TABLE puma_checkin ADD COLUMN servizio TEXT;            -- in_turno | fuori_turno | anticipo | posticipo
+ALTER TABLE puma_checkin ADD COLUMN variazione TEXT;          -- turno coperto con anticipo/posticipo, es. «diurno 21/11 (B7)»
+ALTER TABLE puma_checkin ADD COLUMN variazione_min INTEGER;   -- ore coperte in minuti (720 = 12 ore)
 
 -- Mail del Comando: TEP e Formazione (oltre a Sala Operativa)
 ALTER TABLE comandi ADD COLUMN email_tep TEXT;
