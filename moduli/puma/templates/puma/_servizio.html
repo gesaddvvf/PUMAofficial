@@ -1,0 +1,6 @@
+{# campi presenza: suff = suffisso dei nomi (vuoto o "_email"), val = servizio proposto, va/mi = variazione salvata #}
+<select name="servizio{{ suff }}" aria-label="In turno o fuori turno" {{ 'required' if obbl }}><option value="">{{ 'Scegli…' if obbl else '—' }}</option>
+  <option value="in_turno" {{ 'selected' if val == 'in_turno' }}>In turno</option><option value="fuori_turno" {{ 'selected' if val == 'fuori_turno' }}>Fuori turno</option></select>
+<select name="variazione{{ suff }}" aria-label="Anticipo o posticipo"><option value="">Orario regolare</option>
+  <option value="anticipo" {{ 'selected' if va == 'anticipo' }}>Anticipo</option><option value="posticipo" {{ 'selected' if va == 'posticipo' }}>Posticipo</option></select>
+<select name="variazione_min{{ suff }}" aria-label="Minuti di anticipo o posticipo"><option value="">min</option>{% for m in minuti %}<option value="{{ m }}" {{ 'selected' if mi == m }}>{{ m if m < 60 else (m // 60) ~ ' h' ~ (' ' ~ (m % 60) ~ "'" if m % 60 else '') }}{{ "'" if m < 60 }}</option>{% endfor %}</select>

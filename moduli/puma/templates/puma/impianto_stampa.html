@@ -1,0 +1,21 @@
+<!doctype html><html lang="it"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>{{ doc.titolo }} – Documento d'impianto</title>
+<link rel="stylesheet" href="{{ url_for('puma.static', filename='vendor/leaflet.css') }}">
+<link rel="stylesheet" href="{{ url_for('puma.static', filename='css/stampa.css') }}">
+<script src="{{ url_for('static', filename='js/puma-sito.js') }}" defer></script></head>
+<body class="stampa">
+<div class="barra-stampa"><button type="button" data-stampa>🖨 Stampa o salva in PDF</button> <a href="{{ url_for('puma.impianto', i=doc.id) }}">← Torna al documento</a></div>
+<header><img src="{{ url_for('static', filename='img/puma-logo.jpg') }}" alt=""><div><small>Corpo Nazionale dei Vigili del Fuoco · {{ doc.comando }}</small>
+<h1>Documento d'impianto</h1><h2>{{ doc.titolo }}</h2></div></header>
+<table class="dati"><tr><th>Area corsi</th><td>{{ doc.area or '—' }}</td><th>Stato</th><td>{{ doc.stato }}</td></tr>
+{% if ev %}<tr><th>Addestramento</th><td colspan="3">{{ ev.cod_add }} · {{ ev.titolo or '' }}</td></tr>{% endif %}
+<tr><th>Date e orari</th><td colspan="3">{% for x in date_ %}{{ x.data|datait }} {{ x.ora_inizio }}–{{ x.ora_fine }}{{ ' (' ~ x.nota ~ ')' if x.nota }}{{ '; ' if not loop.last }}{% else %}—{% endfor %}</td></tr></table>
+{% for s in sez %}<section><h3>{{ loop.index }}. {{ s.titolo }}</h3>
+{% if s.testo %}<div class="testo-sez">{{ s.testo }}</div>{% endif %}
+{% if s.mappa and s.lat %}<div class="puma-map" data-tiles="{{ url_for('puma.tile', z=0, x=0, y=0).replace('/0/0/0.png', '/{z}/{x}/{y}.png') }}" data-lat="{{ s.lat }}" data-lon="{{ s.lon }}" data-rvlat="{{ s.rv_lat or '' }}" data-rvlon="{{ s.rv_lon or '' }}" data-amblat="{{ s.amb_lat or '' }}" data-amblon="{{ s.amb_lon or '' }}"></div>
+<p class="coord">Punto: {{ '%.6f'|format(s.lat) }}, {{ '%.6f'|format(s.lon) }}{% if s.rv_lat %} · RV elicottero: {{ '%.6f'|format(s.rv_lat) }}, {{ '%.6f'|format(s.rv_lon) }}{% endif %}{% if s.amb_lat %} · RV ambulanza: {{ '%.6f'|format(s.amb_lat) }}, {{ '%.6f'|format(s.amb_lon) }}{% endif %}</p>{% endif %}
+{% if img.get(s.id) %}<div class="galleria">{% for m in img.get(s.id) %}<figure><img src="{{ url_for('puma.impianto_immagine', i=doc.id, nome=m.file) }}" alt=""><figcaption>{{ m.didascalia or '' }}</figcaption></figure>{% endfor %}</div>{% endif %}
+</section>{% endfor %}
+<footer>Redatto da {{ doc.creato_da }} · stampato il {{ adesso.strftime('%d/%m/%Y %H:%M') }} · P.U.M.A.</footer>
+<script src="{{ url_for('puma.static', filename='vendor/leaflet.js') }}"></script><script src="{{ url_for('puma.static', filename='js/puma.js') }}"></script>
+</body></html>

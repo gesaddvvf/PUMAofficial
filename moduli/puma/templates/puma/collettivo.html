@@ -16,6 +16,8 @@
   {% if e.data != oggi %}<p class="muted piccolo">Il giorno dell'addestramento confermerai la presenza (o lo farà il responsabile).</p>{% endif %}
 {% else %}<p class="muted">Addestramento {{ 'chiuso' if e.stato == 'chiuso' else 'concluso' }}.</p>{% endif %}
 </div>
+{% if (impianti or resp) and utente['tipo_utente'] != 'esterno' %}<p class="piccolo">📄 Documento d'impianto: {% for d in impianti %}<a href="{{ url_for('puma.impianto', i=d.id) }}">{{ d.titolo }}</a> ({{ d.stato }}){{ ', ' if not loop.last }}{% else %}nessuno{% endfor %}
+{% if resp %} · <a href="{{ url_for('puma.impianti', evento=e.id) }}#crea">＋ Crea</a>{% endif %}</p>{% endif %}
 {% if link %}<div class="box area-com box-largo"><h1>🔗 Link d'invito</h1>
 <p class="piccolo">Mandalo a chi vuoi far partecipare (anche di altri Comandi): aperto il link ed entrato con le credenziali dipartimentali, vede questa scheda e si segna tra i previsti. Chi non era ancora abilitato diventa Operatore.</p>
 <div class="mp-coord"><input id="link-ev" readonly value="{{ link }}"><button class="btn" type="button" data-copia="link-ev">Copia</button></div>
@@ -25,10 +27,11 @@
 <h3 id="previsti">Persone previste ({{ previsti|length }})</h3>
 {% if resp and e.data == oggi and e.stato != 'chiuso' and previsti %}
 <form method="post" action="{{ url_for('puma.previsti', i=e.id) }}"><input type="hidden" name="csrf" value="{{ csrf }}"><input type="hidden" name="azione" value="conferma">
-<table class="puma-tab"><thead><tr><th>Persona</th><th>Esito</th><th>Ruolo ICS</th></tr></thead><tbody>
+<table class="puma-tab"><thead><tr><th>Persona</th><th>Esito</th><th>Ruolo ICS</th><th>Servizio</th></tr></thead><tbody>
 {% for p in previsti %}<tr><td><b>{{ p.nome }}</b><br><small>{{ p.email }}{{ ' · si è segnato dal link' if p.origine == 'invito' }}</small></td>
 <td><select name="esito_{{ p.email }}"><option value="">{{ {'previsto': 'da confermare', 'confermato': '✔ presente', 'assente': 'assente'}[p.stato] }}</option><option value="presente">Presente</option><option value="assente">Assente</option></select></td>
-<td><select name="ruolo_{{ p.email }}">{% for r in ruoli %}<option value="{{ r.codice }}" {{ 'selected' if r.codice == 'OPER' }}>{{ r.nome }}</option>{% endfor %}</select></td></tr>{% endfor %}
+<td><select name="ruolo_{{ p.email }}">{% for r in ruoli %}<option value="{{ r.codice }}" {{ 'selected' if r.codice == 'OPER' }}>{{ r.nome }}</option>{% endfor %}</select></td>
+<td class="riga-servizio">{% with suff='_' ~ p.email, val=proposta.get(p.email), va=None, mi=None, obbl=false %}{% include "puma/_servizio.html" %}{% endwith %}</td></tr>{% endfor %}
 </tbody></table><button class="puma-btn puma-on">Conferma le presenze</button></form>
 {% else %}
 <ul class="puma-list">{% for p in previsti %}<li><div><b>{{ p.nome }}</b> <small>{{ p.email }}{{ ' · dal link' if p.origine == 'invito' }}</small></div>
@@ -39,13 +42,15 @@
 {% if resp and e.stato != 'chiuso' and e.data >= oggi %}<details class="aggiungi-previsti"><summary class="puma-btn">➕ Aggiungi persone previste</summary>
 <form method="post" action="{{ url_for('puma.previsti', i=e.id) }}" class="puma-form"><input type="hidden" name="csrf" value="{{ csrf }}"><input type="hidden" name="azione" value="aggiungi">
 {% include "puma/_scegli_persone.html" %}<button type="submit">Aggiungi</button></form></details>{% endif %}
-<p>
+{% if utente['tipo_utente'] != 'esterno' %}<p>
 <a class="puma-btn" href="{{ url_for('puma.piano_scarica', i=e.id, tipo='completo') }}">PDF piano completo</a>
 <a class="puma-btn" href="{{ url_for('puma.piano_scarica', i=e.id, tipo='ridotto') }}">PDF ridotto</a>
-{% if resp %}<a class="puma-btn" href="{{ url_for('puma.piano', i=e.id) }}">Piano di sicurezza (meteo, organizzazione, matrice, invio)</a>{% endif %}</p>
+{% if resp %}<a class="puma-btn" href="{{ url_for('puma.piano', i=e.id) }}">Piano di sicurezza (meteo, organizzazione, matrice, invio)</a>{% endif %}</p>{% endif %}
 <h3>Registrati e presenze ({{ chk|length }})</h3>
 <form method="post" action="{{ url_for('puma.convalida', i=e.id) }}"><input type="hidden" name="csrf" value="{{ csrf }}"><ul class="puma-list">{% for c in chk %}<li><div>{% if resp %}<input type="checkbox" name="ok" value="{{ c.username }}" {{ 'checked' if c.convalidato }}> {% endif %}<b>{{ c.nome }}</b> <small>{{ nomi.get(c.comando_origine,'') }}</small></div>
-<div>{% if resp %}<select name="ruolo_{{ c.username }}">{% for r in ruoli %}<option value="{{ r.codice }}" {{ 'selected' if c.ruolo_ics==r.codice }}>{{ r.nome }}</option>{% endfor %}</select>{% else %}{% for r in ruoli if r.codice==c.ruolo_ics %}{{ r.nome }}{% endfor %}{% endif %} {{ c.ora }} {{ '✓' if c.convalidato }}</div></li>
+<div>{% if c.servizio %}<span class="chip">{{ 'In turno' if c.servizio == 'in_turno' else 'Fuori turno' }}{% if c.variazione %} · {{ c.variazione }} {{ c.variazione_min }}'{% endif %}</span>{% endif %}
+{% if resp %}<span class="riga-servizio">{% with suff='_' ~ c.username, val=c.servizio, va=c.variazione, mi=c.variazione_min, obbl=false %}{% include "puma/_servizio.html" %}{% endwith %}</span>{% endif %}
+{% if resp %}<select name="ruolo_{{ c.username }}">{% for r in ruoli %}<option value="{{ r.codice }}" {{ 'selected' if c.ruolo_ics==r.codice }}>{{ r.nome }}</option>{% endfor %}</select>{% else %}{% for r in ruoli if r.codice==c.ruolo_ics %}{{ r.nome }}{% endfor %}{% endif %} {{ c.ora }} {{ '✓' if c.convalidato }}</div></li>
 {% else %}<li class="puma-empty">Nessuna registrazione.</li>{% endfor %}</ul>
 {% if resp %}<label class="puma-chk"><input type="checkbox" name="chiudi"> Chiudi l'addestramento</label><button>Salva ruoli e convalida presenze</button>{% endif %}</form>
 {% include "puma/_mappa_js.html" %}{% endblock %}

@@ -8,6 +8,8 @@
 <label for="cr">Canale radio</label><input id="cr" name="canale_radio" value="{{ m['canale_radio'] or '' }}">
 <label for="eso">Email Sala Operativa</label><input id="eso" name="email_so" type="email" value="{{ m['email_so'] or '' }}">
 <label for="pso">PEC Sala Operativa</label><input id="pso" name="pec_so" type="email" value="{{ m['pec_so'] or '' }}">
+<label for="etep">Email TEP</label><input id="etep" name="email_tep" type="email" value="{{ m['email_tep'] or '' }}">
+<label for="efor">Email Formazione</label><input id="efor" name="email_formazione" type="email" value="{{ m['email_formazione'] or '' }}">
 <label for="t1">Telefono centralino</label><input id="t1" name="telefono" value="{{ m['telefono'] or '' }}">
 <label for="t2">Telefono 2</label><input id="t2" name="telefono2" value="{{ m['telefono2'] or '' }}">
 <label for="em">Email</label><input id="em" name="email" type="email" value="{{ m['email'] or '' }}">
@@ -28,7 +30,7 @@
 <table><tr><th>Sede</th><th>Sala Operativa</th><th>Contatti</th><th>NUE</th><th>Siti</th><th></th></tr>
 {% for r in righe %}<tr><td><b>{{ r['nome'] }}</b>{% if r['tipo'] != 'comando' %} <span class="badge b-admin">{{ 'Direzione' if r['tipo'] == 'direzione' else 'Nazionale' }}</span>{% endif %}{% if r['sigla'] %} <span class="muted">({{ r['sigla'] }})</span>{% endif %}{% if r['indirizzo'] %}<br><span class="muted">{{ r['indirizzo'] }}{% if r['comune'] %}, {{ r['comune'] }}{% endif %}</span>{% endif %}
 {% set la = r['lat'] if r['lat'] is not none else r['wlat'] %}{% set lo = r['lon'] if r['lon'] is not none else r['wlon'] %}{% if la is not none and lo is not none %}<br><span class="muted">{{ '%.4f'|format(la) }}, {{ '%.4f'|format(lo) }}{% if r['lat'] is none %} (WAUC){% endif %}</span>{% endif %}</td>
-<td>{{ r['telefono_so'] or '—' }}{% if r['canale_radio'] %}<br><span class="muted">canale radio {{ r['canale_radio'] }}</span>{% endif %}{% if r['email_so'] %}<br><span class="muted">{{ r['email_so'] }}</span>{% endif %}</td>
+<td>{{ r['telefono_so'] or '—' }}{% if r['canale_radio'] %}<br><span class="muted">canale radio {{ r['canale_radio'] }}</span>{% endif %}{% if r['email_so'] %}<br><span class="muted">{{ r['email_so'] }}</span>{% endif %}{% if r['email_tep'] %}<br><span class="muted">TEP {{ r['email_tep'] }}</span>{% endif %}{% if r['email_formazione'] %}<br><span class="muted">Formazione {{ r['email_formazione'] }}</span>{% endif %}</td>
 <td>{{ r['telefono'] or '—' }}{% if r['telefono2'] %}<br>{{ r['telefono2'] }}{% endif %}{% if r['email'] %}<br><span class="muted">{{ r['email'] }}</span>{% endif %}{% if r['pec'] %}<br><span class="muted">PEC {{ r['pec'] }}</span>{% endif %}</td>
 <td>{% if r['nue'] == 1 %}<span class="badge b-attivo">Sì</span>{% elif r['nue'] == 0 %}<span class="badge b-disabilitato">No</span>{% else %}<span class="muted">—</span>{% endif %}</td>
 <td>{% if r['sito_web'] %}<a href="{{ r['sito_web'] }}" target="_blank" rel="noopener">Sito</a>{% endif %}{% if r['sito_web'] and r['sito_intranet'] %} · {% endif %}{% if r['sito_intranet'] %}<a href="{{ r['sito_intranet'] }}" target="_blank" rel="noopener">Intranet</a>{% endif %}{% if not r['sito_web'] and not r['sito_intranet'] %}<span class="muted">—</span>{% endif %}</td>

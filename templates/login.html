@@ -20,13 +20,21 @@
       <label for="email">Utente</label><div class="campo-dominio"><input type="text" id="email" name="email" placeholder="nome.cognome" required {{ '' if utenti_prova or invito else 'autofocus' }}{% if invito %} value="{{ invito.email.split('@')[0] }}"{% endif %} autocomplete="username" autocapitalize="none" spellcheck="false"><span class="muted">@vigilfuoco.it</span></div>
       <label for="password">Password</label><input type="password" id="password" name="password" required {{ 'autofocus' if invito }} autocomplete="current-password" {{ 'placeholder=dev' if prova }}>
       <button class="btn btn-primary" type="submit">Accedi</button></form>
+    <form class="box area-per" method="post" action="{{ url_for('login') }}"><h1>🤝 Altri enti (non VVF)</h1>
+      <p class="muted">Amministrazioni dello Stato, Forze armate e di polizia, volontariato, Croce Rossa, CNSAS…: accedi con <b>codice fiscale</b> e la <b>password</b> scelta alla registrazione. Puoi partecipare agli addestramenti e vedere il tuo report individuale.</p>
+      <input type="hidden" name="csrf" value="{{ csrf }}"><input type="hidden" name="tipo" value="esterno">
+      <label for="cf">Codice fiscale</label><input type="text" id="cf" name="cf" maxlength="24" required autocomplete="username" autocapitalize="characters" spellcheck="false" placeholder="RSSMRA80A01H501U">
+      <label for="pwe">Password</label><input type="password" id="pwe" name="password" required autocomplete="current-password">
+      <button class="btn btn-primary" type="submit">Accedi</button>
+      <p class="piccolo centro">Prima volta? <a href="{{ url_for('registrazione') }}"><b>Registrati</b></a></p>
+      <p class="muted piccolo">SPID e CIE: saranno disponibili quando PUMA sarà pubblicato sui server del Dipartimento.</p></form>
+  </div>
     {% if not utenti_prova %}
-    <div class="box stato-rete" id="stato-rete" data-url="{{ url_for('stato_rete') }}"><h1>Collegamento alla rete VVF</h1><ul id="stato-rete-voci"><li class="muted">Verifica in corso…</li></ul><p id="stato-rete-nota" class="muted piccolo">Login e dati del personale funzionano solo in rete VVF o con FortiClient VPN collegata.</p></div>
+    <div class="box stato-rete box-sotto" id="stato-rete" data-url="{{ url_for('stato_rete') }}"><h1>Collegamento alla rete VVF</h1><ul id="stato-rete-voci"><li class="muted">Verifica in corso…</li></ul><p id="stato-rete-nota" class="muted piccolo">Login e dati del personale funzionano solo in rete VVF o con FortiClient VPN collegata.</p></div>
     {% else %}
-    <div class="box area-neu"><h1>Cosa provare</h1><p class="muted">Ogni utente vede PUMA con i suoi permessi: l'<b>Amministratore</b> e il <b>ROP</b> aprono l'Area Comando; l'<b>Operatore</b> registra attività e check-in; <b>ROR</b> e <b>Nazionale</b> vedono più Comandi; <b>Primo accesso</b> mostra la profilazione da WAUC e l'attesa di abilitazione.</p>
+    <div class="box area-neu box-sotto"><h1>Cosa provare</h1><p class="muted">Ogni utente vede PUMA con i suoi permessi: l'<b>Amministratore</b> e il <b>ROP</b> aprono l'Area Comando; l'<b>Operatore</b> registra attività e check-in; <b>ROR</b> e <b>Nazionale</b> vedono più Comandi; <b>Primo accesso</b> mostra la profilazione da WAUC e l'attesa di abilitazione.</p>
     <p class="muted piccolo">I dati di prova stanno in <code>data_prova</code>: per ripartire da zero usa AZZERA_PROVA.bat.</p></div>
     {% endif %}
-  </div>
   {% if utenti_prova %}
   <div class="sez-tit">Modalità prova · scegli un utente fittizio (password «dev», dati WAUC simulati)</div>
   {% set colori = {'demo.admin': 'com', 'demo.rop': 'att', 'demo.utente': 'rt', 'demo.ror': 'doc', 'demo.nazionale': 'rep', 'demo.nuovo': 'neu'} %}

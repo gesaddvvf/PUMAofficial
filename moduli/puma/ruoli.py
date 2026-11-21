@@ -38,6 +38,7 @@ MATRICE = {   # PROVVISORIA
     'AMM_DIR': _GESTIONE, 'FUNZ_DIR': _FUNZ, 'ROR_DIR': _RESP, 'STAFF_DIR': _STAFF, 'MAG_DIR': _MAG,
     'AMM_CMD': _GESTIONE, 'FUNZ_CMD': _FUNZ, 'ROP_CMD': _RESP, 'STAFF_CMD': _STAFF, 'MAG_CMD': _MAG,
     'OPERATORE': ['partecipa'],
+    'ESTERNO': ['partecipa'],   # utente non VVF: solo partecipazione e report individuale (vedi app.ESTERNI_OK)
 }
 # chi può assegnare quali ruoli (oltre all'Amministratore Generale, che assegna tutto)
 ASSEGNA = {
@@ -177,13 +178,13 @@ def applica_inviti(c, utente):
     return True
 
 
-def applica_invito_evento(c, utente, percorso):
+def applica_invito_evento(c, utente, percorso, ruolo='OPERATORE'):
     """Al login da un link d'invito di un addestramento (/puma/i/<token>): chi è in attesa diventa Operatore
     (è personale VVF: la password dipartimentale è già stata verificata) e può aprire l'addestramento."""
     import re
     m = re.fullmatch(r'/puma/i/([A-Za-z0-9]+)', percorso or '')
     if not m or not c.execute('SELECT 1 FROM puma_eventi WHERE invito_token=?', (m.group(1),)).fetchone(): return False
     if utente['stato'] != 'in_attesa': return False
-    assegna(c, utente['id'], 'OPERATORE', None, '*', 'invito addestramento')
+    assegna(c, utente['id'], ruolo, None, '*', 'invito addestramento')
     c.execute("UPDATE utenti SET stato='attivo', approvato_il=? WHERE id=?", (datetime.datetime.now().isoformat(timespec='seconds'), utente['id']))
     return True

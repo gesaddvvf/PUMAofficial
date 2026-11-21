@@ -1,0 +1,57 @@
+{% extends 'base.html' %}{% block main %}{% include "puma/_nav.html" %}
+<div class="libretto-testa"><h2 class="puma-h">{{ doc.titolo }} <small>{{ doc.area or '' }} · {{ doc.comando }} · <span class="stato-{{ 'ok' if doc.stato == 'definitivo' else 'nd' }}">{{ doc.stato }}</span></small></h2>
+<span><a class="puma-btn" href="{{ url_for('puma.impianti') }}">← Elenco</a> <a class="puma-btn puma-on" href="{{ url_for('puma.impianto_stampa', i=doc.id) }}" target="_blank" rel="noopener">🖨 Stampa / PDF</a></span></div>
+{% if mod %}
+<form method="post" class="puma-form largo"><input type="hidden" name="csrf" value="{{ csrf }}"><input type="hidden" name="azione" value="testata">
+<label>Titolo <input name="titolo" value="{{ doc.titolo }}" maxlength="150" required></label>
+<div class="griglia2">
+<label>Addestramento pianificato <select name="evento_id"><option value="">Nessuno</option>{% for e in eventi %}<option value="{{ e.id }}" {{ 'selected' if doc.evento_id == e.id }}>{{ e.data|datait }} · {{ e.cod_add or e.titolo }}</option>{% endfor %}</select></label>
+<label>Stato <select name="stato"><option value="bozza">Bozza</option><option value="definitivo" {{ 'selected' if doc.stato == 'definitivo' }}>Definitivo</option></select></label>
+</div><button type="submit">Salva intestazione</button>
+{% if doc.evento_id %}<p class="piccolo"><a href="{{ url_for('puma.collettivo', i=doc.evento_id) }}">Apri l'addestramento collegato →</a></p>{% endif %}</form>
+{% endif %}
+
+<h3 id="date">Date e orari</h3>
+<ul class="puma-list">{% for x in date_ %}<li><div><b>{{ x.data|datait }}</b> · {{ x.ora_inizio }}–{{ x.ora_fine }}{{ ' · ' ~ x.nota if x.nota }}</div>
+{% if mod %}<form method="post" class="in-linea"><input type="hidden" name="csrf" value="{{ csrf }}"><input type="hidden" name="azione" value="togli_data"><input type="hidden" name="id" value="{{ x.id }}"><button class="x" title="Togli">✕</button></form>{% endif %}</li>
+{% else %}<li class="puma-empty">Nessuna data inserita.</li>{% endfor %}</ul>
+{% if mod %}<form method="post" class="puma-form largo riga-data"><input type="hidden" name="csrf" value="{{ csrf }}"><input type="hidden" name="azione" value="data">
+<div class="griglia4"><label>Data <input type="date" name="data" value="{{ oggi }}" required></label>
+<label>Inizio <select name="ora_inizio">{% for o in orari %}<option {{ 'selected' if o == '08:00' }}>{{ o }}</option>{% endfor %}</select></label>
+<label>Fine <select name="ora_fine">{% for o in orari %}<option {{ 'selected' if o == '13:00' }}>{{ o }}</option>{% endfor %}</select></label>
+<label>Nota <input name="nota" maxlength="120" placeholder="es. 1ª giornata"></label></div><button type="submit">＋ Aggiungi data</button></form>{% endif %}
+
+<datalist id="titoli-sezione">{% for t in titoli %}<option value="{{ t }}">{% endfor %}</datalist>
+{% for s in sez %}<section class="sez-impianto" id="sez-{{ s.id }}">
+{% if mod %}
+<form method="post" class="puma-form largo"><input type="hidden" name="csrf" value="{{ csrf }}"><input type="hidden" name="azione" value="salva_sezione"><input type="hidden" name="sezione" value="{{ s.id }}">
+<div class="sez-testa"><span class="sez-num">{{ loop.index }}</span><input name="titolo" value="{{ s.titolo }}" list="titoli-sezione" maxlength="120" class="tit-sezione" aria-label="Titolo della sezione"></div>
+<label>Testo <textarea name="testo" rows="6" maxlength="20000" placeholder="Descrizione…">{{ s.testo or '' }}</textarea></label>
+<label class="puma-chk"><input type="checkbox" name="mappa" {{ 'checked' if s.mappa }}> Inserisci una mappa in questa sezione <small class="muted">(spunta e salva: la mappa compare qui sotto)</small></label>
+{% if s.mappa %}
+<div class="puma-radio"><label><input type="radio" name="modo" value="area" checked> Punto</label><label><input type="radio" name="modo" value="rv"> RV elicottero (H)</label><label><input type="radio" name="modo" value="amb"> RV ambulanza</label></div>
+<div class="puma-map" data-tiles="{{ tile_url }}" data-pick="1" data-barra="1" data-sedi="{{ url_for('puma.api_sedi') }}" data-centro="{{ ([s.lat, s.lon] if s.lat else (centro or centro_mio or []))|join(',') }}" data-zoom="{{ 15 if s.lat else 11 }}"></div>
+<input type="hidden" name="lat" value="{{ s.lat or '' }}"><input type="hidden" name="lon" value="{{ s.lon or '' }}">
+<input type="hidden" name="rv_lat" value="{{ s.rv_lat or '' }}"><input type="hidden" name="rv_lon" value="{{ s.rv_lon or '' }}">
+<input type="hidden" name="amb_lat" value="{{ s.amb_lat or '' }}"><input type="hidden" name="amb_lon" value="{{ s.amb_lon or '' }}">
+{% else %}{% for k in ['lat','lon','rv_lat','rv_lon','amb_lat','amb_lon'] %}<input type="hidden" name="{{ k }}" value="{{ s[k] or '' }}">{% endfor %}{% endif %}
+<div class="azioni-sez"><button type="submit">Salva la sezione</button>
+<button type="submit" name="azione" value="su" formnovalidate title="Sposta su">▲ Su</button><button type="submit" name="azione" value="giu" formnovalidate title="Sposta giù">▼ Giù</button>
+<button type="submit" name="azione" value="togli_sezione" formnovalidate class="pericolo" title="Elimina la sezione e le sue immagini">Elimina sezione</button></div>
+</form>
+<div class="galleria">{% for m in img.get(s.id, []) %}<figure><a href="{{ url_for('puma.impianto_immagine', i=doc.id, nome=m.file) }}" target="_blank" rel="noopener"><img src="{{ url_for('puma.impianto_immagine', i=doc.id, nome=m.file) }}" alt="{{ m.didascalia or m.nome }}"></a>
+<figcaption>{{ m.didascalia or m.nome }}<form method="post" class="in-linea"><input type="hidden" name="csrf" value="{{ csrf }}"><input type="hidden" name="azione" value="togli_immagine"><input type="hidden" name="sezione" value="{{ s.id }}"><input type="hidden" name="id" value="{{ m.id }}"><button class="x" title="Togli l'immagine">✕</button></form></figcaption></figure>{% endfor %}</div>
+<form method="post" enctype="multipart/form-data" class="carica-immagine"><input type="hidden" name="csrf" value="{{ csrf }}"><input type="hidden" name="azione" value="immagine"><input type="hidden" name="sezione" value="{{ s.id }}">
+<input type="file" name="file" accept="image/jpeg,image/png,image/gif,image/webp" required aria-label="Immagine"><input name="didascalia" maxlength="200" placeholder="Didascalia (facoltativa)"><button class="puma-btn" type="submit">📎 Allega immagine</button></form>
+{% else %}
+<h3><span class="sez-num">{{ loop.index }}</span> {{ s.titolo }}</h3>
+<div class="testo-sez">{{ s.testo or '' }}</div>
+{% if s.mappa and s.lat %}<div class="puma-map" data-tiles="{{ tile_url }}" data-lat="{{ s.lat }}" data-lon="{{ s.lon }}" data-rvlat="{{ s.rv_lat or '' }}" data-rvlon="{{ s.rv_lon or '' }}" data-amblat="{{ s.amb_lat or '' }}" data-amblon="{{ s.amb_lon or '' }}"></div>{% endif %}
+<div class="galleria">{% for m in img.get(s.id, []) %}<figure><img src="{{ url_for('puma.impianto_immagine', i=doc.id, nome=m.file) }}" alt="{{ m.didascalia or m.nome }}"><figcaption>{{ m.didascalia or '' }}</figcaption></figure>{% endfor %}</div>
+{% endif %}
+</section>{% endfor %}
+{% if mod %}<form method="post" class="puma-form"><input type="hidden" name="csrf" value="{{ csrf }}"><input type="hidden" name="azione" value="sezione"><h3>＋ Nuova sezione</h3>
+<label>Titolo <input name="titolo" list="titoli-sezione" maxlength="120" required placeholder="es. Cronoprogramma"></label><button type="submit">Aggiungi sezione</button></form>
+<form method="post" action="{{ url_for('puma.impianto_elimina', i=doc.id) }}" class="puma-form"><input type="hidden" name="csrf" value="{{ csrf }}">
+<label class="puma-chk"><input type="checkbox" required> Confermo: elimina tutto il documento d'impianto</label><button type="submit" class="pericolo">Elimina il documento</button></form>{% endif %}
+{% include "puma/_mappa_js.html" %}{% endblock %}

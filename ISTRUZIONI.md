@@ -35,7 +35,7 @@ PUMA ha la stessa grafica del sito <https://gesaddvvf.github.io/PUMA/>. In alto 
 | Area | Cosa contiene |
 |---|---|
 | **Home Page** | presentazione, aree, addestramenti di oggi, settori abilitati |
-| **Attività** (rosso) | **Pianifica addestramento** (guidato: data, orari, area corsi, corso, finalità, squadra, località e RV da elenchi, persone previste), **Calendario addestramenti**, **Partecipa ad addestramento** (conferma presenza / «➕ Mi aggiungo»), **Redazione piano di sicurezza addestramento**, **Registrazione attività individuali** (solo corsi in possesso) |
+| **Attività** (rosso) | **Pianifica addestramento**, **Documento d'impianto** («＋ Crea»: date e orari, sezioni con titolo libero, mappe e immagini, stampa/PDF), (guidato: data, orari, area corsi, corso, finalità, squadra, località e RV da elenchi, persone previste), **Calendario addestramenti**, **Partecipa ad addestramento** (conferma presenza / «➕ Mi aggiungo»), **Redazione piano di sicurezza addestramento**, **Registrazione attività individuali** (solo corsi in possesso) |
 | **Real Time** (verde) | Presenze Odierne, Mappa Real Time, Riepilogo Globale, Registro odierno |
 | **Didattica e documentazione** (blu) | Manuali P.U.M.A., Manuali di settore, Circolari di settore, Archivio; qui arriveranno i moduli didattici (lezioni, video, quiz, schede tecniche) |
 | **Area personale** (viola) | i tuoi dati, i tuoi livelli di accesso, corsi in possesso, situazione dell'anno, **Report individuale** (libretto), le tue attività, Interventi reali, Profilazione |
@@ -51,6 +51,18 @@ Ogni persona può avere uno o più livelli; ognuno vale per una **sede** e per u
 - **Operatore**: tutti gli altri (partecipa e registra le proprie attività)
 
 Si assegnano da **Area Comando → Livelli di accesso** (l'Amministratore di Comando o di Direzione assegna quelli della sua sede e può abilitare chi è in attesa). Cosa può fare ogni livello è nella tabella in fondo a quella pagina: **è provvisoria** e si cambia in un solo punto, `moduli/puma/ruoli.py` (MATRICE). Le aree corsi si gestiscono da **Area Comando → Aree corsi**.
+
+### Presenza: in turno / fuori turno
+Chi conferma la presenza indica **In turno** o **Fuori turno** (PUMA lo propone dal turno e salto del profilo all'ora di inizio) ed eventuale **anticipo** o **posticipo** con i minuti. Il responsabile può correggerli quando conferma i previsti o convalida le presenze. Nella casella in alto a destra c'è il **tuo** turno e salto: pallino verde = in servizio adesso, arancio = di salto.
+
+### Utenti non VVF
+Amministrazioni dello Stato, Forze armate e di polizia, volontariato, Croce Rossa, CNSAS… si registrano da **Registrati** nella pagina di accesso e poi entrano con **codice fiscale** (gli spazi vengono tolti) e **password**. Possono solo partecipare agli addestramenti, vedere il proprio report individuale e i propri dati. Li abilita l'Amministratore del Comando scelto (**Livelli di accesso**, dove si può anche reimpostare la password o disabilitarli); chi si registra dal **link d'invito** di un addestramento è abilitato subito. SPID e CIE richiedono che PUMA sia un servizio accreditato su un indirizzo https pubblico: si potranno collegare quando sarà ospitato sui server del Dipartimento.
+
+### Trento, Bolzano, Aosta (campi personalizzabili)
+Queste sedi non sono in WAUC: nel profilo qualifica e distaccamento si scrivono liberamente e compaiono i campi decisi in **Area Comando → Campi personalizzati** (di serie: Corpo di appartenenza, Corpo/distaccamento, Matricola). La stessa funzione si può attivare per qualunque sede.
+
+### Mail del Comando
+In **Comandi e Direzioni** ogni sede ha anche **Email TEP** ed **Email Formazione**: il piano di sicurezza va anche a loro, oltre ai destinatari delle Impostazioni.
 
 ### Mappe
 In tutte le mappe: **📍 Centra la mappa su un Comando** (poi sposti la mappa e scegli il luogo), **🎯 Localizzami** (funziona aprendo PUMA dal PC stesso o in https), **✛ croce** al centro con il pulsante **Usa la croce**, e una casella dove incollare le coordinate in qualunque formato: gradi decimali (`44.2225, 12.0408`), gradi-primi-secondi (`44°13'21"N 12°02'27"E`), gradi e primi, **UTM** (`33T 263634 4900845`), **MGRS**, link di Google Maps o OpenStreetMap. Sotto la mappa il punto è riportato in tutti i formati. Chi programma un addestramento parte dalla mappa centrata sul proprio Comando; le località salvate (Area Comando → Località) riempiono da sole area, RV elicottero e RV ambulanza.

@@ -90,6 +90,9 @@ def ctx():
     return dict(csrf=session['csrf'], utente=u, puo=puo, versione=config.VERSIONE, dev_auth=config.DEV_AUTH,
                 prova=config.PROVA, nome_app=config.NOME_APP, nome_esteso=config.NOME_ESTESO, app_utente=app_utente, **nav)
 
+ESTERNI_OK = {'logout', 'account', 'attesa', 'puma.attivita_oggi', 'puma.collettivo', 'puma.partecipa', 'puma.previsto_io', 'puma.invito_addestramento',
+              'puma.profilo', 'puma.personale', 'puma.mie_attivita', 'puma.api_manovre', 'puma.tile', 'puma.api_sedi', 'puma.static'}
+
 @app.before_request
 def prima():
     g.utente, g.perm = None, {}
@@ -110,12 +113,17 @@ def prima():
                     g.perm[config.MODULO_PRINCIPALE] = 'lettura'
         if not g.utente: session.clear()
     if not g.utente:
-        if request.endpoint in ('login', 'stato_rete', 'invito'): return None
+        if request.endpoint in ('login', 'stato_rete', 'invito', 'registrazione'): return None
         if request.endpoint == 'puma.invito_addestramento': session['dopo'] = request.path   # dopo l'accesso torna all'addestramento
         return redirect(url_for('login'))
+    if g.utente['tipo_utente'] == 'esterno' and request.endpoint not in ESTERNI_OK:
+        # utenti non VVF: solo partecipazione agli addestramenti, report individuale e i propri dati
+        if g.utente['stato'] == 'in_attesa': return redirect(url_for('attesa'))
+        if request.endpoint in ('home', 'puma.index', 'elenco_app'): return redirect(url_for('puma.attivita_oggi'))
+        abort(403)
     if not g.utente['profilo_confermato'] and request.endpoint not in ('profilo_view', 'profilo_spec_aggiungi', 'logout'):
         return redirect(url_for('profilo_view'))
-    if g.utente['stato'] == 'in_attesa' and request.endpoint not in ('attesa', 'logout', 'profilo_view', 'profilo_spec_aggiungi'):
+    if g.utente['stato'] == 'in_attesa' and request.endpoint not in ('attesa', 'logout', 'profilo_view', 'profilo_spec_aggiungi', 'account'):
         return redirect(url_for('attesa'))
     if request.blueprint in MODULI and not puo(MODULI[request.blueprint]['settore']):
         abort(403)
@@ -165,6 +173,8 @@ def invito(token):
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if g.utente: return redirect(url_for('home'))
+    if request.method == 'POST' and request.form.get('tipo') == 'esterno':
+        return login_esterno()
     if request.method == 'POST':
         email, err = norm_email(request.form.get('email', ''))   # aggiunge @vigilfuoco.it se manca
         if err:
@@ -208,12 +218,120 @@ def login():
                 log_accesso.warning('WAUC: %s non trovato nelle sedi interrogate', email)
             profilo.assicura_catalogo(c)   # elenchi completi di specializzazioni e qualifiche (al primo accesso e poi ogni 24 ore)
             c.execute('UPDATE utenti SET ultimo_accesso=? WHERE id=?', (now, u['id']))
-        session.clear(); session.permanent = True
-        session['uid'] = u['id']; session['csrf'] = secrets.token_hex(16)
-        if dopo: session['dopo'] = dopo
-        if dopo and u['profilo_confermato'] and u['stato'] == 'attivo': return redirect(session.pop('dopo'))
-        return redirect(url_for('home'))
+        return _entra(u, dopo)
     return pagina_login()
+
+def _entra(u, dopo=None):
+    """Apre la sessione dell'utente u e lo manda dove deve andare."""
+    session.clear(); session.permanent = True
+    session['uid'] = u['id']; session['csrf'] = secrets.token_hex(16)
+    if dopo: session['dopo'] = dopo
+    if dopo and u['profilo_confermato'] and u['stato'] == 'attivo': return redirect(session.pop('dopo'))
+    return redirect(url_for('home'))
+
+
+def login_esterno():
+    """Accesso degli utenti non VVF: codice fiscale (senza spazi) e password scelta alla registrazione."""
+    import esterni
+    cf = esterni.norm_cf(request.form.get('cf', ''))
+    chiave = f"{request.remote_addr}|cf:{cf}"
+    if bloccato(chiave):
+        flash('Troppi tentativi. Riprova tra qualche minuto.', 'danger'); return pagina_login()
+    with db.connect() as c:
+        u = c.execute("SELECT * FROM utenti WHERE codice_fiscale=? AND tipo_utente='esterno'", (cf,)).fetchone()
+        if not u or not esterni.verifica_password(u['password_hash'], request.form.get('password', '')):
+            TENTATIVI.setdefault(chiave, []).append(time.time())
+            db.audit(c, cf or '?', 'accesso_negato', 'utente esterno: codice fiscale o password errati')
+            flash('Accesso negato: codice fiscale o password non corretti.', 'danger'); return pagina_login()
+        if u['stato'] == 'disabilitato':
+            flash('Account disabilitato. Contatta il Comando VVF di riferimento.', 'danger'); return pagina_login()
+        from moduli.puma import ruoli as _ruoli
+        dopo = session.get('dopo') if (session.get('dopo') or '').startswith('/') else None
+        if dopo and _ruoli.applica_invito_evento(c, u, dopo, ruolo='ESTERNO'):
+            u = c.execute('SELECT * FROM utenti WHERE id=?', (u['id'],)).fetchone()
+        c.execute('UPDATE utenti SET ultimo_accesso=? WHERE id=?', (datetime.datetime.now().isoformat(timespec='seconds'), u['id']))
+        db.audit(c, u['email'], 'accesso_esterno', cf)
+    return _entra(u, dopo)
+
+
+@app.route('/registrazione', methods=['GET', 'POST'])
+def registrazione():
+    """Registrazione degli utenti non VVF (Amministrazioni dello Stato, Forze armate, volontariato…)."""
+    import esterni
+    if g.utente: return redirect(url_for('home'))
+    with db.connect() as c:
+        sedi = c.execute(ORDINE_SEDI).fetchall()
+    dati = {}
+    if request.method == 'POST':
+        f = request.form
+        dati = {k: (f.get(k) or '').strip() for k in ('nome', 'cognome', 'cf', 'ente_tipo', 'ente_nome', 'email_contatto', 'telefono')}
+        dati['cf'] = esterni.norm_cf(dati['cf']); cid = f.get('comando_id', type=int)
+        err = None
+        if not dati['nome'] or not dati['cognome']: err = 'Nome e cognome sono obbligatori.'
+        elif not esterni.cf_valido(dati['cf']): err = 'Codice fiscale non valido: controlla i 16 caratteri.'
+        elif dati['ente_tipo'] not in esterni.ENTI: err = 'Scegli l\'ente di appartenenza.'
+        elif not any(x['id'] == cid for x in sedi): err = 'Scegli il Comando VVF con cui ti addestri.'
+        elif not EMAIL_SEMPLICE.match(dati['email_contatto'].lower()): err = 'Indirizzo e-mail non valido.'
+        elif dati['email_contatto'].lower().endswith('@' + config.DOMINIO): err = 'Il personale VVF entra con le credenziali dipartimentali, non serve registrarsi.'
+        elif f.get('password') != f.get('password2'): err = 'Le due password non coincidono.'
+        elif not f.get('privacy'): err = 'Serve il consenso al trattamento dei dati.'
+        else: err = esterni.password_ok(f.get('password'))
+        if not err:
+            with db.connect() as c:
+                if c.execute('SELECT 1 FROM utenti WHERE codice_fiscale=?', (dati['cf'],)).fetchone():
+                    err = 'Questo codice fiscale è già registrato: accedi con la tua password (o chiedi al Comando di reimpostarla).'
+        if err:
+            flash(err, 'danger')
+        else:
+            adesso = datetime.datetime.now().isoformat(timespec='seconds')
+            with db.connect() as c:
+                cur = c.execute("""INSERT INTO utenti(email, nome, cognome, comando_id, stato, creato_il, origine_profilo, profilo_confermato, telefono,
+                        tipo_utente, codice_fiscale, password_hash, ente_tipo, ente_nome, email_contatto, qualifica)
+                    VALUES(?,?,?,?, 'in_attesa', ?, 'esterno', 1, ?, 'esterno', ?, ?, ?, ?, ?, ?)""",
+                    (esterni.username(dati['cf']), dati['nome'][:80].title(), dati['cognome'][:80].title(), cid, adesso, dati['telefono'][:40] or None,
+                     dati['cf'], esterni.hash_password(f.get('password')), dati['ente_tipo'], dati['ente_nome'][:120] or None,
+                     dati['email_contatto'].lower()[:120], (dati['ente_nome'] or dati['ente_tipo'])[:80]))
+                c.execute('INSERT OR REPLACE INTO puma_persone(utente_id, codice_fiscale) VALUES(?,?)', (cur.lastrowid, dati['cf']))
+                u = c.execute('SELECT * FROM utenti WHERE id=?', (cur.lastrowid,)).fetchone()
+                db.audit(c, u['email'], 'registrazione_esterno', f"{dati['ente_tipo']} · sede {cid}")
+                from moduli.puma import ruoli as _ruoli
+                dopo = session.get('dopo') if (session.get('dopo') or '').startswith('/') else None
+                if dopo and _ruoli.applica_invito_evento(c, u, dopo, ruolo='ESTERNO'):
+                    u = c.execute('SELECT * FROM utenti WHERE id=?', (u['id'],)).fetchone()
+            risposta = _entra(u, dopo)   # (apre una sessione nuova: il messaggio va dopo)
+            flash('Registrazione completata.' + ('' if u['stato'] == 'attivo' else ' Il Comando scelto deve abilitarti: riceverai conferma dal Comando.'), 'success')
+            return risposta
+    import esterni as E
+    return render_template('registrazione.html', sedi=sedi, enti=E.ENTI, d=dati)
+
+
+@app.route('/account', methods=['GET', 'POST'])
+def account():
+    """Dati e password degli utenti non VVF."""
+    import esterni
+    u = g.utente
+    if u['tipo_utente'] != 'esterno': return redirect(url_for('profilo_view'))
+    if request.method == 'POST':
+        f = request.form
+        with db.connect() as c:
+            if f.get('azione') == 'password':
+                if not esterni.verifica_password(u['password_hash'], f.get('attuale', '')): flash('La password attuale non è corretta.', 'danger')
+                elif f.get('password') != f.get('password2'): flash('Le due password non coincidono.', 'danger')
+                elif esterni.password_ok(f.get('password')): flash(esterni.password_ok(f.get('password')), 'danger')
+                else:
+                    c.execute('UPDATE utenti SET password_hash=? WHERE id=?', (esterni.hash_password(f.get('password')), u['id']))
+                    db.audit(c, u['email'], 'password_cambiata', ''); flash('Password cambiata.', 'success')
+            else:
+                em = (f.get('email_contatto') or '').strip().lower()
+                if not EMAIL_SEMPLICE.match(em): flash('Indirizzo e-mail non valido.', 'danger')
+                elif f.get('ente_tipo') not in esterni.ENTI: flash('Scegli l\'ente.', 'danger')
+                else:
+                    c.execute('UPDATE utenti SET email_contatto=?, telefono=?, ente_tipo=?, ente_nome=? WHERE id=?',
+                              (em[:120], (f.get('telefono') or '').strip()[:40] or None, f['ente_tipo'], (f.get('ente_nome') or '').strip()[:120] or None, u['id']))
+                    flash('Dati salvati.', 'success')
+        return redirect(url_for('account'))
+    return render_template('account.html', enti=esterni.ENTI)
+
 
 @app.route('/stato-rete')
 def stato_rete():
@@ -247,15 +365,18 @@ def profilo_view():
             elif not com: err = 'Seleziona il comando (provincia) di appartenenza.'
             # qualifica ("codice|gruppo" dall'elenco WAUC)
             qv = f.get('qualifica', '').strip(); qual = (None, None, None)
-            if not err and quals:
+            libero = bool(com and com['profilo_libero'])   # Trento, Bolzano, Aosta…: qualifica e distaccamento liberi
+            if not err and libero:
+                qual = ((f.get('qualifica_libera') or '').strip()[:80] or None, None, None)
+            elif not err and quals:
                 if qv:
                     cod, _, grp = qv.partition('|'); r = next((x for x in quals if x['codice'] == cod and x['cod_gruppo'] == grp), None)
                     if r: qual = (r['descrizione'], cod, grp)
                     else: err = 'Qualifica non valida: scegli un valore dell\'elenco.'
             elif not err: qual = (qv[:80] or None, None, None)
             # distaccamento: solo valori trovati per quel comando
-            dv = f.get('distaccamento', '').strip()[:80]
-            if not err:
+            dv = (f.get('distaccamento_libero') if libero else f.get('distaccamento', '') or '').strip()[:80]
+            if not err and not libero:
                 dcat = [r[0] for r in c.execute('SELECT descrizione FROM distaccamenti_wauc WHERE cod_sede=?', (com['sigla'] or '',))]
                 if dcat and dv and dv not in dcat and dv != (u['distaccamento'] or ''): err = 'Distaccamento non valido per il comando scelto.'
             # tipo personale, turno, salto turno
@@ -268,8 +389,13 @@ def profilo_view():
             elif not err: tipo = (None, tv[:80] or None)
             tur, sal = f.get('turno', '').strip(), f.get('salto_turno', '').strip()
             if not err and ((turni and tur and tur not in turni) or (salti and sal and sal not in salti)): err = 'Turno o salto turno non validi: scegli un valore dell\'elenco.'
+            from moduli.puma import campi as _campi
+            vals = None
+            if not err:
+                vals, err = _campi.leggi_valori(c, cid, f)
             if err:
                 flash(err, 'danger'); return redirect(url_for('profilo_view'))
+            _campi.salva_valori(c, u['id'], cid, vals)
             v['qualifica'], v['distaccamento'] = qual[0], dv
             nuovo = dict(**v, comando_id=cid, cod_qualifica=qual[1], cod_gruppo=qual[2], cod_tipo_personale=tipo[0], tipo_personale=tipo[1], turno=tur or None, salto_turno=sal or None)
             invariato = all((u[k] or None) == (nuovo[k] or None) for k in ('qualifica', 'distaccamento', 'comando_id', 'turno', 'salto_turno', 'cod_tipo_personale', 'nome', 'cognome'))
@@ -293,7 +419,10 @@ def profilo_view():
             FROM specializzazioni s LEFT JOIN specializzazioni_utente su ON su.codice=s.codice AND su.utente_id=?
             WHERE s.aggiornata_il IS NOT NULL
             ORDER BY valida DESC, posseduta DESC, s.codice""", (u['id'],)).fetchall()
+        from moduli.puma import campi as _campi
+        campi_sede, valori_campi = _campi.tutti_i_campi(c), _campi.valori(c, u['id'])
     return render_template('profilo.html', comandi=comandi, specs=specs, quals=quals, tipi=tipi, turni=turni, salti=salti, dist=dist,
+                           campi_sede=campi_sede, valori_campi=valori_campi, opzioni_campo=_campi.opzioni,
                            blocca_nome=u['origine_profilo'] == 'wauc')
 
 @app.route('/profilo/specializzazione', methods=['POST'])
@@ -452,7 +581,7 @@ def admin_comandi():
             v = dict(telefono=t('telefono', 40), telefono2=t('telefono2', 40), telefono_so=t('telefono_so', 40), canale_radio=t('canale_radio', 20),
                      indirizzo=t('indirizzo', 160), cap=t('cap', 10), comune=t('comune', 80), nue_note=t('nue_note', 200), note=t('note', 400))
             err = None
-            for campo in ('email', 'pec', 'email_so', 'pec_so'):
+            for campo in ('email', 'pec', 'email_so', 'pec_so', 'email_tep', 'email_formazione'):
                 x = f.get(campo, '').strip().lower()[:120]
                 if x and not EMAIL_SEMPLICE.match(x): err = f'{campo.replace("_", " ").upper()} non valida.'
                 v[campo] = x or None

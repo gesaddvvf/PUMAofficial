@@ -1,4 +1,6 @@
 {% extends 'base.html' %}{% block titolo %}In attesa{% endblock %}
 {% block main %}<div class="box"><h1>Account in attesa di abilitazione</h1>
-<p>Accesso eseguito come <strong>{{ utente['email'] }}</strong>{% if utente['comando'] %} · {{ utente['comando'] }}{% endif %}. Un amministratore deve abilitarti e assegnarti i settori di competenza.</p>
-<a class="btn" href="{{ url_for('profilo_view') }}">Rivedi i tuoi dati</a></div>{% endblock %}
+{% if utente['tipo_utente'] == 'esterno' %}<p>Registrazione completata: <strong>{{ utente['nome'] }} {{ utente['cognome'] }}</strong> ({{ utente['ente_tipo'] }}). L'Amministratore del Comando di <b>{{ utente['comando'] }}</b> deve abilitare il tuo account. Se ti hanno mandato il link d'invito di un addestramento, aprilo: sarai abilitato subito.</p>
+<a class="btn" href="{{ url_for('account') }}">Il mio account</a>
+{% else %}<p>Accesso eseguito come <strong>{{ utente['email'] }}</strong>{% if utente['comando'] %} · {{ utente['comando'] }}{% endif %}. Un amministratore deve abilitarti e assegnarti i settori di competenza.</p>
+<a class="btn" href="{{ url_for('profilo_view') }}">Rivedi i tuoi dati</a>{% endif %}</div>{% endblock %}

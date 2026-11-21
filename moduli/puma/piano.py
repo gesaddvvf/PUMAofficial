@@ -174,11 +174,20 @@ def piano_scarica(i, tipo):
     else: abort(404)
     return Response(data, mimetype="application/pdf", headers={"Content-Disposition": f'inline; filename="{(e["cod_add"] or "piano")}_{tipo}.pdf"'})
 
+def destinatari(cid):
+    """Indirizzi per l'invio del piano: quelli delle Impostazioni (SO, ROP, ROR, SODIR, Formazione, TEP) più le mail
+    TEP e Formazione della scheda del Comando (Comandi e Direzioni), se non già presenti."""
+    out = [r["email"] for r in db().execute("SELECT DISTINCT email FROM puma_destinatari WHERE comando_id=?", (cid,))]
+    k = db().execute("SELECT email_tep, email_formazione FROM comandi WHERE id=?", (cid,)).fetchone()
+    for x in (k or []):
+        if x and x.lower() not in [o.lower() for o in out]: out.append(x)
+    return out
+
 @puma_bp.post("/collettivi/<int:i>/piano/invia")
 def piano_invia(i):
     u, e = _resp(i); tipo = "ridotto" if request.form.get("ridotto") else "completo"
     if tipo == "completo" and not e["rischio"]: flash("Per il piano completo compila prima la matrice di rischio (oppure invia la versione ridotta)."); return redirect(url_for("puma.piano", i=i))
-    dest = [r["email"] for r in db().execute("SELECT DISTINCT email FROM puma_destinatari WHERE comando_id=?", (e["comando_id"],))]
+    dest = destinatari(e["comando_id"])
     if not dest: flash("Nessun destinatario configurato (Impostazioni)."); return redirect(url_for("puma.piano", i=i))
     cod = e["cod_add"] or "piano"; allegati = [(f"{cod}_{tipo}.pdf", piano_pdf.piano_pdf(dati_pdf(e), tipo))]
     man = pdf_manovre(e)

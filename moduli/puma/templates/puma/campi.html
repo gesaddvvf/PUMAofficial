@@ -1,0 +1,25 @@
+{% extends 'base.html' %}{% block main %}{% include "puma/_nav.html" %}
+<h2 class="puma-h">Campi personalizzati del profilo</h2>
+<p class="muted">Per le sedi che non sono in WAUC (Trento, Bolzano, Aosta) o che hanno esigenze proprie: qualifica e distaccamento si scrivono liberamente e il profilo chiede i campi qui sotto. Compaiono a chi sceglie quella sede nella Profilazione.</p>
+<form method="get" class="filtri"><label>Sede <select name="sede" class="auto-invio">{% for x in sedi %}<option value="{{ x.id }}" {{ 'selected' if x.id == s.id }}>{{ x.nome }}{{ ' ★' if x.profilo_libero }}</option>{% endfor %}</select></label></form>
+
+<form method="post" class="puma-form largo"><input type="hidden" name="csrf" value="{{ csrf }}"><input type="hidden" name="sede" value="{{ s.id }}"><input type="hidden" name="azione" value="libero">
+<label class="puma-chk"><input type="checkbox" name="profilo_libero" {{ 'checked' if s.profilo_libero }}> <b>{{ s.nome }}</b>: qualifica e distaccamento liberi (la sede non usa gli elenchi WAUC)</label>
+<p class="muted piccolo">{{ n_persone }} persone hanno questa sede nel profilo.</p><button type="submit">Salva</button></form>
+
+<form method="post" class="puma-form largo"><input type="hidden" name="csrf" value="{{ csrf }}"><input type="hidden" name="sede" value="{{ s.id }}"><input type="hidden" name="azione" value="salva">
+<h3>Campi di {{ s.nome }}</h3>
+<table class="puma-tab"><thead><tr><th>Campo</th><th>Tipo</th><th>Voci dell'elenco</th><th>Obbl.</th><th>Attivo</th><th>Ordine</th><th>Elimina</th></tr></thead><tbody>
+{% for k in campi %}<tr><td><input name="etichetta_{{ k.id }}" value="{{ k.etichetta }}" maxlength="80"></td><td>{{ dict(tipi)[k.tipo] }}</td>
+<td>{% if k.tipo == 'elenco' %}<textarea name="opzioni_{{ k.id }}" rows="3">{{ k.opzioni or '' }}</textarea>{% else %}—<input type="hidden" name="opzioni_{{ k.id }}" value="">{% endif %}</td>
+<td><input type="checkbox" name="obbligatorio_{{ k.id }}" {{ 'checked' if k.obbligatorio }}></td><td><input type="checkbox" name="attivo_{{ k.id }}" {{ 'checked' if k.attivo }}></td>
+<td><input type="number" name="ordine_{{ k.id }}" value="{{ k.ordine }}" class="corto" min="0" max="99"></td><td><input type="checkbox" name="elimina_{{ k.id }}" title="Elimina il campo e i valori inseriti"></td></tr>
+{% else %}<tr><td colspan="7" class="puma-empty">Nessun campo per questa sede.</td></tr>{% endfor %}</tbody></table>
+{% if campi %}<button type="submit">Salva i campi</button>{% endif %}</form>
+
+<form method="post" class="puma-form"><input type="hidden" name="csrf" value="{{ csrf }}"><input type="hidden" name="sede" value="{{ s.id }}"><input type="hidden" name="azione" value="nuovo"><h3>Nuovo campo</h3>
+<div class="griglia2"><label>Nome del campo <input name="etichetta" maxlength="80" required placeholder="es. Corpo di appartenenza"></label>
+<label>Tipo <select name="tipo">{% for k, t in tipi %}<option value="{{ k }}">{{ t }}</option>{% endfor %}</select></label></div>
+<label>Voci dell'elenco (solo per «Elenco a comparsa», una per riga) <textarea name="opzioni" rows="3"></textarea></label>
+<label class="puma-chk"><input type="checkbox" name="obbligatorio"> Obbligatorio</label><button type="submit">Aggiungi il campo</button></form>
+{% endblock %}

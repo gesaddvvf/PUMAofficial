@@ -14,12 +14,16 @@
 <form method="get" class="filtri"><label>Sede <select name="sede" class="auto-invio"><option value="">Tutte le sedi che gestisci</option>{% for s in tutti_comandi %}<option value="{{ s.id }}" {{ 'selected' if filtro == s.id }}>{{ s.nome }}</option>{% endfor %}</select></label>
 {% if sel %}<a class="puma-btn" href="{{ url_for('puma.accessi') }}">Mostra tutti</a>{% endif %}</form>
 <table class="puma-tab"><thead><tr><th>Persona</th><th>Sede</th><th>Livelli di accesso</th></tr></thead><tbody>
-{% for p in persone %}<tr><td><b>{{ p.cognome }} {{ p.nome }}</b><br><small>{{ p.email }}</small>{% if p.stato == 'in_attesa' %}<br><span class="badge stato-ko">in attesa</span>{% endif %}</td>
+{% for p in persone %}<tr><td><b>{{ p.cognome }} {{ p.nome }}</b><br><small>{{ p.codice_fiscale ~ ' · ' ~ (p.email_contatto or '') if p.tipo_utente == 'esterno' else p.email }}</small>
+{% if p.tipo_utente == 'esterno' %}<br><span class="badge">non VVF · {{ p.ente_tipo }}{{ ' · ' ~ p.ente_nome if p.ente_nome }}</span>{% endif %}
+{% if p.stato == 'in_attesa' %}<br><span class="badge stato-ko">in attesa</span>{% elif p.stato == 'disabilitato' %}<br><span class="badge stato-ko">disabilitato</span>{% endif %}</td>
 <td>{{ p.comando or '—' }}</td>
 <td>{% for a in ass.get(p.id, []) %}<span class="chip">{{ a.ruolo_nome }}{% if a.sede_nome %} · {{ a.sede_nome }}{% endif %}<small>{{ a.area_nome }}</small>
   {% if gestibile(a) %}<form method="post" class="in-linea"><input type="hidden" name="csrf" value="{{ csrf }}"><input type="hidden" name="azione" value="togli"><input type="hidden" name="id" value="{{ a.id }}"><button class="x" title="Togli questo livello" aria-label="Togli">✕</button></form>{% endif %}</span>
 {% else %}<span class="muted">Operatore</span>{% endfor %}
-{% if p.stato == 'in_attesa' %}<form method="post" class="in-linea"><input type="hidden" name="csrf" value="{{ csrf }}"><input type="hidden" name="azione" value="abilita"><input type="hidden" name="utente_id" value="{{ p.id }}"><button class="puma-btn">Abilita come Operatore</button></form>{% endif %}</td></tr>
+{% if p.stato == 'in_attesa' %}<form method="post" class="in-linea"><input type="hidden" name="csrf" value="{{ csrf }}"><input type="hidden" name="azione" value="abilita"><input type="hidden" name="utente_id" value="{{ p.id }}"><button class="puma-btn">Abilita come {{ 'utente esterno' if p.tipo_utente == 'esterno' else 'Operatore' }}</button></form>{% endif %}
+{% if p.tipo_utente == 'esterno' %}<form method="post" class="in-linea"><input type="hidden" name="csrf" value="{{ csrf }}"><input type="hidden" name="azione" value="password"><input type="hidden" name="utente_id" value="{{ p.id }}"><button class="puma-btn">Reimposta password</button></form>
+<form method="post" class="in-linea"><input type="hidden" name="csrf" value="{{ csrf }}"><input type="hidden" name="azione" value="disabilita"><input type="hidden" name="utente_id" value="{{ p.id }}"><button class="puma-btn">{{ 'Riattiva' if p.stato == 'disabilitato' else 'Disabilita' }}</button></form>{% endif %}</td></tr>
 {% else %}<tr><td colspan="3" class="puma-empty">Nessuna persona nelle sedi che gestisci.</td></tr>{% endfor %}</tbody></table>
 
 <div class="sez-tit">Cosa può fare ogni livello <small class="muted">(provvisorio: verrà definito livello per livello)</small></div>

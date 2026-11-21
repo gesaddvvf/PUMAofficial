@@ -17,4 +17,17 @@
     }
     com.addEventListener('change', aggiorna); aggiorna();
   }
+  // sedi con profilo libero (Trento, Bolzano, Aosta…) e campi personalizzati della sede scelta
+  if (com) {
+    function sede() {
+      var o = com.options[com.selectedIndex], libero = o && o.getAttribute('data-libero') === '1';
+      Array.prototype.forEach.call(document.querySelectorAll('.solo-libero'), function (x) { x.hidden = !libero; });
+      Array.prototype.forEach.call(document.querySelectorAll('.solo-wauc'), function (x) { x.hidden = libero; });
+      Array.prototype.forEach.call(document.querySelectorAll('.campi-sede'), function (x) {
+        var vis = x.getAttribute('data-comando') === com.value; x.hidden = !vis;
+        Array.prototype.forEach.call(x.querySelectorAll('input,select'), function (i) { i.disabled = !vis; });
+      });
+    }
+    com.addEventListener('change', sede); sede();
+  }
 })();

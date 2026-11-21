@@ -6,7 +6,10 @@
 <input type="hidden" name="csrf" value="{{ csrf }}">
 <label for="nome">Nome</label><input id="nome" name="nome" value="{{ utente['nome'] or '' }}" required {{ 'readonly' if blocca_nome }}>
 <label for="cognome">Cognome</label><input id="cognome" name="cognome" value="{{ utente['cognome'] or '' }}" required {{ 'readonly' if blocca_nome }}>
-<label for="co">Sede di appartenenza (Comando, Direzione regionale, CON o SOCAV)</label><select id="co" name="comando_id" required><option value="">— seleziona —</option>{% for k in comandi %}{% if loop.first or comandi[loop.index0-1]['tipo'] != k['tipo'] %}{% if not loop.first %}</optgroup>{% endif %}<optgroup label="{{ {'comando': 'Comandi', 'direzione': 'Direzioni regionali', 'nazionale': 'Livello nazionale'}.get(k['tipo'], k['tipo']) }}">{% endif %}<option value="{{ k['id'] }}" data-sigla="{{ k['sigla'] or '' }}" {{ 'selected' if utente['comando_id']==k['id'] }}>{{ k['nome'] }}</option>{% if loop.last %}</optgroup>{% endif %}{% endfor %}</select>
+<label for="co">Sede di appartenenza (Comando, Direzione regionale, CON o SOCAV)</label><select id="co" name="comando_id" required><option value="">— seleziona —</option>{% for k in comandi %}{% if loop.first or comandi[loop.index0-1]['tipo'] != k['tipo'] %}{% if not loop.first %}</optgroup>{% endif %}<optgroup label="{{ {'comando': 'Comandi', 'direzione': 'Direzioni regionali', 'nazionale': 'Livello nazionale'}.get(k['tipo'], k['tipo']) }}">{% endif %}<option value="{{ k['id'] }}" data-sigla="{{ k['sigla'] or '' }}" data-libero="{{ k['profilo_libero'] }}" {{ 'selected' if utente['comando_id']==k['id'] }}>{{ k['nome'] }}</option>{% if loop.last %}</optgroup>{% endif %}{% endfor %}</select>
+<div class="solo-libero" hidden><label for="dl">Distaccamento / Corpo</label><input id="dl" name="distaccamento_libero" value="{{ utente['distaccamento'] or '' }}" maxlength="80">
+<label for="ql">Qualifica</label><input id="ql" name="qualifica_libera" value="{{ utente['qualifica'] or '' }}" maxlength="80"></div>
+<div class="solo-wauc">
 <label for="distaccamento">Distaccamento</label>
 {% if dist %}<select id="distaccamento" name="distaccamento"><option value="">—</option>{% if utente['distaccamento'] and utente['distaccamento'] not in dist|map(attribute='descrizione') %}<option value="{{ utente['distaccamento'] }}" selected>{{ utente['distaccamento'] }}</option>{% endif %}
 {% for d in dist %}<option value="{{ d['descrizione'] }}" data-sigla="{{ d['cod_sede'] }}" {{ 'selected' if utente['distaccamento']==d['descrizione'] }}>{{ d['descrizione'] }}</option>{% endfor %}</select>
@@ -15,6 +18,12 @@
 {% if quals %}<select id="qualifica" name="qualifica"><option value="">—</option>
 {% for q in quals %}{% if loop.first or quals[loop.index0-1]['desc_gruppo']!=q['desc_gruppo'] %}{% if not loop.first %}</optgroup>{% endif %}<optgroup label="{{ q['desc_gruppo'] }}">{% endif %}<option value="{{ q['codice'] }}|{{ q['cod_gruppo'] }}" {{ 'selected' if utente['cod_qualifica']==q['codice'] and (utente['cod_gruppo'] or '')==q['cod_gruppo'] }}>{{ q['descrizione'] }}</option>{% if loop.last %}</optgroup>{% endif %}{% endfor %}</select>
 {% else %}<input id="qualifica" name="qualifica" value="{{ utente['qualifica'] or '' }}">{% endif %}
+</div>
+{% for cid, cc in campi_sede.items() %}<fieldset class="campi-sede" data-comando="{{ cid }}" hidden><legend>Dati della sede</legend>
+{% for k in cc %}<label for="campo_{{ k.id }}">{{ k.etichetta }}{{ ' *' if k.obbligatorio }}</label>
+{% if k.tipo == 'elenco' %}<select id="campo_{{ k.id }}" name="campo_{{ k.id }}"><option value="">—</option>{% for o in opzioni_campo(k) %}<option {{ 'selected' if valori_campi.get(k.id) == o }}>{{ o }}</option>{% endfor %}</select>
+{% else %}<input id="campo_{{ k.id }}" name="campo_{{ k.id }}" type="{{ {'data': 'date', 'numero': 'number'}.get(k.tipo, 'text') }}" value="{{ valori_campi.get(k.id) or '' }}" maxlength="200">{% endif %}
+{% endfor %}</fieldset>{% endfor %}
 <label for="tipo">Tipo di personale</label>
 {% if tipi %}<select id="tipo" name="tipo_personale"><option value="">—</option>{% for t in tipi %}<option value="{{ t['codice'] }}" {{ 'selected' if utente['cod_tipo_personale']==t['codice'] }}>{{ t['descrizione'] }}</option>{% endfor %}</select>
 {% else %}<input id="tipo" name="tipo_personale" value="{{ utente['tipo_personale'] or '' }}">{% endif %}

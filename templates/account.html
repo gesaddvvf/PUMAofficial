@@ -1,0 +1,16 @@
+{% extends 'base.html' %}{% block titolo %}Il mio account{% endblock %}
+{% block main %}<h2 class="puma-h">Il mio account <small>{{ utente['nome'] }} {{ utente['cognome'] }} · {{ utente['codice_fiscale'] }}</small></h2>
+<div class="griglia-pers">
+<form class="box area-per" method="post"><h1>I miei dati</h1><input type="hidden" name="csrf" value="{{ csrf }}"><input type="hidden" name="azione" value="dati">
+<label>Ente <select name="ente_tipo">{% for e in enti %}<option {{ 'selected' if utente['ente_tipo'] == e }}>{{ e }}</option>{% endfor %}</select></label>
+<label>Reparto / sede / associazione <input name="ente_nome" value="{{ utente['ente_nome'] or '' }}" maxlength="120"></label>
+<label>E-mail <input name="email_contatto" type="email" value="{{ utente['email_contatto'] or '' }}" required maxlength="120"></label>
+<label>Telefono <input name="telefono" value="{{ utente['telefono'] or '' }}" maxlength="40"></label>
+<p class="muted piccolo">Comando VVF di riferimento: <b>{{ utente['comando'] or '—' }}</b> (per cambiarlo chiedi al Comando).</p>
+<button class="btn btn-primary" type="submit">Salva</button></form>
+<form class="box area-per" method="post"><h1>Cambia password</h1><input type="hidden" name="csrf" value="{{ csrf }}"><input type="hidden" name="azione" value="password">
+<label>Password attuale <input type="password" name="attuale" required autocomplete="current-password"></label>
+<label>Nuova password <small class="muted">(almeno 10 caratteri, lettere e numeri)</small><input type="password" name="password" required minlength="10" autocomplete="new-password"></label>
+<label>Ripeti la nuova password <input type="password" name="password2" required minlength="10" autocomplete="new-password"></label>
+<button class="btn btn-primary" type="submit">Cambia password</button></form>
+</div>{% endblock %}

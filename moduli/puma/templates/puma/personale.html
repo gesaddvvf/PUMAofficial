@@ -7,9 +7,11 @@
     <tr><th>Sede</th><td>{{ utente['comando'] or '—' }}{{ ' · ' ~ utente['distaccamento'] if utente['distaccamento'] }}</td></tr>
     <tr><th>Turno</th><td>{{ utente['turno'] or '—' }}{{ ' (salto ' ~ utente['salto_turno'] ~ ')' if utente['salto_turno'] }}</td></tr>
     <tr><th>Utente</th><td>{{ utente['email'] }}</td></tr>
+    {% for et, v in campi_extra %}<tr><th>{{ et }}</th><td>{{ v }}</td></tr>{% endfor %}
+    {% if utente['tipo_utente'] == 'esterno' %}<tr><th>Ente</th><td>{{ utente['ente_tipo'] }}{{ ' · ' ~ utente['ente_nome'] if utente['ente_nome'] }}</td></tr>{% endif %}
     <tr><th>Dati da</th><td>{{ 'WAUC (' ~ wauc['ultima_sync'][:10]|datait ~ ')' if wauc else (utente['origine_profilo'] or 'inseriti a mano') }}</td></tr>
   </table>
-  <a class="puma-btn" href="{{ url_for('profilo_view') }}">Profilazione</a></div>
+  {% if utente['tipo_utente'] == 'esterno' %}<a class="puma-btn" href="{{ url_for('account') }}">Il mio account</a>{% else %}<a class="puma-btn" href="{{ url_for('profilo_view') }}">Profilazione</a>{% endif %}</div>
 <div class="box area-per"><h1>🔑 I miei livelli di accesso</h1>
   {% if ruoli %}<ul class="lista-ruoli">{% for a in ruoli %}<li><b>{{ a.ruolo_nome }}</b>{% if a.sede_nome %} · {{ a.sede_nome }}{% endif %}<small>{{ a.area_nome }}</small></li>{% endfor %}</ul>
   {% else %}<p>{{ 'Amministratore Generale' if admin else 'Operatore' }}: partecipi agli addestramenti e registri le tue attività.</p>{% endif %}

@@ -13,6 +13,7 @@ import db as portale_db
 GRUPPI = {
     'attivita': dict(nome='Attività', area='att', ic='📝', schede=[
         ('puma.collettivo_nuovo', {}, 'Pianifica addestramento', 'programma'),
+        ('puma.impianti', {}, "Documento d'impianto", 'programma'),
         ('puma.collettivi', {}, 'Calendario addestramenti', None),
         ('puma.attivita_oggi', {}, 'Partecipa ad addestramento', None),
         ('puma.piani', {}, 'Redazione piano di sicurezza addestramento', 'piano'),
@@ -46,6 +47,7 @@ GRUPPI = {
         ('puma.inviti', {}, 'Inviti', 'ruoli'),
         ('puma.aree_corsi', {}, 'Aree corsi', 'aree'),
         ('puma.impostazioni', {}, 'Impostazioni', 'impostazioni'),
+        ('puma.campi_personalizzati', {}, 'Campi personalizzati', 'impostazioni'),
         ('puma.importa_foglio', {}, 'Corsi e foglio PUMA', 'aree'),
         ('admin_utenti', {}, 'Utenti', 'sistema'),
         ('admin_organico', {}, 'Organico', 'sistema'),
@@ -72,7 +74,8 @@ PAGINE = {
     'puma.attivita_oggi': ('attivita', 'Partecipa ad addestramento'), 'puma.piani': ('attivita', 'Redazione piano di sicurezza'),
     'puma.individuali': ('attivita', 'Registrazione attività individuali'), 'puma.interventi': ('personale', 'Interventi reali'),
     'puma.collettivi': ('attivita', 'Calendario addestramenti'),
-    'puma.collettivo_nuovo': ('attivita', 'Pianifica addestramento'), 'puma.collettivo': ('attivita', 'Scheda addestramento'),
+    'puma.collettivo_nuovo': ('attivita', 'Pianifica addestramento'),
+    'puma.impianti': ('attivita', "Documento d'impianto"), 'puma.impianto': ('attivita', "Documento d'impianto"), 'puma.collettivo': ('attivita', 'Scheda addestramento'),
     'puma.partecipa': ('attivita', 'Partecipa ad addestramento'), 'puma.piano': ('attivita', 'Redazione piano di sicurezza'),
     'puma.attivita': ('attivita', 'Attività formative'),
     'puma.presenze': ('realtime', 'Presenze Odierne'), 'puma.mappa': ('realtime', 'Mappa Real Time'), 'puma.oggi': ('realtime', 'Registro odierno'),
@@ -86,6 +89,7 @@ PAGINE = {
     'puma.area_comando': ('comando', 'Area Comando'), 'puma.impostazioni': ('comando', 'Impostazioni'),
     'puma.livelli_utente': ('comando', 'Livelli di accesso'), 'puma.accessi': ('comando', 'Livelli di accesso'),
     'puma.inviti': ('comando', 'Inviti'), 'puma.aree_corsi': ('comando', 'Aree corsi'),
+    'puma.campi_personalizzati': ('comando', 'Campi personalizzati'),
     'puma.localita': ('comando', 'Località'), 'puma.localita_scheda': ('comando', 'Località'),
     'puma.importa_foglio': ('comando', 'Corsi e foglio PUMA'),
     'admin_utenti': ('comando', 'Utenti'), 'admin_utente': ('comando', 'Gestisci utente'), 'admin_organico': ('comando', 'Organico'),
@@ -95,11 +99,20 @@ TITOLI_DOC = {'manuali-puma': 'Manuali P.U.M.A.', 'manuali-settore': 'Manuali di
 VUOTI = dict(comando=False, gestore=False, admin=False, scrittura=False)
 
 
+ESTERNI_SCHEDE = {'puma.attivita_oggi', 'puma.personale', 'puma.profilo', 'puma.mie_attivita'}   # utenti non VVF
+
+
+def esterno(u):
+    try: return bool(u) and u['tipo_utente'] == 'esterno'
+    except (KeyError, IndexError): return False
+
+
 def permessi(u, puo):
     """Cosa può vedere e fare l'utente: le capacità dei suoi ruoli (moduli/puma/ruoli.py) più i permessi di prima
     (P.U.M.A. scrittura/gestore, gestore di un settore, visibilità regione/nazionale), che restano validi."""
     from .ruoli import accessi, CAPACITA
     if not u or u['stato'] != 'attivo': return dict(VUOTI)
+    if esterno(u): return dict({k: False for k in CAPACITA}, **VUOTI, esterno=True, ruolo='Utente esterno · ' + (u['ente_tipo'] or ''))
     acc = accessi()
     with portale_db.connect() as c:
         liv = c.execute('SELECT livello FROM puma_livello_utente WHERE utente_id=?', (u['id'],)).fetchone()
@@ -140,10 +153,12 @@ def contesto(utente, puo):
     if gruppo:
         for e, a, etichetta, p in gruppo['schede']:
             if not _ok(perm, p): continue
+            if perm.get('esterno') and e not in ESTERNI_SCHEDE: continue
             attiva = e == ep and all(str(args.get(k)) == str(v) for k, v in a.items())
             if ep == 'puma.collettivi' and e == 'puma.collettivi': attiva = (args.get('vista') == 'riepilogo') == ('vista' in a)
             if e == 'puma.collettivi' and ep == 'puma.collettivo' and 'vista' not in a: attiva = True
             if e == 'puma.attivita_oggi' and ep == 'puma.partecipa': attiva = True
+            if e == 'puma.impianti' and ep == 'puma.impianto': attiva = True
             if e == 'puma.piani' and ep == 'puma.piano': attiva = True
             if e == 'admin_utenti' and ep == 'admin_utente': attiva = True
             if e == 'puma.localita' and ep == 'puma.localita_scheda': attiva = True
@@ -160,9 +175,11 @@ def _menu(perm, ep, args):
         gr = GRUPPI[chiave]
         if chiave == 'comando' and not perm.get('area_comando'): continue
         if chiave == 'collettivo' and not perm.get('report'): continue
+        if perm.get('esterno') and chiave not in ('attivita', 'personale'): continue
         voci = []
         for e, a, etichetta, p in gr['schede']:
             if not _ok(perm, p): continue
+            if perm.get('esterno') and e not in ESTERNI_SCHEDE: continue
             voci.append((url_for(e, **a), etichetta, e == ep and all(str(args.get(k)) == str(v) for k, v in a.items())))
         out.append((gr['nome'], gr['area'], gr['ic'], voci))
     return out

@@ -56,7 +56,10 @@
     });
 
     function modo() { var r = form.querySelector('input[name=modo]:checked'); return r ? r.value : (pick === '1' ? 'area' : pick); }
-    function campi(m) { return [form.querySelector('#' + PREF[m] + 'lat'), form.querySelector('#' + PREF[m] + 'lon')]; }
+    function campi(m) {   // per nome dentro il modulo (più mappe nella stessa pagina), altrimenti per id
+      function c(n) { return form.querySelector('[name="' + n + '"]') || form.querySelector('#' + n); }
+      return [c(PREF[m] + 'lat'), c(PREF[m] + 'lon')];
+    }
     function mostra() {
       letto.textContent = '';
       if (!pick) return;

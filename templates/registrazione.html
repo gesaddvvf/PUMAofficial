@@ -1,0 +1,27 @@
+{% extends 'base.html' %}{% block titolo %}Registrazione{% endblock %}
+{% block main %}<div class="home-wrap">
+<form class="box area-per box-largo" method="post" autocomplete="off"><h1>🤝 Registrazione per altri enti (non VVF)</h1>
+<p class="muted">Per chi si addestra con i Vigili del Fuoco senza farne parte: Amministrazioni dello Stato, Forze armate e di polizia, volontariato, Croce Rossa, CNSAS… Il <b>personale VVF non si registra</b>: entra con le credenziali dipartimentali.</p>
+<input type="hidden" name="csrf" value="{{ csrf }}">
+<div class="griglia2">
+<div><label for="n">Nome</label><input id="n" name="nome" value="{{ d.nome or '' }}" required maxlength="80" autocomplete="given-name"></div>
+<div><label for="c">Cognome</label><input id="c" name="cognome" value="{{ d.cognome or '' }}" required maxlength="80" autocomplete="family-name"></div>
+</div>
+<label for="cf">Codice fiscale <small class="muted">(lo userai per accedere)</small></label><input id="cf" name="cf" value="{{ d.cf or '' }}" required maxlength="24" autocapitalize="characters" spellcheck="false">
+<div class="griglia2">
+<div><label for="et">Ente di appartenenza</label><select id="et" name="ente_tipo" required><option value="">— scegli —</option>{% for e in enti %}<option {{ 'selected' if d.ente_tipo == e }}>{{ e }}</option>{% endfor %}</select></div>
+<div><label for="en">Reparto / sede / associazione</label><input id="en" name="ente_nome" value="{{ d.ente_nome or '' }}" maxlength="120" placeholder="es. 8° Reggimento Alpini, Croce Rossa di Forlì"></div>
+</div>
+<label for="co">Comando VVF con cui ti addestri</label><select id="co" name="comando_id" required><option value="">— scegli —</option>{% for k in sedi %}<option value="{{ k['id'] }}" {{ 'selected' if (d.comando_id|default('')) == k['id']|string }}>{{ k['nome'] }}</option>{% endfor %}</select>
+<div class="griglia2">
+<div><label for="em">E-mail</label><input id="em" name="email_contatto" type="email" value="{{ d.email_contatto or '' }}" required maxlength="120" autocomplete="email"></div>
+<div><label for="te">Telefono <small class="muted">(facoltativo)</small></label><input id="te" name="telefono" value="{{ d.telefono or '' }}" maxlength="40" autocomplete="tel"></div>
+</div>
+<div class="griglia2">
+<div><label for="p1">Password <small class="muted">(almeno 10 caratteri, lettere e numeri)</small></label><input id="p1" type="password" name="password" required minlength="10" autocomplete="new-password"></div>
+<div><label for="p2">Ripeti la password</label><input id="p2" type="password" name="password2" required minlength="10" autocomplete="new-password"></div>
+</div>
+<label class="puma-chk"><input type="checkbox" name="privacy" value="1" required> Acconsento al trattamento dei dati (Reg. UE 679/2016) per la gestione degli addestramenti con il Corpo Nazionale dei Vigili del Fuoco.</label>
+<button class="btn btn-primary" type="submit">Registrati</button>
+<p class="muted piccolo">Dopo la registrazione l'Amministratore del Comando scelto abilita l'account (se sei arrivato dal link d'invito di un addestramento sei già abilitato). Potrai partecipare agli addestramenti e vedere il tuo report individuale. <a href="{{ url_for('login') }}">Torna all'accesso</a></p>
+</form></div>{% endblock %}

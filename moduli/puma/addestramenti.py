@@ -34,6 +34,30 @@ def ev_get(i, u):
     return r or abort(404)
 
 
+# ---------------- PRESENZA: IN TURNO / FUORI TURNO, ANTICIPO / POSTICIPO ----------------
+VARIAZIONI_MIN = [15, 30, 45, 60, 90, 120, 180, 240]
+
+
+def servizio_proposto(email, e):
+    """'in_turno' se il turno della persona è in servizio all'inizio dell'addestramento (e non è di salto), altrimenti 'fuori_turno'."""
+    import turni
+    p = db().execute("SELECT turno, salto_turno FROM utenti WHERE email=?", (email,)).fetchone()
+    if not p or not p["turno"]: return None
+    try: quando = datetime.fromisoformat(f"{e['data']}T{e['ora_inizio'] or '08:00'}")
+    except ValueError: return None
+    st = turni.stato(p["turno"], p["salto_turno"], quando)
+    return None if st is None else ("in_turno" if st == "in_turno" else "fuori_turno")
+
+
+def leggi_servizio(f, suff=""):
+    """(servizio, variazione, minuti) dal modulo, validati."""
+    sv = f.get("servizio" + suff); sv = sv if sv in ("in_turno", "fuori_turno") else None
+    va = f.get("variazione" + suff); va = va if va in ("anticipo", "posticipo") else None
+    mi = f.get("variazione_min" + suff, type=int)
+    mi = mi if va and mi in VARIAZIONI_MIN else None
+    return sv, (va if mi else None), mi
+
+
 # ---------------- PERSONE PREVISTE E LINK D'INVITO ----------------
 def persone_sede(cid):
     """Personale attivo della sede, per scegliere le persone previste."""
@@ -112,8 +136,11 @@ def previsti(i):
             v = f.get("esito_" + p["email"])
             if v == "presente":
                 r = f.get("ruolo_" + p["email"]); r = r if r in ruoli else "OPER"
-                db().execute("""INSERT INTO puma_checkin(evento_id,username,nome,comando_origine,ora,ruolo_ics,convalidato) VALUES(?,?,?,?,?,?,1)
-                    ON CONFLICT(evento_id,username) DO UPDATE SET ruolo_ics=excluded.ruolo_ics, convalidato=1""", (i, p["email"], p["nome"], p["comando_id"], ora, r))
+                sv, va, mi = leggi_servizio(f, "_" + p["email"])
+                db().execute("""INSERT INTO puma_checkin(evento_id,username,nome,comando_origine,ora,ruolo_ics,convalidato,servizio,variazione,variazione_min)
+                    VALUES(?,?,?,?,?,?,1,?,?,?) ON CONFLICT(evento_id,username) DO UPDATE SET ruolo_ics=excluded.ruolo_ics, convalidato=1,
+                    servizio=excluded.servizio, variazione=excluded.variazione, variazione_min=excluded.variazione_min""",
+                    (i, p["email"], p["nome"], p["comando_id"], ora, r, sv, va, mi))
                 db().execute("UPDATE puma_previsti SET stato='confermato' WHERE evento_id=? AND email=?", (i, p["email"])); n += 1
             elif v == "assente":
                 db().execute("DELETE FROM puma_checkin WHERE evento_id=? AND username=?", (i, p["email"]))
@@ -275,7 +302,9 @@ def collettivo(i):
     return render_template("puma/collettivo.html", e=e, chk=chk, mio=mio, resp=resp, previsti=prev, io_previsto=io_previsto,
                            abilitato=settore_ok(u, e["tipologia"]), ruoli=ics_ruoli(), oggi=date.today().isoformat(),
                            link=link_invito(e) if resp else None, persone=persone_sede(e["comando_id"]) if resp else [],
-                           gia={p["email"] for p in prev} | {c["username"] for c in chk})
+                           gia={p["email"] for p in prev} | {c["username"] for c in chk},
+                           proposta={p["email"]: servizio_proposto(p["email"], e) for p in prev} if resp else {}, minuti=VARIAZIONI_MIN,
+                           impianti=db().execute("SELECT id, titolo, stato FROM puma_impianti WHERE evento_id=?", (i,)).fetchall())
 
 def ics_ruoli(): return db().execute("SELECT * FROM puma_ics_ruoli ORDER BY ordine").fetchall()
 
@@ -295,14 +324,19 @@ def partecipa(i):
         if not cf_valido(cf): flash("Codice fiscale non valido: controlla i 16 caratteri."); return redirect(request.url)
         uid = g.utente["id"]
         db().execute("INSERT INTO puma_persone(utente_id,codice_fiscale) VALUES(?,?) ON CONFLICT(utente_id) DO UPDATE SET codice_fiscale=excluded.codice_fiscale", (uid, cf))
-        db().execute("""INSERT INTO puma_checkin(evento_id,username,nome,comando_origine,ora,ruolo_ics) VALUES(?,?,?,?,?,?)
-            ON CONFLICT(evento_id,username) DO UPDATE SET ruolo_ics=excluded.ruolo_ics""", (i, u["username"], u.get("nome", u["username"]), u["comando_id"], datetime.now().strftime("%H:%M"), r))
+        sv, va, mi = leggi_servizio(request.form)
+        if not sv and g.utente["tipo_utente"] != "esterno": flash("Indica se partecipi in turno o fuori turno."); return redirect(request.url)
+        db().execute("""INSERT INTO puma_checkin(evento_id,username,nome,comando_origine,ora,ruolo_ics,servizio,variazione,variazione_min) VALUES(?,?,?,?,?,?,?,?,?)
+            ON CONFLICT(evento_id,username) DO UPDATE SET ruolo_ics=excluded.ruolo_ics, servizio=excluded.servizio, variazione=excluded.variazione,
+            variazione_min=excluded.variazione_min""", (i, u["username"], u.get("nome", u["username"]), u["comando_id"], datetime.now().strftime("%H:%M"), r, sv, va, mi))
         db().execute("UPDATE puma_eventi SET stato='attivo' WHERE id=? AND stato='programmato'", (i,))
         db().execute("UPDATE puma_previsti SET stato='confermato' WHERE evento_id=? AND email=?", (i, u["username"])); db().commit()
         flash("Registrazione effettuata.", "success"); return redirect(url_for("puma.collettivo", i=i))
     mio = db().execute("SELECT ruolo_ics FROM puma_checkin WHERE evento_id=? AND username=?", (i, u["username"])).fetchone()
     p = db().execute("SELECT codice_fiscale FROM puma_persone WHERE utente_id=?", (g.utente["id"],)).fetchone()
-    return render_template("puma/partecipa.html", e=e, ruoli=ruoli, mio=mio["ruolo_ics"] if mio else None, cf=p["codice_fiscale"] if p else "")
+    ck = db().execute("SELECT * FROM puma_checkin WHERE evento_id=? AND username=?", (i, u["username"])).fetchone()
+    return render_template("puma/partecipa.html", e=e, ruoli=ruoli, mio=mio["ruolo_ics"] if mio else None, cf=p["codice_fiscale"] if p else "",
+                           servizio=(ck["servizio"] if ck and ck["servizio"] else servizio_proposto(u["username"], e)), ck=ck, minuti=VARIAZIONI_MIN)
 
 def _resp(i):
     u = current_user(); e = ev_get(i, u)
@@ -315,6 +349,9 @@ def convalida(i):
     for r in db().execute("SELECT username FROM puma_checkin WHERE evento_id=?", (i,)).fetchall():
         v = request.form.get("ruolo_" + r["username"])
         if v: db().execute("UPDATE puma_checkin SET ruolo_ics=? WHERE evento_id=? AND username=?", (v, i, r["username"]))
+        if request.form.get("servizio_" + r["username"]):
+            sv, va, mi = leggi_servizio(request.form, "_" + r["username"])
+            db().execute("UPDATE puma_checkin SET servizio=?, variazione=?, variazione_min=? WHERE evento_id=? AND username=?", (sv, va, mi, i, r["username"]))
     db().execute("UPDATE puma_checkin SET convalidato=0 WHERE evento_id=?", (i,))
     for x in ids: db().execute("UPDATE puma_checkin SET convalidato=1 WHERE evento_id=? AND username=?", (i, x))
     if request.form.get("chiudi"): db().execute("UPDATE puma_eventi SET stato='chiuso' WHERE id=?", (i,))
@@ -458,6 +495,7 @@ def profilo():
     u = current_user(); anno = request.args.get("anno", type=int) or date.today().year
     chi = g.utente
     altro = request.args.get("utente", type=int)
+    if altro and altro != g.utente["id"] and g.utente["tipo_utente"] == "esterno": abort(403)
     if altro and altro != g.utente["id"]:
         vis = comandi_visibili(u)
         chi = db().execute("SELECT u.*, k.nome AS comando FROM utenti u LEFT JOIN comandi k ON k.id=u.comando_id WHERE u.id=?", (altro,)).fetchone() or abort(404)
@@ -502,7 +540,8 @@ def impostazioni():
         db().commit(); flash("Impostazioni salvate."); return redirect(url_for("puma.impostazioni"))
     mails = {r: ", ".join(x["email"] for x in db().execute("SELECT email FROM puma_destinatari WHERE comando_id=? AND ruolo=?", (cid, r))) for r in RUOLI_MAIL}
     man = db().execute("SELECT m.*, l.nome livello FROM puma_manovre m JOIN puma_livelli l ON l.id=m.livello_id ORDER BY l.nome, m.ordine, m.id").fetchall()
-    return render_template("puma/impostazioni.html", mails=mails, preavviso=cfg(cid, "giorni_preavviso", "30"), livelli=livelli(), man=man)
+    return render_template("puma/impostazioni.html", mails=mails, preavviso=cfg(cid, "giorni_preavviso", "30"), livelli=livelli(), man=man,
+                           comando=db().execute("SELECT * FROM comandi WHERE id=?", (cid,)).fetchone())
 
 def invia_alert_scadenze():
     n = 0

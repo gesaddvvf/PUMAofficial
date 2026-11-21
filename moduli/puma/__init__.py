@@ -318,4 +318,4 @@ def archivia(i):
     return redirect(url_for("puma.attivita"))
 
 
-from . import addestramenti, piano, pagine, aree, localita  # noqa: E402,F401  (registra le route dei moduli)
+from . import addestramenti, piano, pagine, aree, localita, campi, impianto  # noqa: E402,F401  (registra le route dei moduli)

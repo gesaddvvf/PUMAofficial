@@ -38,6 +38,8 @@
                try { document.execCommand('copy'); b.textContent = 'Copiato ✓'; } catch (e) { b.textContent = 'Premi Ctrl+C'; } }
       });
     });
+    // pulsante di stampa (documento d'impianto): niente onclick in linea per la CSP
+    Array.prototype.forEach.call(document.querySelectorAll('[data-stampa]'), function (b) { b.addEventListener('click', function () { window.print(); }); });
     // ricerca nelle liste di persone (persone previste)
     Array.prototype.forEach.call(document.querySelectorAll('input[data-filtra]'), function (q) {
       var box = document.getElementById(q.getAttribute('data-filtra')); if (!box) return;

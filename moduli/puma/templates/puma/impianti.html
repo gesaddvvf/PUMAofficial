@@ -1,0 +1,17 @@
+{% extends 'base.html' %}{% block main %}{% include "puma/_nav.html" %}
+<div class="libretto-testa"><h2 class="puma-h">Documento d'impianto</h2>{% if crea %}<a class="puma-btn puma-on" href="#crea">＋ Crea</a>{% endif %}</div>
+<p class="muted">Il documento che descrive l'addestramento: date e orari, sezioni con titolo a scelta (scenario, organizzazione, sicurezza…), mappe e immagini. Si collega a un addestramento pianificato e si stampa o si salva in PDF.</p>
+<table class="puma-tab"><thead><tr><th>Documento</th><th>Date</th><th>Addestramento</th><th>Stato</th><th>Aggiornato</th></tr></thead><tbody>
+{% for r in righe %}<tr><td><a href="{{ url_for('puma.impianto', i=r.id) }}"><b>{{ r.titolo }}</b></a><br><small>{{ r.area or '' }} · {{ r.comando }} · {{ r.n_sez }} sezioni</small></td>
+<td>{{ (r.dal|datait) if r.dal else '—' }}{{ ' → ' ~ (r.al|datait) if r.al and r.al != r.dal }}</td><td>{{ r.cod_add or '—' }}</td>
+<td><span class="stato-{{ 'ok' if r.stato == 'definitivo' else 'nd' }}">{{ r.stato }}</span></td><td>{{ (r.aggiornato_il or r.creato_il or '')[:10]|datait }}</td></tr>
+{% else %}<tr><td colspan="5" class="puma-empty">Nessun documento d'impianto.</td></tr>{% endfor %}</tbody></table>
+{% if crea %}<form method="post" action="{{ url_for('puma.impianto_nuovo') }}" class="puma-form largo" id="crea"><input type="hidden" name="csrf" value="{{ csrf }}"><h3>＋ Crea documento d'impianto</h3>
+<label>Titolo <input name="titolo" maxlength="150" required placeholder="es. Esercitazione SAF in forra – Valle del Bidente"></label>
+<div class="griglia2">
+<label>Area corsi <select name="area" required>{% for a in aree %}<option value="{{ a.codice }}">{{ a.nome }}</option>{% endfor %}</select></label>
+<label>Addestramento pianificato <small class="muted">(facoltativo: ne prende data, orari e punti)</small><select name="evento_id"><option value="">Nessuno</option>{% for e in eventi %}<option value="{{ e.id }}" {{ 'selected' if evento_sel == e.id }}>{{ e.data|datait }} · {{ e.cod_add or e.titolo }}</option>{% endfor %}</select></label>
+</div>
+<p class="muted piccolo">Il documento parte con le sezioni Premessa e obiettivi, Scenario e area addestrativa, Organizzazione e risorse, Sicurezza, Comunicazioni: puoi rinominarle, spostarle, toglierle e aggiungerne altre.</p>
+<button type="submit">Crea</button></form>{% endif %}
+{% endblock %}

@@ -46,7 +46,8 @@ def personale():
     prossimi = sorted(list(prossimi) + extra, key=lambda e: (e['data'], e['ora_inizio'] or ''))[:10]
     iscritto = {r[0] for r in d.execute('SELECT evento_id FROM puma_checkin WHERE username=?', (u['username'],))}
     wauc = d.execute('SELECT * FROM anagrafica_wauc WHERE utente_id=?', (g.utente['id'],)).fetchone()
-    return render_template('puma/personale.html', lib=lib, possesso=possesso, prossimi=prossimi, iscritto=iscritto, wauc=wauc, previsto=previsto,
+    from .campi import campi_utente
+    return render_template('puma/personale.html', campi_extra=campi_utente(d, g.utente), lib=lib, possesso=possesso, prossimi=prossimi, iscritto=iscritto, wauc=wauc, previsto=previsto,
                            ruoli=_acc().righe, admin=_acc().admin, y=y, oggi=oggi)
 
 
@@ -103,6 +104,8 @@ def accessi():
             elif area != '*' and not d.execute('SELECT 1 FROM puma_settori WHERE codice=?', (area,)).fetchone(): flash('Area corsi non valida.', 'danger')
             elif not _puo_gestire(acc, ruolo, sede if sede is not None else p['comando_id']): abort(403)
             elif not acc.admin and p['comando_id'] not in ids: abort(403)
+            elif (p['tipo_utente'] == 'esterno') != (ruolo == 'ESTERNO'):
+                flash('Agli utenti non VVF si assegna solo «Utente esterno» (e «Utente esterno» solo a loro).', 'danger')
             else:
                 R.assegna(d, uid, ruolo, sede, area, u['username'])
                 if p['stato'] == 'in_attesa':
@@ -126,13 +129,30 @@ def accessi():
             uid = f.get('utente_id', type=int)
             p = d.execute("SELECT * FROM utenti WHERE id=? AND stato='in_attesa'", (uid,)).fetchone()
             if not p or (not acc.admin and p['comando_id'] not in ids): abort(403)
-            R.assegna(d, uid, 'OPERATORE', None, '*', u['username'])
+            esterno = p['tipo_utente'] == 'esterno'
+            R.assegna(d, uid, 'ESTERNO' if esterno else 'OPERATORE', None, '*', u['username'])
             d.execute("UPDATE utenti SET stato='attivo', approvato_da=?, approvato_il=? WHERE id=?",
                       (g.utente['id'], datetime.now().isoformat(timespec='seconds'), uid))
-            d.commit(); flash(f"{p['nome']} {p['cognome']} abilitato come Operatore.", 'success')
+            d.commit(); flash(f"{p['nome']} {p['cognome']} abilitato come {'utente esterno' if esterno else 'Operatore'}.", 'success')
+        elif azione == 'password':
+            import esterni
+            uid = f.get('utente_id', type=int)
+            p = d.execute("SELECT * FROM utenti WHERE id=? AND tipo_utente='esterno'", (uid,)).fetchone()
+            if not p or (not acc.admin and p['comando_id'] not in ids): abort(403)
+            nuova = esterni.password_temporanea()
+            d.execute('UPDATE utenti SET password_hash=? WHERE id=?', (esterni.hash_password(nuova), uid))
+            import db as portale_db
+            portale_db.audit(d, u['username'], 'password_reimpostata', p['codice_fiscale'])
+            d.commit(); flash(f"Nuova password di {p['nome']} {p['cognome']}: {nuova}  — comunicala alla persona: la cambierà da «Il mio account».", 'warning')
+        elif azione == 'disabilita':
+            uid = f.get('utente_id', type=int)
+            p = d.execute("SELECT * FROM utenti WHERE id=? AND tipo_utente='esterno'", (uid,)).fetchone()
+            if not p or (not acc.admin and p['comando_id'] not in ids): abort(403)
+            d.execute("UPDATE utenti SET stato=CASE stato WHEN 'disabilitato' THEN 'attivo' ELSE 'disabilitato' END WHERE id=?", (uid,))
+            d.commit(); flash('Stato aggiornato.', 'success')
         return redirect(url_for('puma.accessi', **{k: v for k, v in request.args.items()}))
     filtro = request.args.get('sede', type=int)
-    q = """SELECT u.*, k.nome AS comando FROM utenti u LEFT JOIN comandi k ON k.id=u.comando_id WHERE u.stato!='disabilitato'"""
+    q = """SELECT u.*, k.nome AS comando FROM utenti u LEFT JOIN comandi k ON k.id=u.comando_id WHERE (u.stato!='disabilitato' OR u.tipo_utente='esterno')"""
     par = []
     if not acc.admin:
         if not ids: q += ' AND 0'
