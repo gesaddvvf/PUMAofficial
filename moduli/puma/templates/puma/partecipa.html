@@ -6,7 +6,7 @@
 <label>Il tuo ruolo nell'ICS <select name="ruolo" required><option value="">Scegli…</option>{% for r in ruoli %}<option value="{{ r.codice }}" {{ 'selected' if mio==r.codice }}>{{ r.nome }}</option>{% endfor %}</select></label>
 {% if utente['tipo_utente'] != 'esterno' %}<fieldset class="sez"><legend>Servizio</legend>
 <div class="riga-servizio">{% with suff='', val=servizio, obbl=true %}{% include "puma/_servizio.html" %}{% endwith %}</div>
-<small class="muted">{% if servizio %}Proposto dal tuo turno ({{ utente['turno'] }}{{ ', salto ' ~ utente['salto_turno'] if utente['salto_turno'] }}) all'ora di inizio: correggilo se serve.{% else %}Indica se partecipi in turno o fuori turno.{% endif %}
+<small class="muted">{% if servizio %}Proposto dal tuo turno ({{ utente['turno'] }}{{ ', salto ' ~ utente['salto_turno'] if utente['salto_turno'] }}) all'ora di inizio: correggilo se serve.{% else %}Indica se partecipi in turno o in turno libero.{% endif %}
 Anticipo o posticipo: fai in anticipo (o recuperi dopo) 12 ore del tuo turno, coprendo il {{ tc[0] ~ ' del ' ~ tc[1] if tc else 'turno' }} in cui cade l'addestramento.</small>
 </fieldset>{% endif %}
 <label>Codice fiscale <input name="cf" value="{{ cf }}" maxlength="16" minlength="16" pattern="[A-Za-z0-9]{16}" autocapitalize="characters" autocomplete="off" required class="puma-cf"></label>

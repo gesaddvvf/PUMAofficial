@@ -1,8 +1,8 @@
-{# presenza: in turno, fuori turno, oppure anticipo / posticipo di 12 ore del turno (diurno o notturno) in cui cade l'addestramento.
+{# presenza: in turno, in turno libero, oppure anticipo / posticipo di 12 ore del turno (diurno o notturno) in cui cade l'addestramento.
    suff = suffisso dei nomi (vuoto o "_email"), val = valore salvato o proposto, tc = (diurno|notturno, gg/mm, codice turno) #}
 {% set t12 = (tc[0] ~ ' ' ~ tc[1] ~ (' · ' ~ tc[2] if tc[2])) if tc else 'turno' %}
 <select name="servizio{{ suff }}" aria-label="Servizio" {{ 'required' if obbl }}><option value="">{{ 'Scegli…' if obbl else '—' }}</option>
   <option value="in_turno" {{ 'selected' if val == 'in_turno' }}>In turno</option>
-  <option value="fuori_turno" {{ 'selected' if val == 'fuori_turno' }}>Fuori turno</option>
+  <option value="fuori_turno" {{ 'selected' if val == 'fuori_turno' }}>In turno libero</option>
   <option value="anticipo" {{ 'selected' if val == 'anticipo' }}>Anticipo 12 h ({{ t12 }})</option>
   <option value="posticipo" {{ 'selected' if val == 'posticipo' }}>Posticipo 12 h ({{ t12 }})</option></select>

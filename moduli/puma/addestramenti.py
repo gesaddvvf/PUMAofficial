@@ -65,7 +65,7 @@ def servizio_proposto(email, e):
 
 
 def leggi_servizio(f, suff="", e=None):
-    """(servizio, turno coperto, ore) dal modulo: in turno, fuori turno, oppure anticipo/posticipo di 12 ore del
+    """(servizio, turno coperto, ore) dal modulo: in turno, in turno libero (fuori turno), oppure anticipo/posticipo di 12 ore del
     turno diurno o notturno in cui cade l'addestramento."""
     sv = f.get("servizio" + suff)
     if sv not in SERVIZI: return None, None, None
@@ -342,7 +342,7 @@ def partecipa(i):
         uid = g.utente["id"]
         db().execute("INSERT INTO puma_persone(utente_id,codice_fiscale) VALUES(?,?) ON CONFLICT(utente_id) DO UPDATE SET codice_fiscale=excluded.codice_fiscale", (uid, cf))
         sv, va, mi = leggi_servizio(request.form, "", e)
-        if not sv and g.utente["tipo_utente"] != "esterno": flash("Indica se partecipi in turno o fuori turno."); return redirect(request.url)
+        if not sv and g.utente["tipo_utente"] != "esterno": flash("Indica se partecipi in turno o in turno libero."); return redirect(request.url)
         db().execute("""INSERT INTO puma_checkin(evento_id,username,nome,comando_origine,ora,ruolo_ics,servizio,variazione,variazione_min) VALUES(?,?,?,?,?,?,?,?,?)
             ON CONFLICT(evento_id,username) DO UPDATE SET ruolo_ics=excluded.ruolo_ics, servizio=excluded.servizio, variazione=excluded.variazione,
             variazione_min=excluded.variazione_min""", (i, u["username"], u.get("nome", u["username"]), u["comando_id"], datetime.now().strftime("%H:%M"), r, sv, va, mi))
